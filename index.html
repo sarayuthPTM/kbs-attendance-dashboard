@@ -113,8 +113,8 @@
           <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-tight truncate leading-tight">
             ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ
           </h1>
-          <p class="text-[11px] sm:text-xs text-amber-200/95 truncate">
-            โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • ภาคเรียนที่ 2/2569
+          <p id="header-term-subtitle" class="text-[11px] sm:text-xs text-amber-200/95 truncate">
+            โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เชื่อมต่อ Google Sheets อัตโนมัติ
           </p>
         </div>
       </div>
@@ -321,8 +321,15 @@
 
       <!-- Active Teacher Content -->
       <div id="td-dashboard-content" class="space-y-5">
-        <!-- Visible Months Scope Note & Tabs -->
+        <!-- Visible Terms & Months Scope Note & Tabs -->
         <div class="no-print rounded-2xl bg-white border border-slate-200 p-4 shadow-sm space-y-3">
+          <div id="td-term-switcher-box" class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+            <div class="flex items-center gap-2 text-xs font-bold text-kbs-navy">
+              <i data-lucide="layers" class="w-4 h-4 text-kbs-gold"></i>
+              <span>ภาคเรียน / ปีที่เปิดให้เข้าดู:</span>
+            </div>
+            <div id="td-term-pills" class="flex items-center gap-1.5 flex-wrap"></div>
+          </div>
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
               <i data-lucide="filter" class="w-4 h-4 text-kbs-navy"></i>
@@ -505,7 +512,7 @@
         <div class="mt-4 pt-3 border-t border-white/15 flex items-center gap-2 overflow-x-auto no-scrollbar">
           <button id="ad-tab-months" type="button" data-ad-tab="months" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-white text-kbs-navy shadow flex items-center gap-1.5">
             <i data-lucide="calendar-cog" class="w-4 h-4"></i>
-            <span>1. เลือกเปิด-ปิดเดือนให้ครูเห็น</span>
+            <span>1. เปิด-ปิดปี/เทอม และเดือน</span>
           </button>
           <button id="ad-tab-overview" type="button" data-ad-tab="overview" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-white/10 text-white hover:bg-white/20 flex items-center gap-1.5">
             <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
@@ -527,17 +534,32 @@
         </div>
       </div>
 
-      <!-- ADMIN TAB 1: MONTH VISIBILITY CONTROLLER -->
+      <!-- ADMIN TAB 1: TERM & MONTH VISIBILITY CONTROLLER -->
       <div id="ad-panel-months" class="no-print space-y-5">
+        <!-- Term / Year Visibility Cards -->
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
+          <div class="mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-kbs-navyDark flex items-center gap-2">
+              <i data-lucide="layers" class="w-5 h-5 text-kbs-gold"></i>
+              <span>1) เปิด-ปิดระดับภาคเรียน / ปี (ตรวจจับแท็บจาก Google Sheet อัตโนมัติ)</span>
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              เมื่อมีการสร้างแท็บใหม่ในไฟล์ Google Sheets (เช่น <code class="bg-slate-100 px-1 rounded">1/70</code>, <code class="bg-slate-100 px-1 rounded">2/70</code>, <code class="bg-slate-100 px-1 rounded">1/71</code>) ระบบจะดึงขึ้นมาแสดงที่นี่โดยอัตโนมัติ แอดมินสามารถกด <strong>เปิด/ปิดทั้งปีหรือทั้งเทอม</strong> ได้ทันที
+            </p>
+          </div>
+          <div id="ad-terms-toggle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Month Visibility Cards for Selected Term -->
         <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div>
               <h3 class="text-base sm:text-lg font-bold text-kbs-navyDark flex items-center gap-2">
                 <i data-lucide="sliders-horizontal" class="w-5 h-5 text-kbs-gold"></i>
-                <span>กำหนดเดือนที่อนุญาตให้ครูเข้าดูบนแดชบอร์ด</span>
+                <span>2) กำหนดเดือนที่อนุญาตให้ครูดู — <span id="ad-selected-term-label" class="text-kbs-navy"></span></span>
               </h3>
               <p class="text-xs text-slate-500 mt-0.5">
-                เมื่อกดเปิดหรือปิดสวิตช์ ระบบจะบันทึกลงแท็บ <code class="bg-slate-100 px-1 rounded">_Dashboard_Settings</code> ใน Google Sheets ทันที และฝั่งครูจะแสดงผลเฉพาะเดือนที่เปิดไว้เท่านั้น
+                เมื่อกดเปิดหรือปิดสวิตช์ ระบบจะบันทึกลงแท็บ <code class="bg-slate-100 px-1 rounded">_Dashboard_Settings</code> ใน Google Sheets ทันที และฝั่งครูจะแสดงผลเฉพาะเทอมและเดือนที่เปิดไว้เท่านั้น
               </p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -545,10 +567,10 @@
                 เปิดเฉพาะเดือนที่มีข้อมูล
               </button>
               <button id="btn-open-all-months" type="button" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-kbs-navy border border-blue-200 text-xs font-bold transition disabled:opacity-60">
-                เปิดทั้งหมด 6 เดือน
+                เปิดทุกเดือนในเทอมนี้
               </button>
               <button id="btn-close-all-months" type="button" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition disabled:opacity-60">
-                ปิดทั้งหมด
+                ปิดทุกเดือนในเทอมนี้
               </button>
             </div>
           </div>
@@ -585,7 +607,11 @@
       <!-- ADMIN TAB 2: SCHOOL-WIDE OVERVIEW -->
       <div id="ad-panel-overview" class="hidden space-y-5">
         <div class="no-print rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">ภาคเรียน / ปี (แท็บ)</label>
+              <select id="ad-term-select" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 focus:border-kbs-navy outline-none"></select>
+            </div>
             <div>
               <label class="block text-[11px] font-semibold text-slate-500 mb-1">ขอบเขตเดือนที่แสดง</label>
               <select id="ad-scope-select" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 focus:border-kbs-navy outline-none"></select>

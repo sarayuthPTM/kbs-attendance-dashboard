@@ -1,6 +1,6 @@
 /**
  * ข้อมูลรายชื่อบุคลากรและ Hash รหัสยืนยันตัวตน (ไม่เก็บเลขบัตรประชาชนดิบในไฟล์)
- * สร้างจากชีต 'ข้อมูลลงเวลา 2/69' (133 คน) และฐานข้อมูล e-Profile
+ * รองรับทั้งการยืนยันตามรหัสแถวและชื่อ-สกุล (ใช้ได้ข้ามเทอม 2/69, 1/70, 2/70)
  */
 window.KBS_ATTENDANCE_STAFF_SEED = [
   {
@@ -13,7 +13,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ผู้บริหาร",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "0205f69ba3159f0846e61fe5e57d47a4dce00ab01b6ab7988db7f0e3b6746fdb"
+    "pinHash": "0205f69ba3159f0846e61fe5e57d47a4dce00ab01b6ab7988db7f0e3b6746fdb",
+    "coreName": "เกียรติมงคล พูดเพราะ",
+    "namePinHash": "44ac5055589bcb436257ecc4bd8fc9c6481cd63879c2eac4280a62322d50bfbe"
   },
   {
     "key": "staff_5",
@@ -25,7 +27,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ผู้บริหาร",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "cb5ac4ac074dd95ec6893fd1fe66768383343649bec8ce3cca2550a7285346b4"
+    "pinHash": "cb5ac4ac074dd95ec6893fd1fe66768383343649bec8ce3cca2550a7285346b4",
+    "coreName": "คนึงนิตย์ แฉล้มรักษ์",
+    "namePinHash": "7d08678d5bc921af5ee2762e2c2713064c2f6ee322bb148dd8db26cd3499f54c"
   },
   {
     "key": "staff_6",
@@ -37,7 +41,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ผู้บริหาร",
     "avatarUrl": "assets/sarayuth_photo.png",
     "hasSeedPin": true,
-    "pinHash": "485b1066c5612ae2e8bf28793a34d41263b0d9168580bec31d9706d130a8c1b6"
+    "pinHash": "485b1066c5612ae2e8bf28793a34d41263b0d9168580bec31d9706d130a8c1b6",
+    "coreName": "ศรายุทธ พงค์ทองเมือง",
+    "namePinHash": "79fb5b8278e5e2ac98991744a5272105cd0ad1d10ef1d415e0925a388cfc30ff"
   },
   {
     "key": "staff_7",
@@ -49,7 +55,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ผู้บริหาร",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "9a0641213f776f07b42dca898afd90291d30d4ea66d121976f1ad51ce2337a73"
+    "pinHash": "9a0641213f776f07b42dca898afd90291d30d4ea66d121976f1ad51ce2337a73",
+    "coreName": "สุธิดา ธนบัตร",
+    "namePinHash": "dc2f4c83886f913e37648a4d824f771838f17c60b29f8f81cb19b3bec7e5a971"
   },
   {
     "key": "staff_8",
@@ -61,7 +69,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ผู้บริหาร",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "a35999fa29cabe563c36d73b4b477045d319071a2981977ab9d3edcf8a5f72b0"
+    "pinHash": "a35999fa29cabe563c36d73b4b477045d319071a2981977ab9d3edcf8a5f72b0",
+    "coreName": "วัชระ เปียกบุตร",
+    "namePinHash": "581f56b20838823838db40337d28906ee8bb450b489409639cac9331cee0a332"
   },
   {
     "key": "staff_9",
@@ -73,7 +83,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "แนะแนว/วัดผล",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "34949d5c7d0642e5a9d94d2e0c3fc1b5a14a38d8aa64e45de473d3e6a39da5b7"
+    "pinHash": "34949d5c7d0642e5a9d94d2e0c3fc1b5a14a38d8aa64e45de473d3e6a39da5b7",
+    "coreName": "ณัฐปภัสร์ จันท์เสถียร",
+    "namePinHash": "126066f06f139f0ecb8027d8d3f0090168f25ff62ee8e1a74c76fabfc21c7897"
   },
   {
     "key": "staff_10",
@@ -85,7 +97,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "แนะแนว/วัดผล",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "24bbbd7530a7ad77e26f17a90f0226ddd868bd64987b9a1cf748af1643ff70fd"
+    "pinHash": "24bbbd7530a7ad77e26f17a90f0226ddd868bd64987b9a1cf748af1643ff70fd",
+    "coreName": "มูฮัมหมัดฟาเดล ยาลาแว",
+    "namePinHash": "4506206cc0bb23cc4ba05976686f6751c5fc755266fed8556115a5ccc7a11f6d"
   },
   {
     "key": "staff_11",
@@ -97,7 +111,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "แนะแนว/วัดผล",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "f42d3d46176585d72de351d833b67adde8516ec2950532b5f1a26bf0c7d00d51"
+    "pinHash": "f42d3d46176585d72de351d833b67adde8516ec2950532b5f1a26bf0c7d00d51",
+    "coreName": "รติกาล กลับคง",
+    "namePinHash": "e59eab74a1c59e7a143acf45e5dd27b2d26529d06d8a3aa7d4c6733bcee9730a"
   },
   {
     "key": "staff_12",
@@ -109,7 +125,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สุขศึกษาและพละศึกษา",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "a3174eb6759f34e34f3d1ea83e7dd2fcdf3ab27e1542786934b683652ba7e347"
+    "pinHash": "a3174eb6759f34e34f3d1ea83e7dd2fcdf3ab27e1542786934b683652ba7e347",
+    "coreName": "มาติณห์ สัญจร",
+    "namePinHash": "64a6c7c07f6029509a75bccb1e30b3b7c43ae81487d251f5e05896c6aa7d3577"
   },
   {
     "key": "staff_13",
@@ -121,7 +139,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สุขศึกษาและพละศึกษา",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "db159432487d22fdf123295397b0e6a4e9ffce3ab981eaf88a252b420dea2440"
+    "pinHash": "db159432487d22fdf123295397b0e6a4e9ffce3ab981eaf88a252b420dea2440",
+    "coreName": "วิทยา เต็มบางงอน",
+    "namePinHash": "911ef5b1790d4cab816dde9c30dbbdf2737bc52207ceed50cb4c8cefc32f39aa"
   },
   {
     "key": "staff_14",
@@ -133,7 +153,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สุขศึกษาและพละศึกษา",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "0c9db57468a1c8d325d0abd8cb216c5ed185172f6bc465c2463d7dd621125465"
+    "pinHash": "0c9db57468a1c8d325d0abd8cb216c5ed185172f6bc465c2463d7dd621125465",
+    "coreName": "จีรพจน์ ทองขาว",
+    "namePinHash": "0a0e6fa666ce98112c36807d990593a6001316828ad7087101353bf791c15a46"
   },
   {
     "key": "staff_15",
@@ -145,7 +167,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สุขศึกษาและพละศึกษา",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "6a5efe50daaaaa40187c91202e6ea7ac79378b9c4774e7b6e5d9bae7b5acf3c0"
+    "pinHash": "6a5efe50daaaaa40187c91202e6ea7ac79378b9c4774e7b6e5d9bae7b5acf3c0",
+    "coreName": "ณรงค์ศักดิ์ จงจิตร",
+    "namePinHash": "96a924743062eec94f04f5735cdea65b5cf11a77939a3a8e9eab7e0e1e95169a"
   },
   {
     "key": "staff_16",
@@ -157,7 +181,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "2b90a0e31b4b11667b4693399f8d3adabc810e37397db7c3ffa2051b3fa6b3c7"
+    "pinHash": "2b90a0e31b4b11667b4693399f8d3adabc810e37397db7c3ffa2051b3fa6b3c7",
+    "coreName": "ทัศนีย์ ธรรมทักษ์",
+    "namePinHash": "a8d5ca0078fcaabff0f7398f0cbf128c4a31359ea0ebace5a4e34dda143af657"
   },
   {
     "key": "staff_17",
@@ -169,7 +195,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "bc08d765290f211937ed75f3444a73673f1252010f968bc25a7a5ea74c207477"
+    "pinHash": "bc08d765290f211937ed75f3444a73673f1252010f968bc25a7a5ea74c207477",
+    "coreName": "พรพัฒน์ ขวัญนิมิตร",
+    "namePinHash": "8da22b6143f97a42f1d49b1e63e6e857cdc01e734d2a4e786188ed926d25bd23"
   },
   {
     "key": "staff_18",
@@ -181,7 +209,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "3176a5b05aa1647f0ba47387d7aedbc0f2dbda8b60571646254338ceaff599eb"
+    "pinHash": "3176a5b05aa1647f0ba47387d7aedbc0f2dbda8b60571646254338ceaff599eb",
+    "coreName": "ฟ้ารุ่ง ขวัญเพ็ชร",
+    "namePinHash": "8fcb6bf06797d3e140422a9dc446f9fde139be8109e0f954cb2eaff6e6789a41"
   },
   {
     "key": "staff_19",
@@ -193,7 +223,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "b16d064cf32c4ed1554d1690617df5a0a6daa7611bc89e35d484af0827157b2b"
+    "pinHash": "b16d064cf32c4ed1554d1690617df5a0a6daa7611bc89e35d484af0827157b2b",
+    "coreName": "จันทนา สักคุณา",
+    "namePinHash": "a9dc056d52a231e9ee93b50949b1b2800d1ac055dcf44a99011fb80ce7617c9b"
   },
   {
     "key": "staff_20",
@@ -205,7 +237,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "e3ed04c44c867a89aae1a46bb7897b8d69997e1374d9c2c44176c8ad053661fe"
+    "pinHash": "e3ed04c44c867a89aae1a46bb7897b8d69997e1374d9c2c44176c8ad053661fe",
+    "coreName": "นัทธมน ณัฎฐเดช",
+    "namePinHash": "123ea89d3ba8e48679a3e6b024ea0c698149c051eb807f26849fcabe1ef2fb7d"
   },
   {
     "key": "staff_21",
@@ -217,7 +251,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "3eae0b2ecb9cdf0642253197ea840ded23936916b1fe3671a7cc9fe2f98f7613"
+    "pinHash": "3eae0b2ecb9cdf0642253197ea840ded23936916b1fe3671a7cc9fe2f98f7613",
+    "coreName": "ยุพิน ทองแก้ว",
+    "namePinHash": "e1abe4268021166d627d90748d8885eff9f0b5697711ee43398f4098f4f5d4a3"
   },
   {
     "key": "staff_22",
@@ -229,7 +265,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "e97f7e56544b1e8eab7914d9a2b993d4cc48e0549f9d8510bacc7119210d58c5"
+    "pinHash": "e97f7e56544b1e8eab7914d9a2b993d4cc48e0549f9d8510bacc7119210d58c5",
+    "coreName": "รุ่งนภา สุชาฎา",
+    "namePinHash": "574da1600b48910ae3df82d2f6edb5e3180b4ce540af9e1f6553c6226296098c"
   },
   {
     "key": "staff_23",
@@ -241,7 +279,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "38b675295909848d78266bf25f6d4a62d472888bfb7b4377a4fcbf3857d954a4"
+    "pinHash": "38b675295909848d78266bf25f6d4a62d472888bfb7b4377a4fcbf3857d954a4",
+    "coreName": "อนุชา หัทยา",
+    "namePinHash": "69186bf6e1f79667ce3c1c37703b97250d919b08bf2dd3693bc8cc8cefbd8856"
   },
   {
     "key": "staff_24",
@@ -253,7 +293,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "98b55526acec3b7ded15f4f3e15b0521e55ce45db9d2ddfcf46edaab00769815"
+    "pinHash": "98b55526acec3b7ded15f4f3e15b0521e55ce45db9d2ddfcf46edaab00769815",
+    "coreName": "วาทินี เสล่ราษฎร์",
+    "namePinHash": "c04c6f19df8fc1b3dcb46c125c5bf603f274d6aa69c7ec3104c1ce34799447fb"
   },
   {
     "key": "staff_25",
@@ -265,7 +307,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "752305c876130221407a1b2ae59a0e114b565c7d86ba0622cc25aedc4caf0520"
+    "pinHash": "752305c876130221407a1b2ae59a0e114b565c7d86ba0622cc25aedc4caf0520",
+    "coreName": "อารมณ์ หยีหาสัน",
+    "namePinHash": "887c8ce96847eecef3a634c703fa6ffa19e2846cef3734257c8333345994be95"
   },
   {
     "key": "staff_26",
@@ -277,7 +321,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "b6f661c6afccb43817fe9a6b26fd1eeaf84e116361f86e8e39cd7bc020281801"
+    "pinHash": "b6f661c6afccb43817fe9a6b26fd1eeaf84e116361f86e8e39cd7bc020281801",
+    "coreName": "กานต์ชนก กานต์นภัทร",
+    "namePinHash": "8dc5a354ecb18b68f225862e3fcd47fa886b21fdf29c34623461a3b99517afaa"
   },
   {
     "key": "staff_27",
@@ -289,7 +335,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "43c5ad5c546f9eb8ba6a0ee6ce339666bf435fb4f5fbb896b3250dbc099a9671"
+    "pinHash": "43c5ad5c546f9eb8ba6a0ee6ce339666bf435fb4f5fbb896b3250dbc099a9671",
+    "coreName": "สุทิศา ปานแดง",
+    "namePinHash": "ccdb96e51f5a9293294f7016af906e0dc5a7d4d496111c4505e6335e99a07c51"
   },
   {
     "key": "staff_28",
@@ -301,7 +349,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "cca28a0934c886c495a96c73a4c294b2910b13da023e4d4e2bb40583faee01d3"
+    "pinHash": "cca28a0934c886c495a96c73a4c294b2910b13da023e4d4e2bb40583faee01d3",
+    "coreName": "ธีติมา มูรติการ",
+    "namePinHash": "8cfd7f1a106286246ae22b234f1e8ac53e6e221bf70f3ee34abccd8b0bb037db"
   },
   {
     "key": "staff_29",
@@ -313,7 +363,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "ef1cf32469a733f897f426f03076e9f8958130e69e0ca0f46386f3e556c4e966"
+    "pinHash": "ef1cf32469a733f897f426f03076e9f8958130e69e0ca0f46386f3e556c4e966",
+    "coreName": "ดัยนา หัทยา",
+    "namePinHash": "6d5a374967b95d67e439792ce3e7f709acf65b9254e993f5b13acc7d30c33745"
   },
   {
     "key": "staff_30",
@@ -325,7 +377,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "da8df44124d9203ba30379ff1943ffd50b866a6fc8859d2c60dfe29a022191ad"
+    "pinHash": "da8df44124d9203ba30379ff1943ffd50b866a6fc8859d2c60dfe29a022191ad",
+    "coreName": "ด้าโอด ลูกเด็น",
+    "namePinHash": "b8f53440e0e7c3c7a5556d3fd543f610b3d461839e6531a0c8ed3a5d81d28c94"
   },
   {
     "key": "staff_31",
@@ -337,7 +391,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "f8bef0a8a4e453fd61d6ee07323266168ba414384b134f255057a0fd9f02d449"
+    "pinHash": "f8bef0a8a4e453fd61d6ee07323266168ba414384b134f255057a0fd9f02d449",
+    "coreName": "เสาวภาค จันทร์คง",
+    "namePinHash": "60eb2c488a34f0cc69c22792c0b8d940309d5982c518000790b3d01f371e6966"
   },
   {
     "key": "staff_32",
@@ -349,7 +405,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "fca2b80d830a5e5671e64d5b7057bf440ec7a601cb6a7fb9d207a013320bbc47"
+    "pinHash": "fca2b80d830a5e5671e64d5b7057bf440ec7a601cb6a7fb9d207a013320bbc47",
+    "coreName": "สมจารี คันธชาติกุล",
+    "namePinHash": "079c80e5a7cb2f1173c6f50abcddc8c8b2d522783bc16e87d1b10035a9d4ec8c"
   },
   {
     "key": "staff_33",
@@ -361,7 +419,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "911fca30e00c3b9cc2d183113b6a1b56c745766d3ca4ee43522690093340e16b"
+    "pinHash": "911fca30e00c3b9cc2d183113b6a1b56c745766d3ca4ee43522690093340e16b",
+    "coreName": "อภิสิทธิ์ ทองสีนุช",
+    "namePinHash": "6edc0d43248bca1b9771ac58dd5d34d719bcf09ef25188d2b511faec342152df"
   },
   {
     "key": "staff_34",
@@ -373,7 +433,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "32dfe66787080aa31076bb2494b96b3482cc9d30c075d5d77ed280ead2f68931"
+    "pinHash": "32dfe66787080aa31076bb2494b96b3482cc9d30c075d5d77ed280ead2f68931",
+    "coreName": "บดี กังงา",
+    "namePinHash": "0daddb3dbd87b137cc96dd8a75ed889ebd0f667c360ad70becd3d18e438ed6f6"
   },
   {
     "key": "staff_35",
@@ -385,7 +447,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "วิทยาศาสตร์และเทคโนโลยี",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "85510c3517c831b384a98339e17dccc3eca8b2967a50b98eeee81f9edf5c814b"
+    "pinHash": "85510c3517c831b384a98339e17dccc3eca8b2967a50b98eeee81f9edf5c814b",
+    "coreName": "พรศักดิ์ เจียวก๊ก",
+    "namePinHash": "f66c6f7cbf03d45d6009b2bb2043effb8697e0057610c7148b51f8b9b7c146bf"
   },
   {
     "key": "staff_36",
@@ -397,7 +461,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "213b362a746757936dcc498345db7ac94a86e13aad8b45594599dd0e10195120"
+    "pinHash": "213b362a746757936dcc498345db7ac94a86e13aad8b45594599dd0e10195120",
+    "coreName": "ปิยะมาศ ผกาวรรณ",
+    "namePinHash": "32772a3d883748030fb637b99c75e5a571c8d7d5ff5f293a4d3dcc20de025653"
   },
   {
     "key": "staff_37",
@@ -409,7 +475,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "8896fc048a2574d3ee3be1818b8bbacab672bfd99ff92f2cf20911b663977a75"
+    "pinHash": "8896fc048a2574d3ee3be1818b8bbacab672bfd99ff92f2cf20911b663977a75",
+    "coreName": "พรทิพย์ คงมาก",
+    "namePinHash": "1226c018f84064b00b07885632aa6bf2cb7baf6422e3c4149e613de2755f1dbf"
   },
   {
     "key": "staff_38",
@@ -421,7 +489,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "c860422e10b56647fc6ad817f79154b573a5f68ced99a74b166185facd40b27e"
+    "pinHash": "c860422e10b56647fc6ad817f79154b573a5f68ced99a74b166185facd40b27e",
+    "coreName": "ธนพร สระทองแยง",
+    "namePinHash": "910f69b88b9562d81087a684d3e75c91bfa53363c25d4f3d000f904725f4d5e0"
   },
   {
     "key": "staff_39",
@@ -433,7 +503,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "1069a406d2782048642100eb8ebf836c6403094ed20ddf96557cfcea13d68567"
+    "pinHash": "1069a406d2782048642100eb8ebf836c6403094ed20ddf96557cfcea13d68567",
+    "coreName": "สุทธวรรณ รักการ",
+    "namePinHash": "d2821b3a088efc372062d305611931c6798c54a43f7ae1ac399dd1b7308994bd"
   },
   {
     "key": "staff_40",
@@ -445,7 +517,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "f327ac38117f90f021c914b15fc8c3e7d9a4ab89fb781150d0af5068e52a4bc2"
+    "pinHash": "f327ac38117f90f021c914b15fc8c3e7d9a4ab89fb781150d0af5068e52a4bc2",
+    "coreName": "อมรรัตน์ ทวีพงศ์ศักดิ์",
+    "namePinHash": "53e2495482e54a1a5aedf8a537107135e9477172838339f88e9a60f77bcde67d"
   },
   {
     "key": "staff_41",
@@ -457,7 +531,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "716c0f712a213e40ff4d44ebaf6f30b37673b5517dd05ac33d2ded938568feea"
+    "pinHash": "716c0f712a213e40ff4d44ebaf6f30b37673b5517dd05ac33d2ded938568feea",
+    "coreName": "กัญญารัตน์ เพ็งจันทร์",
+    "namePinHash": "e467d56882292ac9180dc688f9c0d020ee481916c18bbe324b5481810e459072"
   },
   {
     "key": "staff_42",
@@ -469,7 +545,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "d14177390fc06b740d48bda1cb55b5bce61bfbc2d1237f42954bf98a1ab7b006"
+    "pinHash": "d14177390fc06b740d48bda1cb55b5bce61bfbc2d1237f42954bf98a1ab7b006",
+    "coreName": "นภิสรา อุษณีษ์พันธุ์",
+    "namePinHash": "76babd3ed93d3c1699c5e8b24117640cb88d8cc96af51a1223a7fd76d9a795af"
   },
   {
     "key": "staff_43",
@@ -481,7 +559,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "d6633400f571fc410d6b9e9d39917006b45fed7b6773d41e7982c54b44d89387"
+    "pinHash": "d6633400f571fc410d6b9e9d39917006b45fed7b6773d41e7982c54b44d89387",
+    "coreName": "สายน้ำผึ้ง หมึกดำ",
+    "namePinHash": "8ce94d96dd5279f2fee20a4c5be9188eff7f93aa718a200ef6d837296a337605"
   },
   {
     "key": "staff_44",
@@ -493,7 +573,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "74f0ad7e8c0a01e086d1f5fa449c8868f7df1e4922d2542055cdd61683d6ae70"
+    "pinHash": "74f0ad7e8c0a01e086d1f5fa449c8868f7df1e4922d2542055cdd61683d6ae70",
+    "coreName": "ทิพย์เกษร แก้วกาญจน์",
+    "namePinHash": "da02eb0ad6d431b3b0da533e417b54712998242dbcf72e797b5ca78dd6717e64"
   },
   {
     "key": "staff_45",
@@ -505,7 +587,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "69adcdddb215683239f188c23539cdb32503427fd7419a793b1affe18538c466"
+    "pinHash": "69adcdddb215683239f188c23539cdb32503427fd7419a793b1affe18538c466",
+    "coreName": "ศศิกร สงขาว",
+    "namePinHash": "7faae52af920652b7faacffdc2c8ecd98fbe068db6d2b9c29db3a35e66c07fd5"
   },
   {
     "key": "staff_46",
@@ -517,7 +601,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "0168bd31e21f125ae1f4e959a4ff903842ae6bc7f7f411aa457a0efae842db41"
+    "pinHash": "0168bd31e21f125ae1f4e959a4ff903842ae6bc7f7f411aa457a0efae842db41",
+    "coreName": "อรสา สมาพงษ์",
+    "namePinHash": "99fd103c2626b01e633005597542a2e48c216f8b9ac1d992f9be4a6769c44fea"
   },
   {
     "key": "staff_47",
@@ -529,7 +615,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "คณิตศาสตร์",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "b635e0ed6f373fce53bb9898cf9e6e97308df2faebe1a19490f915526c297291"
+    "pinHash": "b635e0ed6f373fce53bb9898cf9e6e97308df2faebe1a19490f915526c297291",
+    "coreName": "ชญานิษฐ์ เอ่งฉ้วน",
+    "namePinHash": "3111c14e8d9dd6c63f84b9ac82a2b957117254e6e4bb9b9ff0c67708a012c4bb"
   },
   {
     "key": "staff_48",
@@ -541,7 +629,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "270b374e35a945ddb925f4385173bb606207160e9f0c0035f9fe3e805287c486"
+    "pinHash": "270b374e35a945ddb925f4385173bb606207160e9f0c0035f9fe3e805287c486",
+    "coreName": "ลัดดา จันทรดี",
+    "namePinHash": "faa69a661fef852be59789095d509986920ed0fdf71d42ea7a23f8b7dac616ee"
   },
   {
     "key": "staff_49",
@@ -553,7 +643,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "7ea2877e1b8e62c5f10fbc1be8b9d0564de160e72553cb4250778e52b3ec088d"
+    "pinHash": "7ea2877e1b8e62c5f10fbc1be8b9d0564de160e72553cb4250778e52b3ec088d",
+    "coreName": "หทัยรัตน์ ศรีวรเดชไพศาล",
+    "namePinHash": "1031c35d222f97e694363bfdef1354465cfd8da8e14b0343df92063397f1f682"
   },
   {
     "key": "staff_50",
@@ -565,7 +657,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "59bd9d6309e17d122d4620b796ecedd379403283972e2154e1be2f17923fa734"
+    "pinHash": "59bd9d6309e17d122d4620b796ecedd379403283972e2154e1be2f17923fa734",
+    "coreName": "วีรญา ช้างน้ำ",
+    "namePinHash": "a64a3ad16d13e8206a3b2434bbe9b19e354e3996ed7a82264a68dd4a4f6e7b28"
   },
   {
     "key": "staff_51",
@@ -577,7 +671,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "94bdce001f36db2aa48eaa3af82ad47d8ac24edfee5537443bfd96fc81cfaf1b"
+    "pinHash": "94bdce001f36db2aa48eaa3af82ad47d8ac24edfee5537443bfd96fc81cfaf1b",
+    "coreName": "ศศิญา จูฑามาตย์",
+    "namePinHash": "a50389e8c5456006da8a2968e638de181350b69f82833d2c094398a492f68c17"
   },
   {
     "key": "staff_52",
@@ -589,7 +685,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "8a3bae686dc7a73e91160b95b06461816534f2d96c0238171b6ddb5a71cfd0e0"
+    "pinHash": "8a3bae686dc7a73e91160b95b06461816534f2d96c0238171b6ddb5a71cfd0e0",
+    "coreName": "ปาริชาติ ดำด้วง",
+    "namePinHash": "eb55aee9e5efd4078c04b6c4b0d46b2142205e3ec799ee215998da88efa7e4fd"
   },
   {
     "key": "staff_53",
@@ -601,7 +699,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "63efcb5f8eb15f4b7ecad1576e4a30b4eb29621a44533b4e086282e2a060eac9"
+    "pinHash": "63efcb5f8eb15f4b7ecad1576e4a30b4eb29621a44533b4e086282e2a060eac9",
+    "coreName": "ฐิติยาภรณ์ หล่อสุพรรณพร",
+    "namePinHash": "50c61c8c99194a5942f979caf33d9f861066c073c20df2297c64ea53c79a5f71"
   },
   {
     "key": "staff_54",
@@ -613,7 +713,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "efe5846f8dfacb2406ef17465cf6ca237ec8e940521079a6902d7165bc825e2f"
+    "pinHash": "efe5846f8dfacb2406ef17465cf6ca237ec8e940521079a6902d7165bc825e2f",
+    "coreName": "ปริญญา สมแก้ว",
+    "namePinHash": "e8e4bff0bfc52ad404baed44ea011130b4b03de7fe74b9ba4351962fc71e1cc1"
   },
   {
     "key": "staff_55",
@@ -625,7 +727,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาไทย",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "56eb59222e8b0ee192fd513e01ff1801154585d9ad650e185e0a414d382f4ee9"
+    "pinHash": "56eb59222e8b0ee192fd513e01ff1801154585d9ad650e185e0a414d382f4ee9",
+    "coreName": "วิภาวี สิทธิการ",
+    "namePinHash": "68858aeb33d640f817476d422625e6393a9d707441731380c254d78797ff786c"
   },
   {
     "key": "staff_56",
@@ -637,7 +741,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "88fc610ba119960dea386ca00a8e0061f235b1a76fff00f523ac06fb71ffce35"
+    "pinHash": "88fc610ba119960dea386ca00a8e0061f235b1a76fff00f523ac06fb71ffce35",
+    "coreName": "อภิวัฒน์ กาพย์เกิด",
+    "namePinHash": "a225674ebb577c70ab6ce7978dbb5e44100d82dc0cd00e84f6a412bd42eed482"
   },
   {
     "key": "staff_57",
@@ -649,7 +755,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ชญานี ชัยสวัสดิ์",
+    "namePinHash": null
   },
   {
     "key": "staff_58",
@@ -661,7 +769,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "f24dc34b1155925dc4bcae4c522d8aff5fe808f55b43efe93890af1f8b7a234b"
+    "pinHash": "f24dc34b1155925dc4bcae4c522d8aff5fe808f55b43efe93890af1f8b7a234b",
+    "coreName": "สุชาดา เพชรสุก",
+    "namePinHash": "566836127357606e24038ff618de8585c2d2251e88391856cd3c293584de2c0c"
   },
   {
     "key": "staff_59",
@@ -673,7 +783,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "9bdacff66c0a4dd4416c248c6fc9ecacd3c8831715f29364f5182155815750b1"
+    "pinHash": "9bdacff66c0a4dd4416c248c6fc9ecacd3c8831715f29364f5182155815750b1",
+    "coreName": "เริงสรรค์ ยะลา",
+    "namePinHash": "9c5684e37b64e72aa4e5bd9c27b94811e8460b23e755707e33aee86c7c5da9ff"
   },
   {
     "key": "staff_60",
@@ -685,7 +797,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "4e2868c323e8eb2b6386092a2381b0665ec7108620e2a460c7cb4e2e68cf7452"
+    "pinHash": "4e2868c323e8eb2b6386092a2381b0665ec7108620e2a460c7cb4e2e68cf7452",
+    "coreName": "อัจฉรา นุ่นชูผล",
+    "namePinHash": "8698c0a282f130c2a75458a67338aab5366eeab6dd8dd8f7fb675cf751bcbd37"
   },
   {
     "key": "staff_61",
@@ -697,7 +811,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "906950ca2ad2d112fd0b0e968450fab196837a91c68333587ef3b54ba67ccd7e"
+    "pinHash": "906950ca2ad2d112fd0b0e968450fab196837a91c68333587ef3b54ba67ccd7e",
+    "coreName": "ชลธิชา บัวแต่ง",
+    "namePinHash": "838ef02ce636998bd77d4c5adbaebf3de1d1e3964295aef644ed844a2e903fa9"
   },
   {
     "key": "staff_62",
@@ -709,7 +825,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "6fda025aad167739180bf7ea2116c742ff650384574ab6bc0e596c42b55a7f15"
+    "pinHash": "6fda025aad167739180bf7ea2116c742ff650384574ab6bc0e596c42b55a7f15",
+    "coreName": "ศุภิสรา ยาวส่ง",
+    "namePinHash": "5d23b047c28d92b583167e52323a7e338d068db12a3667b2f8c6819c926d3d5d"
   },
   {
     "key": "staff_63",
@@ -721,7 +839,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "730484a60edc84b3131ea0385d07f83792b6b3d09528a02c0cacc7ec8c404473"
+    "pinHash": "730484a60edc84b3131ea0385d07f83792b6b3d09528a02c0cacc7ec8c404473",
+    "coreName": "ชนกนันท์ จันทร์สงค์",
+    "namePinHash": "b3f43af1faab25385192ca2b3016275ce73a3781e8a5a6cc54491e48e42f44a4"
   },
   {
     "key": "staff_64",
@@ -733,7 +853,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "e5adf94aeacbd7b30fcc26c1938b0440944b19c07067ea17c08dbd052882423a"
+    "pinHash": "e5adf94aeacbd7b30fcc26c1938b0440944b19c07067ea17c08dbd052882423a",
+    "coreName": "ชนะชัย สุวรรณชล",
+    "namePinHash": "b7156819a0740d29cd670da9522c56118889d802679454749d9f5838fdf3f974"
   },
   {
     "key": "staff_65",
@@ -745,7 +867,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "8930e868570c96a96ed46a1448864e77837390235fd1058334c0c035c588efc8"
+    "pinHash": "8930e868570c96a96ed46a1448864e77837390235fd1058334c0c035c588efc8",
+    "coreName": "กานต์ลดา สายนุ้ย",
+    "namePinHash": "62c388482161e404dc60a563986dc895f6fd82c5b77cc18a01b8bab0761a4a0e"
   },
   {
     "key": "staff_66",
@@ -757,7 +881,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "20e18f19bee046169e5ab41dd8fb97f9c884238a5ce3be2b15b3e673f8f407d3"
+    "pinHash": "20e18f19bee046169e5ab41dd8fb97f9c884238a5ce3be2b15b3e673f8f407d3",
+    "coreName": "สุนันทา รักราวี",
+    "namePinHash": "567ac7436f6f8b5cda9d26d1e680db07290bdee4a05de557ce506a16f1acd778"
   },
   {
     "key": "staff_67",
@@ -769,7 +895,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "a260eba2a8145b479b2b91c21ed489666157e7f547b57a971b285bb5df71e4be"
+    "pinHash": "a260eba2a8145b479b2b91c21ed489666157e7f547b57a971b285bb5df71e4be",
+    "coreName": "จุไรรัตน์ เรืองอ่อน",
+    "namePinHash": "6a604279376fb7dd9d6bbc2e7cfb4dcc8733d2e0a2fe9b441cc01e8a46a54725"
   },
   {
     "key": "staff_68",
@@ -781,7 +909,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "24b475fa8e36fe7ccefda5b73f943f60119b3d7446703683bc51f6f3db57acf5"
+    "pinHash": "24b475fa8e36fe7ccefda5b73f943f60119b3d7446703683bc51f6f3db57acf5",
+    "coreName": "วาสนา หนูมาก",
+    "namePinHash": "b57d7f73fc31e23567b72740a3e22497c753cd622559f2a8c1abc4b8aac3cfd0"
   },
   {
     "key": "staff_69",
@@ -793,7 +923,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "e8279eda85a15de67700f17f72dbaca31b87030ba510ee6f4ce8be210d988e0a"
+    "pinHash": "e8279eda85a15de67700f17f72dbaca31b87030ba510ee6f4ce8be210d988e0a",
+    "coreName": "สรารัตน์ โพชสาลี",
+    "namePinHash": "38642e1ff2ef65e65ed2dc61483de94cf5c8cac63f3984281bdf7777871a2098"
   },
   {
     "key": "staff_70",
@@ -805,7 +937,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "247f1021335fde81fb03f2c73c43ab99f2a0bebda3cac239bc938c8b87ec9793"
+    "pinHash": "247f1021335fde81fb03f2c73c43ab99f2a0bebda3cac239bc938c8b87ec9793",
+    "coreName": "กนกรัตน์ เลี่ยนเส้ง",
+    "namePinHash": "88fe8af819a0a295c6ce409fdc407dcb4f44b203ebb516e49c6331821a1d2d3f"
   },
   {
     "key": "staff_71",
@@ -817,7 +951,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "ccbeb8ce8e4d1a9c02cc631202528db6bb30d3e051973d0b3c7dd1a0eb5b0049"
+    "pinHash": "ccbeb8ce8e4d1a9c02cc631202528db6bb30d3e051973d0b3c7dd1a0eb5b0049",
+    "coreName": "ปิยะวรรณ จันทร์ประกอบ",
+    "namePinHash": "220236619c30f59b30ff8379acc0bb4549f72597b3e111497467c0095ea286a6"
   },
   {
     "key": "staff_72",
@@ -829,7 +965,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "5fee48a0cc80ad8c3d9466b7607a9b1e1355db95f0fddeb4003fda2df22ee51d"
+    "pinHash": "5fee48a0cc80ad8c3d9466b7607a9b1e1355db95f0fddeb4003fda2df22ee51d",
+    "coreName": "ธนพร ธนาวุฑฒ์",
+    "namePinHash": "7ccbcef2429fadb57a8e724fd0ff0feaf66ddae6d2b2f9493e6b0a56a1f1dabc"
   },
   {
     "key": "staff_73",
@@ -841,7 +979,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "1dd656b406d7702e38bac973921ff7883959936bd9d35c3285067d49c849e3d5"
+    "pinHash": "1dd656b406d7702e38bac973921ff7883959936bd9d35c3285067d49c849e3d5",
+    "coreName": "ธีรยุทธ เหล่ชาย",
+    "namePinHash": "1ebb1bc252bd95b366373ba1ff8bf2de78289f1d6c2febc9a974cb80dd656d60"
   },
   {
     "key": "staff_74",
@@ -853,7 +993,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "1535b04d92daa3027f6edb65ecfaabc3af66d92a0b7710670cfe2b5352d19f14"
+    "pinHash": "1535b04d92daa3027f6edb65ecfaabc3af66d92a0b7710670cfe2b5352d19f14",
+    "coreName": "ชลธิชา หนูชูแก้ว",
+    "namePinHash": "a1ad88a09a0489e43fc4cb92cdbf90c17c4532899a28c4488e086e0448f26dc1"
   },
   {
     "key": "staff_75",
@@ -865,7 +1007,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "85bc1f01d3497d0c05d65f6cc700cbf87c1c9cd01b19ff553b1bc708ab6efc6a"
+    "pinHash": "85bc1f01d3497d0c05d65f6cc700cbf87c1c9cd01b19ff553b1bc708ab6efc6a",
+    "coreName": "สมิตา ไชยสาลี",
+    "namePinHash": "928d89a22e34f13cb5385c6ef87728db9e8bb554c24f87b958cc70109ad8b026"
   },
   {
     "key": "staff_76",
@@ -877,7 +1021,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "b785eaebb062a77dd9702ad0ed754c5a0ff1ddddf4e071e156f9071e8add37fe"
+    "pinHash": "b785eaebb062a77dd9702ad0ed754c5a0ff1ddddf4e071e156f9071e8add37fe",
+    "coreName": "ปภัสรา รักฤทธิ์",
+    "namePinHash": "fe0299f1fa280202a0f9f9b0887f588e9a8446224939e595b7154c3eea0acb3f"
   },
   {
     "key": "staff_77",
@@ -889,7 +1035,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "e7f48822722ccbe93525dcefa5d3f39fd6d5f2cbca3947aeb57b6d9cd393824d"
+    "pinHash": "e7f48822722ccbe93525dcefa5d3f39fd6d5f2cbca3947aeb57b6d9cd393824d",
+    "coreName": "อุไร สังหาร",
+    "namePinHash": "a2d4efd75c85a4a40a1a755fa0ffe9cc03df56e3775cc82b5ef3f7c23f6d4f01"
   },
   {
     "key": "staff_78",
@@ -901,7 +1049,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "6317392d233b54df43660a5c97463ab7dab8ad24cf12e31cfbf4350fe415d119"
+    "pinHash": "6317392d233b54df43660a5c97463ab7dab8ad24cf12e31cfbf4350fe415d119",
+    "coreName": "วันเฉลิม กัณหะกุล",
+    "namePinHash": "66310e598659f7170af0017364d16b3bc5dcc47b4e1c495435d02eeca1843b94"
   },
   {
     "key": "staff_79",
@@ -913,7 +1063,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "c034e858fde0834adb64a2d00aa5edc7d9899fccfe533cd44c41e1c6b0184764"
+    "pinHash": "c034e858fde0834adb64a2d00aa5edc7d9899fccfe533cd44c41e1c6b0184764",
+    "coreName": "รัชนีวรรณ ชาตรี",
+    "namePinHash": "fd2664150ef0993765a5c091f756dd9aa94ebc779b8c757a32849fbae3febb1d"
   },
   {
     "key": "staff_80",
@@ -925,7 +1077,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "429b5b957a6bfd5ec10a8d4401c37d598e92305636fe9fdc1821852f495d625a"
+    "pinHash": "429b5b957a6bfd5ec10a8d4401c37d598e92305636fe9fdc1821852f495d625a",
+    "coreName": "พิมพ์ปวีณ์ เศรษสระ",
+    "namePinHash": "50e6bb31600032da6dbb190ac57bec98627bd64ae5caf00c595658f735e384e9"
   },
   {
     "key": "staff_81",
@@ -937,7 +1091,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "504972bd2f59bf107a25258c155c49920d602bf18c0384888b5fe1e9e34e4314"
+    "pinHash": "504972bd2f59bf107a25258c155c49920d602bf18c0384888b5fe1e9e34e4314",
+    "coreName": "ชัยวัฒน์ ริยาพันธ์",
+    "namePinHash": "93c4d0f4366ca70121cd47c082c0d9c48553fb1b4a03f2122f6e8bdd8f16d213"
   },
   {
     "key": "staff_82",
@@ -949,7 +1105,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "0df76a8759faec676bdba7aa73e09938baf2d5374ae0d20dd41e7e1a46f4ddb8"
+    "pinHash": "0df76a8759faec676bdba7aa73e09938baf2d5374ae0d20dd41e7e1a46f4ddb8",
+    "coreName": "รมิตา จุลนันโท",
+    "namePinHash": "c01eb5eab294fffa610679183d0f7f22e5763da6dcf991a7f88f2265440e0f1b"
   },
   {
     "key": "staff_83",
@@ -961,7 +1119,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "b39b87acd38400b44270db984946dd0eeb7616981271fdb3d491df1adb80ddbd"
+    "pinHash": "b39b87acd38400b44270db984946dd0eeb7616981271fdb3d491df1adb80ddbd",
+    "coreName": "นัฒพล เทียบแก้ว",
+    "namePinHash": "8f940ea54c76b428282623aa948ce510415836dd3733fad774da53ccb634b9be"
   },
   {
     "key": "staff_84",
@@ -973,7 +1133,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "ef84153f934a8c3870bc7486ea04435a166e862447d0646cf3b8a9dda7fb7e12"
+    "pinHash": "ef84153f934a8c3870bc7486ea04435a166e862447d0646cf3b8a9dda7fb7e12",
+    "coreName": "เสาวนีย์ ชลธี",
+    "namePinHash": "23d4ac9d18693acff3b4364fbb75b5e4ed230262481630d42cec395bd81ab86a"
   },
   {
     "key": "staff_85",
@@ -985,7 +1147,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "5fa3aee42f9727739cb580870157c9da639794c90d2cf93f6d2816d9eb33b9d3"
+    "pinHash": "5fa3aee42f9727739cb580870157c9da639794c90d2cf93f6d2816d9eb33b9d3",
+    "coreName": "วิชชา ไชยกุล",
+    "namePinHash": "d4aeffdbde62f468b7354a40c6189537524c858d1dc2a83a4b4fa5f7157d9ca9"
   },
   {
     "key": "staff_86",
@@ -997,7 +1161,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "46bdfe5770b72111ecc2f432e0f0cbc3f290bbbfd87f74dcd168919e3dcd5505"
+    "pinHash": "46bdfe5770b72111ecc2f432e0f0cbc3f290bbbfd87f74dcd168919e3dcd5505",
+    "coreName": "จุมพล เพ็ชรพวง",
+    "namePinHash": "6bbaa31083d9ffcbd629fb7a4e25725412ef3cc9216ad9086cef262f226206ce"
   },
   {
     "key": "staff_87",
@@ -1009,7 +1175,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "4f9e992dad41841bfd9424c1b2f46607d154686d8622d7f2114f32b93e3ae255"
+    "pinHash": "4f9e992dad41841bfd9424c1b2f46607d154686d8622d7f2114f32b93e3ae255",
+    "coreName": "ศราวุธ เกื้อขาว",
+    "namePinHash": "92c24d45836c3d1bf698416caa5fe76653d4cc0a84583a86f1bd926d0b826271"
   },
   {
     "key": "staff_88",
@@ -1021,7 +1189,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "65d8806a60423b460415b2740f2ca9665cd797c28ccabf44866c1e277e2a08f1"
+    "pinHash": "65d8806a60423b460415b2740f2ca9665cd797c28ccabf44866c1e277e2a08f1",
+    "coreName": "ศรีสุดา สุวรรณโชติ",
+    "namePinHash": "b3aceb07f4c67dcfb8b262c6bb877931171c69be1cfa51ecbf6f56247bdb457c"
   },
   {
     "key": "staff_89",
@@ -1033,7 +1203,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ศิลปะ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "34061015a6734f34bdbadb0501f1a11c53b56a6b75793b5f4e3de9e212999fc5"
+    "pinHash": "34061015a6734f34bdbadb0501f1a11c53b56a6b75793b5f4e3de9e212999fc5",
+    "coreName": "อลิษา แท่นดี",
+    "namePinHash": "26c0f4fc528876de6479e489f47005b0e040fde1304c697e6681fd24dad296d3"
   },
   {
     "key": "staff_90",
@@ -1045,7 +1217,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "แนะแนว/วัดผล",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "42a2609c9cfd81904c8f28b774f989ecdfd0915c6b8c226f1dcda11c743610e1"
+    "pinHash": "42a2609c9cfd81904c8f28b774f989ecdfd0915c6b8c226f1dcda11c743610e1",
+    "coreName": "สิริรัตน์ ส่งศรี",
+    "namePinHash": "20b8c49368d8aac0cd35650debb9d7872b4fdcb24193a53b8326cffc75554045"
   },
   {
     "key": "staff_91",
@@ -1057,7 +1231,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "9d93637ce10f909161ad408abfb5665a15da47fa2755eeff5a3158ae5333e17c"
+    "pinHash": "9d93637ce10f909161ad408abfb5665a15da47fa2755eeff5a3158ae5333e17c",
+    "coreName": "มานิตย์ บัวเพชร",
+    "namePinHash": "2d10d78a5008343980806935d1428161db23c275c667114fd1ba2196f617dcf9"
   },
   {
     "key": "staff_92",
@@ -1069,7 +1245,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สังคมศึกษาฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "cc0598b90c6c255c143c89c749b906ec9a36676f75fa46d1f3f1e7f0fa6a9196"
+    "pinHash": "cc0598b90c6c255c143c89c749b906ec9a36676f75fa46d1f3f1e7f0fa6a9196",
+    "coreName": "ปัทมา ญาณแก้ว",
+    "namePinHash": "a0958ed1182910e627cdfe67d811ad13375985256fdbab05e1e88625bef6e9cc"
   },
   {
     "key": "staff_93",
@@ -1081,7 +1259,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "การงานอาชีพ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "91ad5f334a21f45c43983f1ffd9358854ba1a07c7b0eb12af46a12167c6a85ab"
+    "pinHash": "91ad5f334a21f45c43983f1ffd9358854ba1a07c7b0eb12af46a12167c6a85ab",
+    "coreName": "โกษิต ดาวกระจ่าง",
+    "namePinHash": "b8815f17d77ac51938e7f377f9786c9980876c35520a47593d09625422adbe6d"
   },
   {
     "key": "staff_94",
@@ -1093,7 +1273,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "สุขศึกษาและพละศึกษา",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "af5c17dd7cdf6616c81347d149f46346addf81e3c4bab7c9af7384fbe13a9c3c"
+    "pinHash": "af5c17dd7cdf6616c81347d149f46346addf81e3c4bab7c9af7384fbe13a9c3c",
+    "coreName": "วรวรรณ เพ็ชรฤทธิ์",
+    "namePinHash": "3295e92ad7f5f814aff603013b49f3ca2af7109b5af7ec434739734186912c93"
   },
   {
     "key": "staff_95",
@@ -1105,7 +1287,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "40c7a09a1a04caa8c371e838da6bca453a6ead07ab80828130a45fbd6279b99e"
+    "pinHash": "40c7a09a1a04caa8c371e838da6bca453a6ead07ab80828130a45fbd6279b99e",
+    "coreName": "วณิชยา ลิ่มสกุล",
+    "namePinHash": "7d7f90cd40bb898e2d832ab51b7ed8b9d310d87557a26e372737eecbe1998bdf"
   },
   {
     "key": "staff_96",
@@ -1117,7 +1301,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "8532fa05cc698692d81383516a0d6dd69573a75523d1c1db8bb2a1183bdb3649"
+    "pinHash": "8532fa05cc698692d81383516a0d6dd69573a75523d1c1db8bb2a1183bdb3649",
+    "coreName": "เกียรติชานนท์ เสียงดัง",
+    "namePinHash": "cdb43d4197027b203fbe9df9616f97a1527e70b6bef33f75618af99877123964"
   },
   {
     "key": "staff_97",
@@ -1129,7 +1315,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "37f29168516aacf5e57d379031a83aa7c6fc107369e3b57f051f6473a3a3c384"
+    "pinHash": "37f29168516aacf5e57d379031a83aa7c6fc107369e3b57f051f6473a3a3c384",
+    "coreName": "ภาวิณี ช่วยพัทลุง",
+    "namePinHash": "b9245c3cd8331e523f565331f2a9404bf4328291c348ce89369dfbe4e67fea10"
   },
   {
     "key": "staff_98",
@@ -1141,7 +1329,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "พรชนก จันทร์สุริย์",
+    "namePinHash": null
   },
   {
     "key": "staff_99",
@@ -1153,7 +1343,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "มนัสชนก ซ้ายเส้ง",
+    "namePinHash": null
   },
   {
     "key": "staff_100",
@@ -1165,7 +1357,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "jean paul ngugui",
+    "namePinHash": null
   },
   {
     "key": "staff_101",
@@ -1177,7 +1371,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ransom musi tita",
+    "namePinHash": null
   },
   {
     "key": "staff_102",
@@ -1189,7 +1385,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "roman plastinin",
+    "namePinHash": null
   },
   {
     "key": "staff_103",
@@ -1201,7 +1399,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ / อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "zhang lihang",
+    "namePinHash": null
   },
   {
     "key": "staff_104",
@@ -1213,7 +1413,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "2fde8025ab997f30a820a9cc8fced4ff400f12dc6a7553be4fffbfe1f387db4f"
+    "pinHash": "2fde8025ab997f30a820a9cc8fced4ff400f12dc6a7553be4fffbfe1f387db4f",
+    "coreName": "กรรณิกา คงภักดี",
+    "namePinHash": "800e0a64f46018051d64bfba05107d6bd7ccf622516c20e8b86dd5d76f538d64"
   },
   {
     "key": "staff_105",
@@ -1225,7 +1427,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "วิภารัตน์ ลูกอ้อน",
+    "namePinHash": null
   },
   {
     "key": "staff_106",
@@ -1237,7 +1441,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "4fcb32aab4eb72c1d6abe5637b6273c13e43363c5f0eb07d565e75209118559f"
+    "pinHash": "4fcb32aab4eb72c1d6abe5637b6273c13e43363c5f0eb07d565e75209118559f",
+    "coreName": "คณิน คำกิ่ง",
+    "namePinHash": "7925e1698d4744467ef6ee84c56390af1f84367afbcf0c96d4f3aeb3545f2f7e"
   },
   {
     "key": "staff_107",
@@ -1249,7 +1455,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "สุรศักดิ์ ค้าของ",
+    "namePinHash": null
   },
   {
     "key": "staff_108",
@@ -1261,7 +1469,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "กาญจนา บุตรเลี่ยม",
+    "namePinHash": null
   },
   {
     "key": "staff_109",
@@ -1273,7 +1483,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "สรัลพร ค้าของ",
+    "namePinHash": null
   },
   {
     "key": "staff_110",
@@ -1285,7 +1497,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "จุฬาภรณ์ ฝีมือสาร",
+    "namePinHash": null
   },
   {
     "key": "staff_111",
@@ -1297,7 +1511,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "จิราพรรณ์ นิลวารี",
+    "namePinHash": null
   },
   {
     "key": "staff_112",
@@ -1309,7 +1525,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "เจนจิรา มดคัน",
+    "namePinHash": null
   },
   {
     "key": "staff_113",
@@ -1321,7 +1539,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ฉัตรชัย บัวเจริญ",
+    "namePinHash": null
   },
   {
     "key": "staff_114",
@@ -1333,7 +1553,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "เอกพล ขนานใต้",
+    "namePinHash": null
   },
   {
     "key": "staff_115",
@@ -1345,7 +1567,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "กิตติพันธ์ เทียบแก้ว",
+    "namePinHash": null
   },
   {
     "key": "staff_116",
@@ -1357,7 +1581,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ภูเบศ รักสิฐ",
+    "namePinHash": null
   },
   {
     "key": "staff_117",
@@ -1369,7 +1595,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "สมชาย หลำหญ้า",
+    "namePinHash": null
   },
   {
     "key": "staff_118",
@@ -1381,7 +1609,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "กฤษณะ ขนานใต้",
+    "namePinHash": null
   },
   {
     "key": "staff_121",
@@ -1393,7 +1623,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "24d1066cf8a0330fb73e4b14a4738b2fbf00706b789b3afd3cb3045e46a81155"
+    "pinHash": "24d1066cf8a0330fb73e4b14a4738b2fbf00706b789b3afd3cb3045e46a81155",
+    "coreName": "สกาวเดือน เศษคง",
+    "namePinHash": "1ae7c3b362b8fa4f81186136d80febc0ce1c2edaeab1763f9fd10262195d22ca"
   },
   {
     "key": "staff_122",
@@ -1405,7 +1637,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "0caa55d46903dc13efa8e340b1864324fbc6659f030baa68c5085720adb3ad01"
+    "pinHash": "0caa55d46903dc13efa8e340b1864324fbc6659f030baa68c5085720adb3ad01",
+    "coreName": "ญาณปรีชา ภูขะมา",
+    "namePinHash": "4b84b3c380141dd77b308bf6191054108ecccb489e77181c2e19c656024edc96"
   },
   {
     "key": "staff_123",
@@ -1417,7 +1651,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "47ddc1ff23d28f7ac34451d48adc719c64ee14b5159b7f6a275a832048eac1e4"
+    "pinHash": "47ddc1ff23d28f7ac34451d48adc719c64ee14b5159b7f6a275a832048eac1e4",
+    "coreName": "ศุภณัฐ กัณหกุล",
+    "namePinHash": "20d70bb056c56f4dfa9ada9d9323f8c1798c953103b30849f02d7e7cf1a53153"
   },
   {
     "key": "staff_124",
@@ -1429,7 +1665,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "1a4fce4dc73f52a6a41d1108ca66f8673ca04bfef3e83f245073577957fb4c46"
+    "pinHash": "1a4fce4dc73f52a6a41d1108ca66f8673ca04bfef3e83f245073577957fb4c46",
+    "coreName": "ธนากร หนูอิน",
+    "namePinHash": "de3721b003046a283f206c3a89fee505e2f07acc9f830dd81790d5d4f7c444fa"
   },
   {
     "key": "staff_125",
@@ -1441,7 +1679,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "91093f40160deb275a39b1021c73871653083646a28bcbb9a3e84cc233fefdb0"
+    "pinHash": "91093f40160deb275a39b1021c73871653083646a28bcbb9a3e84cc233fefdb0",
+    "coreName": "ทินภัทร อนุการ",
+    "namePinHash": "190c7f9e6b345e6e181bd9e45cfe87a7e0b6a034223f76c2ba89c666362e195f"
   },
   {
     "key": "staff_126",
@@ -1453,7 +1693,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": true,
-    "pinHash": "4238833d0151160a516777786d3a3f3646c4d9860cdb6330ee23fd7fc603a0c1"
+    "pinHash": "4238833d0151160a516777786d3a3f3646c4d9860cdb6330ee23fd7fc603a0c1",
+    "coreName": "สราวุธ แก้วสร",
+    "namePinHash": "f0a930283ce944b72a5564b499b6a99639e7a480a38e73865b085e2eb8e44afc"
   },
   {
     "key": "staff_127",
@@ -1465,7 +1707,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "มุธิตา ตันติลาสน์",
+    "namePinHash": null
   },
   {
     "key": "staff_128",
@@ -1477,7 +1721,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "กฤชนก หลีจิ",
+    "namePinHash": null
   },
   {
     "key": "staff_129",
@@ -1489,7 +1735,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ฉันทนา อร่ามฉิม",
+    "namePinHash": null
   },
   {
     "key": "staff_130",
@@ -1501,7 +1749,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ลำยอง ปราบปราม",
+    "namePinHash": null
   },
   {
     "key": "staff_131",
@@ -1513,7 +1763,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ฝ้าม่า บ่อน้ำร้อน",
+    "namePinHash": null
   },
   {
     "key": "staff_132",
@@ -1525,7 +1777,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "อำนวย ทุ่งยอ",
+    "namePinHash": null
   },
   {
     "key": "staff_133",
@@ -1537,7 +1791,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "สุชาติ สูน่าหู",
+    "namePinHash": null
   },
   {
     "key": "staff_134",
@@ -1549,7 +1805,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ราตรี ขนานใต้",
+    "namePinHash": null
   },
   {
     "key": "staff_135",
@@ -1561,7 +1819,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "กรรณิกา ส่งชัย",
+    "namePinHash": null
   },
   {
     "key": "staff_136",
@@ -1573,7 +1833,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "ห้องเรียนกีฬา",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "สุชาดา เพ็ชรมาก",
+    "namePinHash": null
   },
   {
     "key": "staff_137",
@@ -1585,7 +1847,9 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "สุภาภรณ์ ชื่นตา",
+    "namePinHash": null
   },
   {
     "key": "staff_138",
@@ -1597,6 +1861,121 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
     "hasSeedPin": false,
-    "pinHash": null
+    "pinHash": null,
+    "coreName": "ส่ง เฉลียวชาติ",
+    "namePinHash": null
   }
 ];
+window.KBS_ATTENDANCE_NAME_HASHES = {
+  "เกียรติมงคล พูดเพราะ": "44ac5055589bcb436257ecc4bd8fc9c6481cd63879c2eac4280a62322d50bfbe",
+  "คนึงนิตย์ แฉล้มรักษ์": "7d08678d5bc921af5ee2762e2c2713064c2f6ee322bb148dd8db26cd3499f54c",
+  "วัชระ เปียกบุตร": "581f56b20838823838db40337d28906ee8bb450b489409639cac9331cee0a332",
+  "ศรายุทธ พงค์ทองเมือง": "79fb5b8278e5e2ac98991744a5272105cd0ad1d10ef1d415e0925a388cfc30ff",
+  "สุธิดา ธนบัตร": "dc2f4c83886f913e37648a4d824f771838f17c60b29f8f81cb19b3bec7e5a971",
+  "เปรมฤดี จูหลง": "9ad133b4038f138dc015d8e3d93774a4991cfcd8517d5655b48dd60383e0077b",
+  "ณัฐปภัสร์ จันท์เสถียร": "126066f06f139f0ecb8027d8d3f0090168f25ff62ee8e1a74c76fabfc21c7897",
+  "รติกาล กลับคง": "e59eab74a1c59e7a143acf45e5dd27b2d26529d06d8a3aa7d4c6733bcee9730a",
+  "มูฮัมหมัดฟาเดล ยาลาแว": "4506206cc0bb23cc4ba05976686f6751c5fc755266fed8556115a5ccc7a11f6d",
+  "สิริรัตน์ ส่งศรี": "20b8c49368d8aac0cd35650debb9d7872b4fdcb24193a53b8326cffc75554045",
+  "อนุรัตน์ นาคสง่า": "d4f5c4060562730d15ba33b301535cf85815e3bf6804b286f1c73c1348adc371",
+  "ทัศนีย์ ธรรมทักษ์": "a8d5ca0078fcaabff0f7398f0cbf128c4a31359ea0ebace5a4e34dda143af657",
+  "พรพัฒน์ ขวัญนิมิตร": "8da22b6143f97a42f1d49b1e63e6e857cdc01e734d2a4e786188ed926d25bd23",
+  "ฟ้ารุ่ง ขวัญเพ็ชร": "8fcb6bf06797d3e140422a9dc446f9fde139be8109e0f954cb2eaff6e6789a41",
+  "จันทนา สักคุณา": "a9dc056d52a231e9ee93b50949b1b2800d1ac055dcf44a99011fb80ce7617c9b",
+  "นัทธมน ณัฎฐเดช": "123ea89d3ba8e48679a3e6b024ea0c698149c051eb807f26849fcabe1ef2fb7d",
+  "ยุพิน ทองแก้ว": "e1abe4268021166d627d90748d8885eff9f0b5697711ee43398f4098f4f5d4a3",
+  "รุ่งนภา สุชาฎา": "574da1600b48910ae3df82d2f6edb5e3180b4ce540af9e1f6553c6226296098c",
+  "อนุชา หัทยา": "69186bf6e1f79667ce3c1c37703b97250d919b08bf2dd3693bc8cc8cefbd8856",
+  "วาทินี เสล่ราษฎร์": "c04c6f19df8fc1b3dcb46c125c5bf603f274d6aa69c7ec3104c1ce34799447fb",
+  "อารมณ์ หยีหาสัน": "887c8ce96847eecef3a634c703fa6ffa19e2846cef3734257c8333345994be95",
+  "กานต์ชนก กานต์นภัทร": "8dc5a354ecb18b68f225862e3fcd47fa886b21fdf29c34623461a3b99517afaa",
+  "สุทิศา ปานแดง": "ccdb96e51f5a9293294f7016af906e0dc5a7d4d496111c4505e6335e99a07c51",
+  "ธีติมา มูรติการ": "8cfd7f1a106286246ae22b234f1e8ac53e6e221bf70f3ee34abccd8b0bb037db",
+  "ดัยนา หัทยา": "6d5a374967b95d67e439792ce3e7f709acf65b9254e993f5b13acc7d30c33745",
+  "ด้าโอด ลูกเด็น": "b8f53440e0e7c3c7a5556d3fd543f610b3d461839e6531a0c8ed3a5d81d28c94",
+  "เสาวภาค จันทร์คง": "60eb2c488a34f0cc69c22792c0b8d940309d5982c518000790b3d01f371e6966",
+  "สมจารี คันธชาติกุล": "079c80e5a7cb2f1173c6f50abcddc8c8b2d522783bc16e87d1b10035a9d4ec8c",
+  "อภิสิทธิ์ ทองสีนุช": "6edc0d43248bca1b9771ac58dd5d34d719bcf09ef25188d2b511faec342152df",
+  "บดี กังงา": "0daddb3dbd87b137cc96dd8a75ed889ebd0f667c360ad70becd3d18e438ed6f6",
+  "พรศักดิ์ เจียวก๊ก": "f66c6f7cbf03d45d6009b2bb2043effb8697e0057610c7148b51f8b9b7c146bf",
+  "ยาใจ มาชู (เสียชีวิต)": "4d64a7a1e9280766971530447565be732e8f177ed9938e77c420a266c141430b",
+  "ปิยะมาศ ผกาวรรณ": "32772a3d883748030fb637b99c75e5a571c8d7d5ff5f293a4d3dcc20de025653",
+  "พรทิพย์ คงมาก": "1226c018f84064b00b07885632aa6bf2cb7baf6422e3c4149e613de2755f1dbf",
+  "ธนพร สระทองแยง": "910f69b88b9562d81087a684d3e75c91bfa53363c25d4f3d000f904725f4d5e0",
+  "สุทธวรรณ รักการ": "d2821b3a088efc372062d305611931c6798c54a43f7ae1ac399dd1b7308994bd",
+  "อมรรัตน์ ทวีพงศ์ศักดิ์": "53e2495482e54a1a5aedf8a537107135e9477172838339f88e9a60f77bcde67d",
+  "กัญญารัตน์ เพ็งจันทร์": "e467d56882292ac9180dc688f9c0d020ee481916c18bbe324b5481810e459072",
+  "นภิสรา อุษณีษ์พันธุ์": "76babd3ed93d3c1699c5e8b24117640cb88d8cc96af51a1223a7fd76d9a795af",
+  "สายน้ำผึ้ง หมึกดำ": "8ce94d96dd5279f2fee20a4c5be9188eff7f93aa718a200ef6d837296a337605",
+  "ทิพย์เกษร แก้วกาญจน์": "da02eb0ad6d431b3b0da533e417b54712998242dbcf72e797b5ca78dd6717e64",
+  "ศศิกร สงขาว": "7faae52af920652b7faacffdc2c8ecd98fbe068db6d2b9c29db3a35e66c07fd5",
+  "อรสา สมาพงษ์": "99fd103c2626b01e633005597542a2e48c216f8b9ac1d992f9be4a6769c44fea",
+  "ชญานิษฐ์ เอ่งฉ้วน": "3111c14e8d9dd6c63f84b9ac82a2b957117254e6e4bb9b9ff0c67708a012c4bb",
+  "ลัดดา จันทรดี": "faa69a661fef852be59789095d509986920ed0fdf71d42ea7a23f8b7dac616ee",
+  "หทัยรัตน์ ศรีวรเดชไพศาล": "1031c35d222f97e694363bfdef1354465cfd8da8e14b0343df92063397f1f682",
+  "ศศิญา จูฑามาตย์": "a50389e8c5456006da8a2968e638de181350b69f82833d2c094398a492f68c17",
+  "ปาริชาติ ดำด้วง": "eb55aee9e5efd4078c04b6c4b0d46b2142205e3ec799ee215998da88efa7e4fd",
+  "ฐิติยาภรณ์ หล่อสุพรรณพร": "50c61c8c99194a5942f979caf33d9f861066c073c20df2297c64ea53c79a5f71",
+  "วีรญา ช้างน้ำ": "a64a3ad16d13e8206a3b2434bbe9b19e354e3996ed7a82264a68dd4a4f6e7b28",
+  "ปริญญา สมแก้ว": "e8e4bff0bfc52ad404baed44ea011130b4b03de7fe74b9ba4351962fc71e1cc1",
+  "วิภาวี สิทธิการ": "68858aeb33d640f817476d422625e6393a9d707441731380c254d78797ff786c",
+  "นันท์นภัส กิติบุญญา": "a0a6cfda5e16061a5e5e618c52416098478d656eaf211d291394778025578d4f",
+  "สุชาดา เพชรสุก": "566836127357606e24038ff618de8585c2d2251e88391856cd3c293584de2c0c",
+  "อัจฉรา นุ่นชูผล": "8698c0a282f130c2a75458a67338aab5366eeab6dd8dd8f7fb675cf751bcbd37",
+  "อภิวัฒน์ กาพย์เกิด": "a225674ebb577c70ab6ce7978dbb5e44100d82dc0cd00e84f6a412bd42eed482",
+  "ว่าที่ร้อยตรีหญิงชญานี ชัยสวัสดิ์": "45d77ec282b09482b3d8360e0f3d8cbbb6b9775e96475377cb11326dd3a3f193",
+  "เริงสรรค์ ยะลา": "9c5684e37b64e72aa4e5bd9c27b94811e8460b23e755707e33aee86c7c5da9ff",
+  "ชลธิชา บัวแต่ง": "838ef02ce636998bd77d4c5adbaebf3de1d1e3964295aef644ed844a2e903fa9",
+  "กานต์ลดา สายนุ้ย": "62c388482161e404dc60a563986dc895f6fd82c5b77cc18a01b8bab0761a4a0e",
+  "สุนันทา รักราวี": "567ac7436f6f8b5cda9d26d1e680db07290bdee4a05de557ce506a16f1acd778",
+  "จุไรรัตน์ เรืองอ่อน": "6a604279376fb7dd9d6bbc2e7cfb4dcc8733d2e0a2fe9b441cc01e8a46a54725",
+  "ศุภิสรา ยาวส่ง": "5d23b047c28d92b583167e52323a7e338d068db12a3667b2f8c6819c926d3d5d",
+  "ชนกนันท์ จันทร์สงค์": "b3f43af1faab25385192ca2b3016275ce73a3781e8a5a6cc54491e48e42f44a4",
+  "ชนะชัย สุวรรณชล": "b7156819a0740d29cd670da9522c56118889d802679454749d9f5838fdf3f974",
+  "ภาวิณี ช่วยพัทลุง": "b9245c3cd8331e523f565331f2a9404bf4328291c348ce89369dfbe4e67fea10",
+  "ธัญญา กัลยกรกุล": "b812eebdb5cfcc70447f80bd63f1817312e07ceac09d6bdb9a335000c8a69919",
+  "วาสนา หนูมาก": "b57d7f73fc31e23567b72740a3e22497c753cd622559f2a8c1abc4b8aac3cfd0",
+  "สรารัตน์ โพชสาลี": "38642e1ff2ef65e65ed2dc61483de94cf5c8cac63f3984281bdf7777871a2098",
+  "กนกรัตน์ เลี่ยนเส้ง": "88fe8af819a0a295c6ce409fdc407dcb4f44b203ebb516e49c6331821a1d2d3f",
+  "ปิยะวรรณ จันทร์ประกอบ": "220236619c30f59b30ff8379acc0bb4549f72597b3e111497467c0095ea286a6",
+  "ธนพร ธนาวุฑฒ์": "7ccbcef2429fadb57a8e724fd0ff0feaf66ddae6d2b2f9493e6b0a56a1f1dabc",
+  "ธีรยุทธ เหล่ชาย": "1ebb1bc252bd95b366373ba1ff8bf2de78289f1d6c2febc9a974cb80dd656d60",
+  "ชลธิชา หนูชูแก้ว": "a1ad88a09a0489e43fc4cb92cdbf90c17c4532899a28c4488e086e0448f26dc1",
+  "สมิตา ไชยสาลี": "928d89a22e34f13cb5385c6ef87728db9e8bb554c24f87b958cc70109ad8b026",
+  "ปภัสรา รักฤทธิ์": "fe0299f1fa280202a0f9f9b0887f588e9a8446224939e595b7154c3eea0acb3f",
+  "มานิตย์ บัวเพชร": "2d10d78a5008343980806935d1428161db23c275c667114fd1ba2196f617dcf9",
+  "ปัทมา ญาณแก้ว": "a0958ed1182910e627cdfe67d811ad13375985256fdbab05e1e88625bef6e9cc",
+  "ณัฐธิดา แก้วสาระ": "0416024bd866e4c905bf0d345ed80b346e8ecd7b0fb74a6d0ae61f9815550b5e",
+  "มาติณห์ สัญจร": "64a6c7c07f6029509a75bccb1e30b3b7c43ae81487d251f5e05896c6aa7d3577",
+  "วิทยา เต็มบางงอน": "911ef5b1790d4cab816dde9c30dbbdf2737bc52207ceed50cb4c8cefc32f39aa",
+  "จีรพจน์ ทองขาว": "0a0e6fa666ce98112c36807d990593a6001316828ad7087101353bf791c15a46",
+  "ณรงค์ศักดิ์ จงจิตร": "96a924743062eec94f04f5735cdea65b5cf11a77939a3a8e9eab7e0e1e95169a",
+  "วรวรรณ เพ็ชรฤทธิ์": "3295e92ad7f5f814aff603013b49f3ca2af7109b5af7ec434739734186912c93",
+  "ธนากร ชื่นบุตร": "bde5ba25448cd7f316d4e11f25c3bc4c017f9f6f3d8bbeb0af02ccb12e67a2f0",
+  "อุไร สังหาร": "a2d4efd75c85a4a40a1a755fa0ffe9cc03df56e3775cc82b5ef3f7c23f6d4f01",
+  "วันเฉลิม กัณหะกุล": "66310e598659f7170af0017364d16b3bc5dcc47b4e1c495435d02eeca1843b94",
+  "รัชนีวรรณ ชาตรี": "fd2664150ef0993765a5c091f756dd9aa94ebc779b8c757a32849fbae3febb1d",
+  "พิมพ์ปวีณ์ เศรษสระ": "50e6bb31600032da6dbb190ac57bec98627bd64ae5caf00c595658f735e384e9",
+  "ชัยวัฒน์ ริยาพันธ์": "93c4d0f4366ca70121cd47c082c0d9c48553fb1b4a03f2122f6e8bdd8f16d213",
+  "รมิตา จุลนันโท": "c01eb5eab294fffa610679183d0f7f22e5763da6dcf991a7f88f2265440e0f1b",
+  "โกษิต ดาวกระจ่าง": "b8815f17d77ac51938e7f377f9786c9980876c35520a47593d09625422adbe6d",
+  "อรฤดี เพ็งลำ": "73141f908f7485ddd68f8d6dee9c0a8a7bdf41f13a24362531b11dd0a3212fce",
+  "นัฒพล เทียบแก้ว": "8f940ea54c76b428282623aa948ce510415836dd3733fad774da53ccb634b9be",
+  "วิชชา ไชยกุล": "d4aeffdbde62f468b7354a40c6189537524c858d1dc2a83a4b4fa5f7157d9ca9",
+  "จุมพล เพ็ชรพวง": "6bbaa31083d9ffcbd629fb7a4e25725412ef3cc9216ad9086cef262f226206ce",
+  "ศราวุธ เกื้อขาว": "92c24d45836c3d1bf698416caa5fe76653d4cc0a84583a86f1bd926d0b826271",
+  "ศรีสุดา สุวรรณโชติ": "b3aceb07f4c67dcfb8b262c6bb877931171c69be1cfa51ecbf6f56247bdb457c",
+  "อลิษา แท่นดี": "26c0f4fc528876de6479e489f47005b0e040fde1304c697e6681fd24dad296d3",
+  "เสาวนีย์ ชลธี": "23d4ac9d18693acff3b4364fbb75b5e4ed230262481630d42cec395bd81ab86a",
+  "กรรณิกา คงภักดี": "800e0a64f46018051d64bfba05107d6bd7ccf622516c20e8b86dd5d76f538d64",
+  "คณิน คำกิ่ง": "7925e1698d4744467ef6ee84c56390af1f84367afbcf0c96d4f3aeb3545f2f7e",
+  "สกาวเดือน เศษคง": "1ae7c3b362b8fa4f81186136d80febc0ce1c2edaeab1763f9fd10262195d22ca",
+  "ธนากร หนูอิน": "de3721b003046a283f206c3a89fee505e2f07acc9f830dd81790d5d4f7c444fa",
+  "สราวุธ แก้วสร": "f0a930283ce944b72a5564b499b6a99639e7a480a38e73865b085e2eb8e44afc",
+  "ญาณปรีชา ภูขะมา": "4b84b3c380141dd77b308bf6191054108ecccb489e77181c2e19c656024edc96",
+  "เอกสิทธิ์ สมันบุตร": "f0b515dc2b619834e21635cd034cefa73a078c1cdd1353316f8d5c8a88e68279",
+  "วณิชยา ลิ่มสกุล": "7d7f90cd40bb898e2d832ab51b7ed8b9d310d87557a26e372737eecbe1998bdf",
+  "ศุภณัฐ กัณหกุล": "20d70bb056c56f4dfa9ada9d9323f8c1798c953103b30849f02d7e7cf1a53153",
+  "เกียรติชานนท์ เสียงดัง": "cdb43d4197027b203fbe9df9616f97a1527e70b6bef33f75618af99877123964",
+  "ทินภัทร อนุการ": "190c7f9e6b345e6e181bd9e45cfe87a7e0b6a034223f76c2ba89c666362e195f"
+};

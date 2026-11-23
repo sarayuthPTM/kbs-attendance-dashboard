@@ -2,33 +2,40 @@
  * ============================================================================
  * ระบบแดชบอร์ดสรุปวันลาและการลงเวลาปฏิบัติราชการ (KBS Attendance Dashboard)
  * โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่
- * Google Apps Script REST API — 100% Google Sheets Database Engine
- * (เก็บทั้งข้อมูลลงเวลา การตั้งค่าเปิด-ปิดเดือน PIN ครู และคำร้องแก้ไขใน Google Sheets)
+ * Google Apps Script REST API — Multi-Term / Auto-Discover Tabs Engine
+ * - ตรวจจับแท็บภาคเรียน/ปีใหม่ๆ ใน Google Sheet นี้อัตโนมัติ (เช่น 2/69, 1/70, 2/70, 1/71)
+ * - อ่านชื่อเดือนและจำนวนวันจากแถวที่ 1 อัตโนมัติ
+ * - แอดมินสามารถเปิด/ปิดได้ทั้งระดับ "ภาคเรียน/ปี" และระดับ "รายเดือน"
  * ============================================================================
  */
 
 var CONFIG = {
   SPREADSHEET_ID: '1AuOkjvEAy2JTS6DqDt1hUZMlVV6TO1EFcxclfVOfAfs',
-  SHEET_NAME: 'ข้อมูลลงเวลา 2/69',
   TAB_SETTINGS: '_Dashboard_Settings',
   TAB_PINS: '_Staff_Pins',
   TAB_CORRECTIONS: '_Correction_Requests',
   TIMEZONE: 'Asia/Bangkok',
-  CACHE_KEY_FULL: 'kbs_attendance_full_v2',
-  CACHE_TTL_SECONDS: 300, // 5 นาที (ใช้ forceRefresh เพื่อดึงสดทันที)
+  CACHE_PREFIX: 'kbs_att_tab_v3_',
+  CACHE_TTL_SECONDS: 300,
   DEFAULT_ADMIN_PIN: '123456'
 };
 
-var MONTHS_META = [
-  { id: '2569-10', label: 'ตุลาคม 2569', shortLabel: 'ต.ค. 69', yearBE: 2569, yearCE: 2026, month: 10, daysInMonth: 31, startCol: 3 },
-  { id: '2569-11', label: 'พฤศจิกายน 2569', shortLabel: 'พ.ย. 69', yearBE: 2569, yearCE: 2026, month: 11, daysInMonth: 30, startCol: 34 },
-  { id: '2569-12', label: 'ธันวาคม 2569', shortLabel: 'ธ.ค. 69', yearBE: 2569, yearCE: 2026, month: 12, daysInMonth: 31, startCol: 65 },
-  { id: '2570-01', label: 'มกราคม 2570', shortLabel: 'ม.ค. 70', yearBE: 2570, yearCE: 2027, month: 1, daysInMonth: 31, startCol: 96 },
-  { id: '2570-02', label: 'กุมภาพันธ์ 2570', shortLabel: 'ก.พ. 70', yearBE: 2570, yearCE: 2027, month: 2, daysInMonth: 28, startCol: 127 },
-  { id: '2570-03', label: 'มีนาคม 2570', shortLabel: 'มี.ค. 70', yearBE: 2570, yearCE: 2027, month: 3, daysInMonth: 31, startCol: 158 }
-];
+var THAI_MONTH_MAP = {
+  'มกราคม': { month: 1, short: 'ม.ค.' },
+  'กุมภาพันธ์': { month: 2, short: 'ก.พ.' },
+  'มีนาคม': { month: 3, short: 'มี.ค.' },
+  'เมษายน': { month: 4, short: 'เม.ย.' },
+  'พฤษภาคม': { month: 5, short: 'พ.ค.' },
+  'มิถุนายน': { month: 6, short: 'มิ.ย.' },
+  'กรกฎาคม': { month: 7, short: 'ก.ค.' },
+  'สิงหาคม': { month: 8, short: 'ส.ค.' },
+  'กันยายน': { month: 9, short: 'ก.ย.' },
+  'ตุลาคม': { month: 10, short: 'ต.ค.' },
+  'พฤศจิกายน': { month: 11, short: 'พ.ย.' },
+  'ธันวาคม': { month: 12, short: 'ธ.ค.' }
+};
 
-// Hash (SHA-256 of "staffKey:last4IdCard") สำหรับยืนยันตัวตนฝั่งเซิร์ฟเวอร์ (ไม่เก็บเลขบัตรดิบ)
+// Hash (SHA-256) สำหรับยืนยันตัวตนฝั่งเซิร์ฟเวอร์ (ไม่เก็บเลขบัตรดิบ)
 var SEED_PIN_HASHES = {
   "staff_4": "0205f69ba3159f0846e61fe5e57d47a4dce00ab01b6ab7988db7f0e3b6746fdb",
   "staff_5": "cb5ac4ac074dd95ec6893fd1fe66768383343649bec8ce3cca2550a7285346b4",
@@ -132,6 +139,119 @@ var SEED_PIN_HASHES = {
   "staff_125": "91093f40160deb275a39b1021c73871653083646a28bcbb9a3e84cc233fefdb0",
   "staff_126": "4238833d0151160a516777786d3a3f3646c4d9860cdb6330ee23fd7fc603a0c1"
 };
+var SEED_NAME_PIN_HASHES = {
+  "เกียรติมงคล พูดเพราะ": "44ac5055589bcb436257ecc4bd8fc9c6481cd63879c2eac4280a62322d50bfbe",
+  "คนึงนิตย์ แฉล้มรักษ์": "7d08678d5bc921af5ee2762e2c2713064c2f6ee322bb148dd8db26cd3499f54c",
+  "วัชระ เปียกบุตร": "581f56b20838823838db40337d28906ee8bb450b489409639cac9331cee0a332",
+  "ศรายุทธ พงค์ทองเมือง": "79fb5b8278e5e2ac98991744a5272105cd0ad1d10ef1d415e0925a388cfc30ff",
+  "สุธิดา ธนบัตร": "dc2f4c83886f913e37648a4d824f771838f17c60b29f8f81cb19b3bec7e5a971",
+  "เปรมฤดี จูหลง": "9ad133b4038f138dc015d8e3d93774a4991cfcd8517d5655b48dd60383e0077b",
+  "ณัฐปภัสร์ จันท์เสถียร": "126066f06f139f0ecb8027d8d3f0090168f25ff62ee8e1a74c76fabfc21c7897",
+  "รติกาล กลับคง": "e59eab74a1c59e7a143acf45e5dd27b2d26529d06d8a3aa7d4c6733bcee9730a",
+  "มูฮัมหมัดฟาเดล ยาลาแว": "4506206cc0bb23cc4ba05976686f6751c5fc755266fed8556115a5ccc7a11f6d",
+  "สิริรัตน์ ส่งศรี": "20b8c49368d8aac0cd35650debb9d7872b4fdcb24193a53b8326cffc75554045",
+  "อนุรัตน์ นาคสง่า": "d4f5c4060562730d15ba33b301535cf85815e3bf6804b286f1c73c1348adc371",
+  "ทัศนีย์ ธรรมทักษ์": "a8d5ca0078fcaabff0f7398f0cbf128c4a31359ea0ebace5a4e34dda143af657",
+  "พรพัฒน์ ขวัญนิมิตร": "8da22b6143f97a42f1d49b1e63e6e857cdc01e734d2a4e786188ed926d25bd23",
+  "ฟ้ารุ่ง ขวัญเพ็ชร": "8fcb6bf06797d3e140422a9dc446f9fde139be8109e0f954cb2eaff6e6789a41",
+  "จันทนา สักคุณา": "a9dc056d52a231e9ee93b50949b1b2800d1ac055dcf44a99011fb80ce7617c9b",
+  "นัทธมน ณัฎฐเดช": "123ea89d3ba8e48679a3e6b024ea0c698149c051eb807f26849fcabe1ef2fb7d",
+  "ยุพิน ทองแก้ว": "e1abe4268021166d627d90748d8885eff9f0b5697711ee43398f4098f4f5d4a3",
+  "รุ่งนภา สุชาฎา": "574da1600b48910ae3df82d2f6edb5e3180b4ce540af9e1f6553c6226296098c",
+  "อนุชา หัทยา": "69186bf6e1f79667ce3c1c37703b97250d919b08bf2dd3693bc8cc8cefbd8856",
+  "วาทินี เสล่ราษฎร์": "c04c6f19df8fc1b3dcb46c125c5bf603f274d6aa69c7ec3104c1ce34799447fb",
+  "อารมณ์ หยีหาสัน": "887c8ce96847eecef3a634c703fa6ffa19e2846cef3734257c8333345994be95",
+  "กานต์ชนก กานต์นภัทร": "8dc5a354ecb18b68f225862e3fcd47fa886b21fdf29c34623461a3b99517afaa",
+  "สุทิศา ปานแดง": "ccdb96e51f5a9293294f7016af906e0dc5a7d4d496111c4505e6335e99a07c51",
+  "ธีติมา มูรติการ": "8cfd7f1a106286246ae22b234f1e8ac53e6e221bf70f3ee34abccd8b0bb037db",
+  "ดัยนา หัทยา": "6d5a374967b95d67e439792ce3e7f709acf65b9254e993f5b13acc7d30c33745",
+  "ด้าโอด ลูกเด็น": "b8f53440e0e7c3c7a5556d3fd543f610b3d461839e6531a0c8ed3a5d81d28c94",
+  "เสาวภาค จันทร์คง": "60eb2c488a34f0cc69c22792c0b8d940309d5982c518000790b3d01f371e6966",
+  "สมจารี คันธชาติกุล": "079c80e5a7cb2f1173c6f50abcddc8c8b2d522783bc16e87d1b10035a9d4ec8c",
+  "อภิสิทธิ์ ทองสีนุช": "6edc0d43248bca1b9771ac58dd5d34d719bcf09ef25188d2b511faec342152df",
+  "บดี กังงา": "0daddb3dbd87b137cc96dd8a75ed889ebd0f667c360ad70becd3d18e438ed6f6",
+  "พรศักดิ์ เจียวก๊ก": "f66c6f7cbf03d45d6009b2bb2043effb8697e0057610c7148b51f8b9b7c146bf",
+  "ยาใจ มาชู (เสียชีวิต)": "4d64a7a1e9280766971530447565be732e8f177ed9938e77c420a266c141430b",
+  "ปิยะมาศ ผกาวรรณ": "32772a3d883748030fb637b99c75e5a571c8d7d5ff5f293a4d3dcc20de025653",
+  "พรทิพย์ คงมาก": "1226c018f84064b00b07885632aa6bf2cb7baf6422e3c4149e613de2755f1dbf",
+  "ธนพร สระทองแยง": "910f69b88b9562d81087a684d3e75c91bfa53363c25d4f3d000f904725f4d5e0",
+  "สุทธวรรณ รักการ": "d2821b3a088efc372062d305611931c6798c54a43f7ae1ac399dd1b7308994bd",
+  "อมรรัตน์ ทวีพงศ์ศักดิ์": "53e2495482e54a1a5aedf8a537107135e9477172838339f88e9a60f77bcde67d",
+  "กัญญารัตน์ เพ็งจันทร์": "e467d56882292ac9180dc688f9c0d020ee481916c18bbe324b5481810e459072",
+  "นภิสรา อุษณีษ์พันธุ์": "76babd3ed93d3c1699c5e8b24117640cb88d8cc96af51a1223a7fd76d9a795af",
+  "สายน้ำผึ้ง หมึกดำ": "8ce94d96dd5279f2fee20a4c5be9188eff7f93aa718a200ef6d837296a337605",
+  "ทิพย์เกษร แก้วกาญจน์": "da02eb0ad6d431b3b0da533e417b54712998242dbcf72e797b5ca78dd6717e64",
+  "ศศิกร สงขาว": "7faae52af920652b7faacffdc2c8ecd98fbe068db6d2b9c29db3a35e66c07fd5",
+  "อรสา สมาพงษ์": "99fd103c2626b01e633005597542a2e48c216f8b9ac1d992f9be4a6769c44fea",
+  "ชญานิษฐ์ เอ่งฉ้วน": "3111c14e8d9dd6c63f84b9ac82a2b957117254e6e4bb9b9ff0c67708a012c4bb",
+  "ลัดดา จันทรดี": "faa69a661fef852be59789095d509986920ed0fdf71d42ea7a23f8b7dac616ee",
+  "หทัยรัตน์ ศรีวรเดชไพศาล": "1031c35d222f97e694363bfdef1354465cfd8da8e14b0343df92063397f1f682",
+  "ศศิญา จูฑามาตย์": "a50389e8c5456006da8a2968e638de181350b69f82833d2c094398a492f68c17",
+  "ปาริชาติ ดำด้วง": "eb55aee9e5efd4078c04b6c4b0d46b2142205e3ec799ee215998da88efa7e4fd",
+  "ฐิติยาภรณ์ หล่อสุพรรณพร": "50c61c8c99194a5942f979caf33d9f861066c073c20df2297c64ea53c79a5f71",
+  "วีรญา ช้างน้ำ": "a64a3ad16d13e8206a3b2434bbe9b19e354e3996ed7a82264a68dd4a4f6e7b28",
+  "ปริญญา สมแก้ว": "e8e4bff0bfc52ad404baed44ea011130b4b03de7fe74b9ba4351962fc71e1cc1",
+  "วิภาวี สิทธิการ": "68858aeb33d640f817476d422625e6393a9d707441731380c254d78797ff786c",
+  "นันท์นภัส กิติบุญญา": "a0a6cfda5e16061a5e5e618c52416098478d656eaf211d291394778025578d4f",
+  "สุชาดา เพชรสุก": "566836127357606e24038ff618de8585c2d2251e88391856cd3c293584de2c0c",
+  "อัจฉรา นุ่นชูผล": "8698c0a282f130c2a75458a67338aab5366eeab6dd8dd8f7fb675cf751bcbd37",
+  "อภิวัฒน์ กาพย์เกิด": "a225674ebb577c70ab6ce7978dbb5e44100d82dc0cd00e84f6a412bd42eed482",
+  "ว่าที่ร้อยตรีหญิงชญานี ชัยสวัสดิ์": "45d77ec282b09482b3d8360e0f3d8cbbb6b9775e96475377cb11326dd3a3f193",
+  "เริงสรรค์ ยะลา": "9c5684e37b64e72aa4e5bd9c27b94811e8460b23e755707e33aee86c7c5da9ff",
+  "ชลธิชา บัวแต่ง": "838ef02ce636998bd77d4c5adbaebf3de1d1e3964295aef644ed844a2e903fa9",
+  "กานต์ลดา สายนุ้ย": "62c388482161e404dc60a563986dc895f6fd82c5b77cc18a01b8bab0761a4a0e",
+  "สุนันทา รักราวี": "567ac7436f6f8b5cda9d26d1e680db07290bdee4a05de557ce506a16f1acd778",
+  "จุไรรัตน์ เรืองอ่อน": "6a604279376fb7dd9d6bbc2e7cfb4dcc8733d2e0a2fe9b441cc01e8a46a54725",
+  "ศุภิสรา ยาวส่ง": "5d23b047c28d92b583167e52323a7e338d068db12a3667b2f8c6819c926d3d5d",
+  "ชนกนันท์ จันทร์สงค์": "b3f43af1faab25385192ca2b3016275ce73a3781e8a5a6cc54491e48e42f44a4",
+  "ชนะชัย สุวรรณชล": "b7156819a0740d29cd670da9522c56118889d802679454749d9f5838fdf3f974",
+  "ภาวิณี ช่วยพัทลุง": "b9245c3cd8331e523f565331f2a9404bf4328291c348ce89369dfbe4e67fea10",
+  "ธัญญา กัลยกรกุล": "b812eebdb5cfcc70447f80bd63f1817312e07ceac09d6bdb9a335000c8a69919",
+  "วาสนา หนูมาก": "b57d7f73fc31e23567b72740a3e22497c753cd622559f2a8c1abc4b8aac3cfd0",
+  "สรารัตน์ โพชสาลี": "38642e1ff2ef65e65ed2dc61483de94cf5c8cac63f3984281bdf7777871a2098",
+  "กนกรัตน์ เลี่ยนเส้ง": "88fe8af819a0a295c6ce409fdc407dcb4f44b203ebb516e49c6331821a1d2d3f",
+  "ปิยะวรรณ จันทร์ประกอบ": "220236619c30f59b30ff8379acc0bb4549f72597b3e111497467c0095ea286a6",
+  "ธนพร ธนาวุฑฒ์": "7ccbcef2429fadb57a8e724fd0ff0feaf66ddae6d2b2f9493e6b0a56a1f1dabc",
+  "ธีรยุทธ เหล่ชาย": "1ebb1bc252bd95b366373ba1ff8bf2de78289f1d6c2febc9a974cb80dd656d60",
+  "ชลธิชา หนูชูแก้ว": "a1ad88a09a0489e43fc4cb92cdbf90c17c4532899a28c4488e086e0448f26dc1",
+  "สมิตา ไชยสาลี": "928d89a22e34f13cb5385c6ef87728db9e8bb554c24f87b958cc70109ad8b026",
+  "ปภัสรา รักฤทธิ์": "fe0299f1fa280202a0f9f9b0887f588e9a8446224939e595b7154c3eea0acb3f",
+  "มานิตย์ บัวเพชร": "2d10d78a5008343980806935d1428161db23c275c667114fd1ba2196f617dcf9",
+  "ปัทมา ญาณแก้ว": "a0958ed1182910e627cdfe67d811ad13375985256fdbab05e1e88625bef6e9cc",
+  "ณัฐธิดา แก้วสาระ": "0416024bd866e4c905bf0d345ed80b346e8ecd7b0fb74a6d0ae61f9815550b5e",
+  "มาติณห์ สัญจร": "64a6c7c07f6029509a75bccb1e30b3b7c43ae81487d251f5e05896c6aa7d3577",
+  "วิทยา เต็มบางงอน": "911ef5b1790d4cab816dde9c30dbbdf2737bc52207ceed50cb4c8cefc32f39aa",
+  "จีรพจน์ ทองขาว": "0a0e6fa666ce98112c36807d990593a6001316828ad7087101353bf791c15a46",
+  "ณรงค์ศักดิ์ จงจิตร": "96a924743062eec94f04f5735cdea65b5cf11a77939a3a8e9eab7e0e1e95169a",
+  "วรวรรณ เพ็ชรฤทธิ์": "3295e92ad7f5f814aff603013b49f3ca2af7109b5af7ec434739734186912c93",
+  "ธนากร ชื่นบุตร": "bde5ba25448cd7f316d4e11f25c3bc4c017f9f6f3d8bbeb0af02ccb12e67a2f0",
+  "อุไร สังหาร": "a2d4efd75c85a4a40a1a755fa0ffe9cc03df56e3775cc82b5ef3f7c23f6d4f01",
+  "วันเฉลิม กัณหะกุล": "66310e598659f7170af0017364d16b3bc5dcc47b4e1c495435d02eeca1843b94",
+  "รัชนีวรรณ ชาตรี": "fd2664150ef0993765a5c091f756dd9aa94ebc779b8c757a32849fbae3febb1d",
+  "พิมพ์ปวีณ์ เศรษสระ": "50e6bb31600032da6dbb190ac57bec98627bd64ae5caf00c595658f735e384e9",
+  "ชัยวัฒน์ ริยาพันธ์": "93c4d0f4366ca70121cd47c082c0d9c48553fb1b4a03f2122f6e8bdd8f16d213",
+  "รมิตา จุลนันโท": "c01eb5eab294fffa610679183d0f7f22e5763da6dcf991a7f88f2265440e0f1b",
+  "โกษิต ดาวกระจ่าง": "b8815f17d77ac51938e7f377f9786c9980876c35520a47593d09625422adbe6d",
+  "อรฤดี เพ็งลำ": "73141f908f7485ddd68f8d6dee9c0a8a7bdf41f13a24362531b11dd0a3212fce",
+  "นัฒพล เทียบแก้ว": "8f940ea54c76b428282623aa948ce510415836dd3733fad774da53ccb634b9be",
+  "วิชชา ไชยกุล": "d4aeffdbde62f468b7354a40c6189537524c858d1dc2a83a4b4fa5f7157d9ca9",
+  "จุมพล เพ็ชรพวง": "6bbaa31083d9ffcbd629fb7a4e25725412ef3cc9216ad9086cef262f226206ce",
+  "ศราวุธ เกื้อขาว": "92c24d45836c3d1bf698416caa5fe76653d4cc0a84583a86f1bd926d0b826271",
+  "ศรีสุดา สุวรรณโชติ": "b3aceb07f4c67dcfb8b262c6bb877931171c69be1cfa51ecbf6f56247bdb457c",
+  "อลิษา แท่นดี": "26c0f4fc528876de6479e489f47005b0e040fde1304c697e6681fd24dad296d3",
+  "เสาวนีย์ ชลธี": "23d4ac9d18693acff3b4364fbb75b5e4ed230262481630d42cec395bd81ab86a",
+  "กรรณิกา คงภักดี": "800e0a64f46018051d64bfba05107d6bd7ccf622516c20e8b86dd5d76f538d64",
+  "คณิน คำกิ่ง": "7925e1698d4744467ef6ee84c56390af1f84367afbcf0c96d4f3aeb3545f2f7e",
+  "สกาวเดือน เศษคง": "1ae7c3b362b8fa4f81186136d80febc0ce1c2edaeab1763f9fd10262195d22ca",
+  "ธนากร หนูอิน": "de3721b003046a283f206c3a89fee505e2f07acc9f830dd81790d5d4f7c444fa",
+  "สราวุธ แก้วสร": "f0a930283ce944b72a5564b499b6a99639e7a480a38e73865b085e2eb8e44afc",
+  "ญาณปรีชา ภูขะมา": "4b84b3c380141dd77b308bf6191054108ecccb489e77181c2e19c656024edc96",
+  "เอกสิทธิ์ สมันบุตร": "f0b515dc2b619834e21635cd034cefa73a078c1cdd1353316f8d5c8a88e68279",
+  "วณิชยา ลิ่มสกุล": "7d7f90cd40bb898e2d832ab51b7ed8b9d310d87557a26e372737eecbe1998bdf",
+  "ศุภณัฐ กัณหกุล": "20d70bb056c56f4dfa9ada9d9323f8c1798c953103b30849f02d7e7cf1a53153",
+  "เกียรติชานนท์ เสียงดัง": "cdb43d4197027b203fbe9df9616f97a1527e70b6bef33f75618af99877123964",
+  "ทินภัทร อนุการ": "190c7f9e6b345e6e181bd9e45cfe87a7e0b6a034223f76c2ba89c666362e195f"
+};
 
 function createJsonResponse(obj) {
   return ContentService
@@ -151,6 +271,14 @@ function sha256Hex(str) {
   return out;
 }
 
+function stripNamePrefix(s) {
+  return String(s || '')
+    .replace(/^(ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 function getOrCreateHelperSheet(ss, tabName, headers) {
   var sheet = ss.getSheetByName(tabName);
   if (!sheet) {
@@ -166,13 +294,260 @@ function getOrCreateHelperSheet(ss, tabName, headers) {
   return sheet;
 }
 
-function readSettingsFromSheet(ss, monthsSummary) {
-  var defaultVisible = {};
-  if (Array.isArray(monthsSummary)) {
-    monthsSummary.forEach(function(m) { defaultVisible[m.id] = Boolean(m.hasData); });
+function detectMonthsFromHeaderRow(row1, totalCols, tabName) {
+  var regex = /(มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s*(\d{2,4})?/;
+  var fallbackYearMatch = String(tabName || '').match(/\/\s*(\d{2,4})/);
+  var baseYearBE = fallbackYearMatch
+    ? (fallbackYearMatch[1].length === 2 ? 2500 + Number(fallbackYearMatch[1]) : Number(fallbackYearMatch[1]))
+    : 2569;
+
+  var months = [];
+  var lastYearBE = baseYearBE;
+  var prevMonthNum = 0;
+
+  for (var c = 3; c < totalCols; c++) {
+    var cell = String(row1[c] || '').trim();
+    if (!cell) continue;
+    var m = cell.match(regex);
+    if (!m) continue;
+
+    var info = THAI_MONTH_MAP[m[1]];
+    if (!info) continue;
+
+    var yearBE;
+    if (m[2]) {
+      yearBE = m[2].length === 2 ? (2500 + Number(m[2])) : Number(m[2]);
+    } else {
+      yearBE = (prevMonthNum > 0 && info.month < prevMonthNum) ? (lastYearBE + 1) : lastYearBE;
+    }
+    lastYearBE = yearBE;
+    prevMonthNum = info.month;
+
+    var yearCE = yearBE - 543;
+    var daysInMonth = new Date(yearCE, info.month, 0).getDate();
+    var mStr = info.month < 10 ? ('0' + info.month) : String(info.month);
+    var id = yearBE + '-' + mStr;
+    var shortYear = String(yearBE).slice(-2);
+
+    months.push({
+      id: id,
+      label: m[1] + ' ' + yearBE,
+      shortLabel: info.short + ' ' + shortYear,
+      yearBE: yearBE,
+      yearCE: yearCE,
+      month: info.month,
+      daysInMonth: daysInMonth,
+      startCol: c
+    });
   }
+  return months;
+}
+
+function computeTabSortOrder(tabName, months) {
+  var m = String(tabName || '').match(/(\d)\s*\/\s*(\d{2,4})/);
+  if (m) {
+    var sem = Number(m[1]);
+    var yr = m[2].length === 2 ? 2500 + Number(m[2]) : Number(m[2]);
+    return yr * 10 + sem;
+  }
+  if (months && months.length > 0) {
+    return months[0].yearBE * 10 + (months[0].month >= 5 && months[0].month <= 9 ? 1 : 2);
+  }
+  return 0;
+}
+
+function discoverAttendanceTabs(ss) {
+  var sheets = ss.getSheets();
+  var found = [];
+  for (var i = 0; i < sheets.length; i++) {
+    var sh = sheets[i];
+    var name = sh.getName();
+    if (!name || name.charAt(0) === '_') continue;
+    var lastRow = sh.getLastRow();
+    var lastCol = sh.getLastColumn();
+    if (lastRow < 4 || lastCol < 10) continue;
+
+    var headerRows = sh.getRange(1, 1, 3, lastCol).getDisplayValues();
+    var r3a = String((headerRows[2] && headerRows[2][0]) || '').trim();
+    var r3b = String((headerRows[2] && headerRows[2][1]) || '').trim();
+    if (r3a.indexOf('ลำดับ') === -1 && r3b.indexOf('ชื่อ') === -1) continue;
+
+    var months = detectMonthsFromHeaderRow(headerRows[0] || [], lastCol, name);
+    if (months.length === 0) continue;
+
+    found.push({
+      sheet: sh,
+      id: String(sh.getSheetId()),
+      name: name,
+      sortOrder: computeTabSortOrder(name, months),
+      monthsMeta: months
+    });
+  }
+  found.sort(function(a, b) { return a.sortOrder - b.sortOrder; });
+  return found;
+}
+
+function parseTabDataset(tabInfo, forceRefresh) {
+  var cache = CacheService.getScriptCache();
+  var cacheKey = CONFIG.CACHE_PREFIX + tabInfo.id;
+  if (!forceRefresh) {
+    var cached = cache.get(cacheKey);
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+  }
+
+  var sh = tabInfo.sheet;
+  var lastRow = sh.getLastRow();
+  var monthsMeta = tabInfo.monthsMeta;
+  var maxDayEndCol = 3;
+  for (var mi = 0; mi < monthsMeta.length; mi++) {
+    var endC = monthsMeta[mi].startCol + 31;
+    if (endC > maxDayEndCol) maxDayEndCol = endC;
+  }
+  var readCols = Math.min(sh.getLastColumn(), maxDayEndCol);
+  var values = sh.getRange(1, 1, lastRow, readCols).getDisplayValues();
+
+  // อ่านข้อมูลการ Merge เซลล์ในตารางรายวัน
+  var rowMergesMap = {};
+  if (lastRow >= 4 && readCols >= 4) {
+    var mergedRanges = sh.getRange(4, 4, lastRow - 3, readCols - 3).getMergedRanges();
+    for (var m = 0; m < mergedRanges.length; m++) {
+      var rg = mergedRanges[m];
+      var sRow = rg.getRow() - 1;
+      var eRow = rg.getLastRow() - 1;
+      var sCol = rg.getColumn() - 1;
+      var eCol = rg.getLastColumn();
+      if (eCol - sCol <= 1) continue;
+      for (var rr = sRow; rr <= eRow; rr++) {
+        var codeVal = String((values[rr] && values[rr][sCol]) || '').trim();
+        if (!codeVal) continue;
+        if (!rowMergesMap[rr]) rowMergesMap[rr] = [];
+        rowMergesMap[rr].push({ startCol: sCol, endCol: eCol, code: codeVal });
+      }
+    }
+  }
+
+  var records = [];
+  var currentGroup = 'ข้าราชการครูและบุคลากร';
+
+  for (var r = 3; r < values.length; r++) {
+    var row = values[r];
+    var colA = String(row[0] || '').trim();
+    var colB = String(row[1] || '').trim();
+    var colC = String(row[2] || '').trim();
+
+    if (colB === 'ลูกจ้างห้องเรียนกีฬา' || (colB && !colA && isNaN(Number(colA)) && colB.indexOf('ลูกจ้าง') !== -1)) {
+      currentGroup = colB;
+      continue;
+    }
+    if (!colA || isNaN(Number(colA)) || !colB) continue;
+
+    var staffKey = 'staff_' + (r + 1);
+    var coreName = stripNamePrefix(colB);
+    var monthsData = {};
+    var rMerges = rowMergesMap[r] || [];
+
+    for (var mj = 0; mj < monthsMeta.length; mj++) {
+      var meta = monthsMeta[mj];
+      var days = [];
+      for (var d = 0; d < meta.daysInMonth; d++) {
+        var colIdx = meta.startCol + d;
+        days.push(colIdx < row.length ? String(row[colIdx] || '').trim() : '');
+      }
+      var monthMerges = [];
+      var mStart = meta.startCol;
+      var mEnd = meta.startCol + meta.daysInMonth;
+      for (var mgIdx = 0; mgIdx < rMerges.length; mgIdx++) {
+        var mg = rMerges[mgIdx];
+        var overlapStart = Math.max(mg.startCol, mStart);
+        var overlapEnd = Math.min(mg.endCol, mEnd);
+        if (overlapStart < overlapEnd) {
+          monthMerges.push({
+            startDay: (overlapStart - mStart) + 1,
+            endDay: (overlapEnd - mStart),
+            code: mg.code,
+            isOrigin: mg.startCol >= mStart && mg.startCol < mEnd
+          });
+        }
+      }
+      monthsData[meta.id] = { days: days, merges: monthMerges };
+    }
+
+    records.push({
+      key: staffKey,
+      coreName: coreName,
+      rowNumber: r + 1,
+      seq: Number(colA),
+      name: colB,
+      position: colC,
+      group: currentGroup,
+      months: monthsData
+    });
+  }
+
+  var monthsSummary = monthsMeta.map(function(meta) {
+    var recordedCells = 0;
+    var activeDays = 0;
+    for (var d = 0; d < meta.daysInMonth; d++) {
+      var dayHasData = false;
+      for (var p = 0; p < records.length; p++) {
+        if (records[p].months[meta.id].days[d]) {
+          recordedCells++;
+          dayHasData = true;
+        }
+      }
+      if (dayHasData) activeDays++;
+    }
+    return {
+      id: meta.id,
+      label: meta.label,
+      shortLabel: meta.shortLabel,
+      yearBE: meta.yearBE,
+      yearCE: meta.yearCE,
+      month: meta.month,
+      daysInMonth: meta.daysInMonth,
+      startCol: meta.startCol,
+      recordedCells: recordedCells,
+      activeDays: activeDays,
+      hasData: recordedCells > 0
+    };
+  });
+
+  var tabDataset = {
+    termId: tabInfo.id,
+    termName: tabInfo.name,
+    sortOrder: tabInfo.sortOrder,
+    months: monthsSummary,
+    records: records
+  };
+
+  try {
+    var serialized = JSON.stringify(tabDataset);
+    if (serialized.length < 95000) {
+      cache.put(cacheKey, serialized, CONFIG.CACHE_TTL_SECONDS);
+    }
+  } catch (e) {}
+
+  return tabDataset;
+}
+
+function readSettingsFromSheet(ss, tabsDatasets) {
+  var defaultVisibleTerms = {};
+  var defaultVisibleMonths = {};
+  if (Array.isArray(tabsDatasets)) {
+    tabsDatasets.forEach(function(td, idx) {
+      // แท็บแรกเปิดเป็นค่าเริ่มต้น แท็บใหม่ที่เพิ่งสร้างให้รอแอดมินกดเปิด
+      defaultVisibleTerms[td.termId] = (td.termId === '0' || idx === 0);
+      td.months.forEach(function(m) {
+        defaultVisibleMonths[td.termId + '::' + m.id] = (td.termId === '0' || idx === 0) ? Boolean(m.hasData) : false;
+      });
+    });
+  }
+
   var settings = {
-    visibleMonths: defaultVisible,
+    visibleTerms: defaultVisibleTerms,
+    visibleMonths: defaultVisibleMonths,
     announcement: '',
     adminPinHash: sha256Hex('kbs-att-admin:' + CONFIG.DEFAULT_ADMIN_PIN),
     updatedAt: ''
@@ -185,8 +560,23 @@ function readSettingsFromSheet(ss, monthsSummary) {
   for (var i = 0; i < rows.length; i++) {
     var key = String(rows[i][0] || '').trim();
     var val = String(rows[i][1] || '');
-    if (key === 'visibleMonths' && val) {
-      try { settings.visibleMonths = JSON.parse(val); } catch (e) {}
+    if (key === 'visibleTerms' && val) {
+      try {
+        var parsedTerms = JSON.parse(val);
+        Object.keys(parsedTerms).forEach(function(k) { settings.visibleTerms[k] = Boolean(parsedTerms[k]); });
+      } catch (e) {}
+    } else if (key === 'visibleMonths' && val) {
+      try {
+        var parsedMonths = JSON.parse(val);
+        Object.keys(parsedMonths).forEach(function(k) {
+          // รองรับทั้งรูปแบบเก่า "2569-10" และรูปแบบใหม่ "0::2569-10"
+          if (k.indexOf('::') === -1 && tabsDatasets && tabsDatasets.length > 0) {
+            settings.visibleMonths[tabsDatasets[0].termId + '::' + k] = Boolean(parsedMonths[k]);
+          } else {
+            settings.visibleMonths[k] = Boolean(parsedMonths[k]);
+          }
+        });
+      } catch (e) {}
     } else if (key === 'announcement') {
       settings.announcement = val;
     } else if (key === 'adminPinHash' && val) {
@@ -227,16 +617,21 @@ function writeSettingsToSheet(ss, updates) {
 }
 
 function readCustomPinsFromSheet(ss) {
-  var map = {};
+  var byKey = {};
+  var byCore = {};
   var sheet = ss.getSheetByName(CONFIG.TAB_PINS);
-  if (!sheet || sheet.getLastRow() <= 1) return map;
-  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getDisplayValues();
+  if (!sheet || sheet.getLastRow() <= 1) return { byKey: byKey, byCore: byCore };
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getDisplayValues();
   for (var i = 0; i < rows.length; i++) {
     var k = String(rows[i][0] || '').trim();
+    var name = String(rows[i][1] || '').trim();
     var h = String(rows[i][2] || '').trim();
-    if (k && h) map[k] = h;
+    if (k && h) {
+      byKey[k] = h;
+      if (name) byCore[stripNamePrefix(name)] = h;
+    }
   }
-  return map;
+  return { byKey: byKey, byCore: byCore };
 }
 
 function readCorrectionsFromSheet(ss) {
@@ -330,185 +725,80 @@ function handleAction(action, payload) {
 
 function handlePing() {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var sheet = ss.getSheetByName(CONFIG.SHEET_NAME) || ss.getSheets()[0];
+  var tabs = discoverAttendanceTabs(ss);
   return {
     success: true,
-    service: 'KBS Attendance Dashboard GAS API',
+    service: 'KBS Attendance Dashboard Multi-Term GAS API',
     spreadsheetId: CONFIG.SPREADSHEET_ID,
     spreadsheetTitle: ss.getName(),
-    sheetTitle: sheet.getName(),
-    lastRow: sheet.getLastRow(),
+    sheetTitle: tabs.length ? tabs.map(function(t) { return t.name; }).join(', ') : 'ไม่พบแท็บข้อมูล',
+    tabsCount: tabs.length,
+    lastRow: tabs.length ? tabs[0].sheet.getLastRow() : 0,
     timestamp: Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss')
   };
 }
 
-function parseSpreadsheetDataset(forceRefresh) {
-  var cache = CacheService.getScriptCache();
-  if (!forceRefresh) {
-    var cached = cache.get(CONFIG.CACHE_KEY_FULL);
-    if (cached) {
-      try { return JSON.parse(cached); } catch (e) {}
-    }
-  }
-
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var sheet = ss.getSheetByName(CONFIG.SHEET_NAME) || ss.getSheets()[0];
-  var lastRow = sheet.getLastRow();
-  var lastCol = Math.min(206, Math.max(189, sheet.getLastColumn()));
-  var values = sheet.getRange(1, 1, lastRow, lastCol).getDisplayValues();
-
-  // อ่านข้อมูลการ Merge เซลล์ในตารางรายวัน (คอลัมน์ D..GG = 4..189 ในระบบ 1-based)
-  var rowMergesMap = {};
-  if (lastRow >= 4) {
-    var mergedRanges = sheet.getRange(4, 4, lastRow - 3, 186).getMergedRanges();
-    for (var m = 0; m < mergedRanges.length; m++) {
-      var rg = mergedRanges[m];
-      var sRow = rg.getRow() - 1;
-      var eRow = rg.getLastRow() - 1;
-      var sCol = rg.getColumn() - 1;
-      var eCol = rg.getLastColumn();
-      if (eCol - sCol <= 1) continue;
-      for (var rr = sRow; rr <= eRow; rr++) {
-        var codeVal = String((values[rr] && values[rr][sCol]) || '').trim();
-        if (!codeVal) continue;
-        if (!rowMergesMap[rr]) rowMergesMap[rr] = [];
-        rowMergesMap[rr].push({ startCol: sCol, endCol: eCol, code: codeVal });
-      }
-    }
-  }
-
-  var records = [];
-  var currentGroup = 'ข้าราชการครูและบุคลากร';
-
-  for (var r = 3; r < values.length; r++) {
-    var row = values[r];
-    var colA = String(row[0] || '').trim();
-    var colB = String(row[1] || '').trim();
-    var colC = String(row[2] || '').trim();
-
-    if (colB === 'ลูกจ้างห้องเรียนกีฬา') {
-      currentGroup = 'ลูกจ้างห้องเรียนกีฬา';
-      continue;
-    }
-    if (!colA || isNaN(Number(colA)) || !colB) continue;
-
-    var staffKey = 'staff_' + (r + 1);
-    var monthsData = {};
-    var rMerges = rowMergesMap[r] || [];
-
-    for (var mi = 0; mi < MONTHS_META.length; mi++) {
-      var meta = MONTHS_META[mi];
-      var days = [];
-      for (var d = 0; d < meta.daysInMonth; d++) {
-        days.push(String(row[meta.startCol + d] || '').trim());
-      }
-      var monthMerges = [];
-      var mStart = meta.startCol;
-      var mEnd = meta.startCol + meta.daysInMonth;
-      for (var mgIdx = 0; mgIdx < rMerges.length; mgIdx++) {
-        var mg = rMerges[mgIdx];
-        var overlapStart = Math.max(mg.startCol, mStart);
-        var overlapEnd = Math.min(mg.endCol, mEnd);
-        if (overlapStart < overlapEnd) {
-          monthMerges.push({
-            startDay: (overlapStart - mStart) + 1,
-            endDay: (overlapEnd - mStart),
-            code: mg.code,
-            isOrigin: mg.startCol >= mStart && mg.startCol < mEnd
-          });
-        }
-      }
-      monthsData[meta.id] = { days: days, merges: monthMerges };
-    }
-
-    records.push({
-      key: staffKey,
-      rowNumber: r + 1,
-      seq: Number(colA),
-      name: colB,
-      position: colC,
-      group: currentGroup,
-      months: monthsData
-    });
-  }
-
-  var monthsSummary = MONTHS_META.map(function(meta) {
-    var recordedCells = 0;
-    var activeDays = 0;
-    for (var d = 0; d < meta.daysInMonth; d++) {
-      var dayHasData = false;
-      for (var p = 0; p < records.length; p++) {
-        if (records[p].months[meta.id].days[d]) {
-          recordedCells++;
-          dayHasData = true;
-        }
-      }
-      if (dayHasData) activeDays++;
-    }
-    return {
-      id: meta.id,
-      label: meta.label,
-      shortLabel: meta.shortLabel,
-      yearBE: meta.yearBE,
-      yearCE: meta.yearCE,
-      month: meta.month,
-      daysInMonth: meta.daysInMonth,
-      startCol: meta.startCol,
-      recordedCells: recordedCells,
-      activeDays: activeDays,
-      hasData: recordedCells > 0
-    };
-  });
-
-  var dataset = {
-    source: 'gas_live',
-    spreadsheetId: CONFIG.SPREADSHEET_ID,
-    spreadsheetTitle: ss.getName(),
-    sheetTitle: sheet.getName(),
-    syncedAt: Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss'),
-    months: monthsSummary,
-    records: records
-  };
-
-  try {
-    var serialized = JSON.stringify(dataset);
-    if (serialized.length < 95000) {
-      cache.put(CONFIG.CACHE_KEY_FULL, serialized, CONFIG.CACHE_TTL_SECONDS);
-    }
-  } catch (e) {}
-
-  return dataset;
-}
-
 function handleGetPublicCatalog(forceRefresh) {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var dataset = parseSpreadsheetDataset(forceRefresh);
+  var tabsInfo = discoverAttendanceTabs(ss);
+  var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
   var customPins = readCustomPinsFromSheet(ss);
-  var settings = readSettingsFromSheet(ss, dataset.months);
+  var settings = readSettingsFromSheet(ss, tabsDatasets);
 
-  var staffCatalog = dataset.records.map(function(rec) {
+  // รวมรายชื่อบุคลากรไม่ซ้ำจากทุกภาคเรียนที่พบ (เรียงตามภาคเรียนล่าสุดก่อน)
+  var catalogMap = {};
+  var catalogList = [];
+  for (var ti = tabsDatasets.length - 1; ti >= 0; ti--) {
+    var td = tabsDatasets[ti];
+    for (var ri = 0; ri < td.records.length; ri++) {
+      var rec = td.records[ri];
+      var core = rec.coreName || stripNamePrefix(rec.name);
+      if (!catalogMap[core]) {
+        var hasCustom = Boolean(customPins.byKey[rec.key] || customPins.byCore[core]);
+        var hasSeed = Boolean(SEED_PIN_HASHES[rec.key] || SEED_NAME_PIN_HASHES[core]);
+        var entry = {
+          key: rec.key,
+          coreName: core,
+          rowNumber: rec.rowNumber,
+          seq: rec.seq,
+          name: rec.name,
+          position: rec.position,
+          group: rec.group,
+          hasCustomPin: hasCustom,
+          hasSeedPin: hasSeed
+        };
+        catalogMap[core] = entry;
+        catalogList.push(entry);
+      }
+    }
+  }
+  catalogList.sort(function(a, b) { return a.seq - b.seq; });
+
+  var termsMeta = tabsDatasets.map(function(td) {
     return {
-      key: rec.key,
-      rowNumber: rec.rowNumber,
-      seq: rec.seq,
-      name: rec.name,
-      position: rec.position,
-      group: rec.group,
-      hasCustomPin: Boolean(customPins[rec.key]),
-      hasSeedPin: Boolean(SEED_PIN_HASHES[rec.key])
+      termId: td.termId,
+      termName: td.termName,
+      sortOrder: td.sortOrder,
+      staffCount: td.records.length,
+      months: td.months
     };
   });
+
+  var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+  var latestTerm = termsMeta.length ? termsMeta[termsMeta.length - 1] : null;
 
   return {
     success: true,
     source: 'gas_live',
-    spreadsheetId: dataset.spreadsheetId,
-    spreadsheetTitle: dataset.spreadsheetTitle,
-    sheetTitle: dataset.sheetTitle,
-    syncedAt: dataset.syncedAt,
-    months: dataset.months,
-    staffCatalog: staffCatalog,
+    spreadsheetId: CONFIG.SPREADSHEET_ID,
+    spreadsheetTitle: ss.getName(),
+    sheetTitle: latestTerm ? latestTerm.termName : '',
+    syncedAt: syncedAt,
+    terms: termsMeta,
+    months: latestTerm ? latestTerm.months : [],
+    staffCatalog: catalogList,
     settings: {
+      visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,
       announcement: settings.announcement,
       updatedAt: settings.updatedAt
@@ -516,75 +806,133 @@ function handleGetPublicCatalog(forceRefresh) {
   };
 }
 
-function verifyTeacherPin(ss, staffKey, pin4, pinHashInput) {
-  var computedHash = pin4 ? sha256Hex(staffKey + ':' + pin4) : String(pinHashInput || '').trim();
-  if (!computedHash) return { ok: false, error: 'กรุณากรอกรหัสยืนยันตัวตน 4 หลัก' };
-
+function verifyTeacherPin(ss, staffKey, coreName, pin4, pinHashInput, namePinHashInput) {
   var customPins = readCustomPinsFromSheet(ss);
-  var expectedHash = customPins[staffKey] || SEED_PIN_HASHES[staffKey] || '';
-  if (!expectedHash) {
+  var keyExpected = customPins.byKey[staffKey] || SEED_PIN_HASHES[staffKey] || '';
+  var coreExpected = customPins.byCore[coreName] || SEED_NAME_PIN_HASHES[coreName] || '';
+
+  if (!keyExpected && !coreExpected) {
     return { ok: false, error: 'ยังไม่ได้กำหนดรหัสยืนยันตัวตนสำหรับรายชื่อนี้ กรุณาติดต่อแอดมิน' };
   }
-  if (computedHash !== expectedHash) {
-    return { ok: false, error: 'รหัสยืนยันตัวตนไม่ถูกต้อง' };
+
+  var keyAttempt = pin4 ? sha256Hex(staffKey + ':' + pin4) : String(pinHashInput || '').trim();
+  var coreAttempt = pin4 ? sha256Hex('name:' + coreName + ':' + pin4) : String(namePinHashInput || '').trim();
+
+  if ((keyExpected && keyAttempt && keyAttempt === keyExpected) || (coreExpected && coreAttempt && coreAttempt === coreExpected)) {
+    return { ok: true };
   }
-  return { ok: true, pinHash: computedHash };
+  if (!pin4 && !pinHashInput && !namePinHashInput) {
+    return { ok: false, error: 'กรุณากรอกรหัสยืนยันตัวตน 4 หลัก' };
+  }
+  return { ok: false, error: 'รหัสยืนยันตัวตนไม่ถูกต้อง' };
 }
 
 function handleGetTeacherAttendance(payload, forceRefresh) {
   var staffKey = String(payload.staffKey || '').trim();
-  if (!staffKey) return { success: false, error: 'กรุณาระบุรหัสบุคลากร' };
+  var coreName = stripNamePrefix(payload.coreName || payload.staffName || '');
+  if (!staffKey && !coreName) return { success: false, error: 'กรุณาระบุรหัสบุคลากร' };
 
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var auth = verifyTeacherPin(ss, staffKey, String(payload.pin4 || '').trim(), payload.pinHash);
-  if (!auth.ok) return { success: false, error: auth.error };
+  var tabsInfo = discoverAttendanceTabs(ss);
+  var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
 
-  var dataset = parseSpreadsheetDataset(forceRefresh);
-  var settings = readSettingsFromSheet(ss, dataset.months);
-  var found = null;
-  for (var i = 0; i < dataset.records.length; i++) {
-    if (dataset.records[i].key === staffKey) {
-      found = dataset.records[i];
-      break;
+  // หาชื่อจริง/coreName หากส่งมาเฉพาะ staffKey
+  if (!coreName) {
+    for (var ti = 0; ti < tabsDatasets.length; ti++) {
+      for (var ri = 0; ri < tabsDatasets[ti].records.length; ri++) {
+        if (tabsDatasets[ti].records[ri].key === staffKey) {
+          coreName = tabsDatasets[ti].records[ri].coreName;
+          break;
+        }
+      }
+      if (coreName) break;
     }
   }
-  if (!found) return { success: false, error: 'ไม่พบข้อมูลบุคลากรในชีต' };
 
-  // กรองฝั่งเซิร์ฟเวอร์: ส่งเฉพาะเดือนที่แอดมินเปิดให้ครูเห็น
-  var filteredMonths = {};
-  var vis = settings.visibleMonths || {};
-  Object.keys(found.months).forEach(function(mId) {
-    if (vis[mId]) filteredMonths[mId] = found.months[mId];
-  });
+  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash);
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  var settings = readSettingsFromSheet(ss, tabsDatasets);
+  var visTerms = settings.visibleTerms || {};
+  var visMonths = settings.visibleMonths || {};
+
+  var teacherTerms = [];
+  var latestFoundProfile = null;
+
+  for (var tIdx = 0; tIdx < tabsDatasets.length; tIdx++) {
+    var td = tabsDatasets[tIdx];
+    if (!visTerms[td.termId]) continue; // ปิดภาคเรียน/ปีนี้ไว้ ไม่ส่งให้ครู
+
+    var rec = null;
+    for (var rIdx = 0; rIdx < td.records.length; rIdx++) {
+      if (td.records[rIdx].coreName === coreName || td.records[rIdx].key === staffKey) {
+        rec = td.records[rIdx];
+        break;
+      }
+    }
+    if (!rec) continue;
+    latestFoundProfile = rec;
+
+    // กรองส่งเฉพาะเดือนที่แอดมินเปิดในภาคเรียนนี้
+    var filteredMonths = {};
+    var openMonthsMeta = [];
+    for (var mIdx = 0; mIdx < td.months.length; mIdx++) {
+      var mMeta = td.months[mIdx];
+      if (visMonths[td.termId + '::' + mMeta.id]) {
+        filteredMonths[mMeta.id] = rec.months[mMeta.id];
+        openMonthsMeta.push(mMeta);
+      }
+    }
+
+    teacherTerms.push({
+      termId: td.termId,
+      termName: td.termName,
+      sortOrder: td.sortOrder,
+      months: td.months,
+      openMonths: openMonthsMeta,
+      record: {
+        key: rec.key,
+        coreName: rec.coreName,
+        seq: rec.seq,
+        name: rec.name,
+        position: rec.position,
+        group: rec.group,
+        months: filteredMonths
+      }
+    });
+  }
+
+  var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+  var fallbackLatest = teacherTerms.length ? teacherTerms[teacherTerms.length - 1] : null;
 
   return {
     success: true,
     source: 'gas_live',
-    spreadsheetTitle: dataset.spreadsheetTitle,
-    sheetTitle: dataset.sheetTitle,
-    syncedAt: dataset.syncedAt,
-    months: dataset.months,
+    spreadsheetTitle: ss.getName(),
+    syncedAt: syncedAt,
     settings: {
+      visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,
       announcement: settings.announcement,
       updatedAt: settings.updatedAt
     },
-    record: {
-      key: found.key,
-      rowNumber: found.rowNumber,
-      seq: found.seq,
-      name: found.name,
-      position: found.position,
-      group: found.group,
-      months: filteredMonths
-    }
+    terms: teacherTerms,
+    months: fallbackLatest ? fallbackLatest.months : [],
+    record: fallbackLatest ? fallbackLatest.record : (latestFoundProfile ? {
+      key: latestFoundProfile.key,
+      name: latestFoundProfile.name,
+      position: latestFoundProfile.position,
+      group: latestFoundProfile.group,
+      months: {}
+    } : null)
   };
 }
 
 function handleSubmitCorrection(payload) {
   var staffKey = String(payload.staffKey || '').trim();
+  var coreName = stripNamePrefix(payload.coreName || payload.staffName || '');
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var auth = verifyTeacherPin(ss, staffKey, String(payload.pin4 || '').trim(), payload.pinHash);
+  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash);
   if (!auth.ok) return { success: false, error: auth.error };
 
   var sheet = getOrCreateHelperSheet(ss, CONFIG.TAB_CORRECTIONS, [
@@ -593,12 +941,13 @@ function handleSubmitCorrection(payload) {
   var reqId = 'req_' + Date.now();
   var nowTs = Date.now();
   var nowText = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd/MM/yyyy HH:mm');
+  var monthLabelFull = payload.termName ? (payload.monthLabel + ' (' + payload.termName + ')') : String(payload.monthLabel || '');
   sheet.appendRow([
     reqId,
     staffKey,
     String(payload.staffName || ''),
     String(payload.monthId || ''),
-    String(payload.monthLabel || ''),
+    monthLabelFull,
     Number(payload.day) || '',
     String(payload.reason || ''),
     'pending',
@@ -613,26 +962,59 @@ function handleGetAdminAllData(payload, forceRefresh) {
   if (!verifyAdminAuth(ss, payload)) {
     return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
   }
-  var dataset = parseSpreadsheetDataset(forceRefresh);
-  var settings = readSettingsFromSheet(ss, dataset.months);
+
+  var tabsInfo = discoverAttendanceTabs(ss);
+  var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
+  var settings = readSettingsFromSheet(ss, tabsDatasets);
   var customPins = readCustomPinsFromSheet(ss);
   var corrections = readCorrectionsFromSheet(ss);
 
+  var requestedTermId = String(payload.termId || '').trim();
+  var activeDataset = null;
+  if (requestedTermId) {
+    for (var i = 0; i < tabsDatasets.length; i++) {
+      if (tabsDatasets[i].termId === requestedTermId) {
+        activeDataset = tabsDatasets[i];
+        break;
+      }
+    }
+  }
+  if (!activeDataset && tabsDatasets.length > 0) {
+    // เลือกแท็บล่าสุดที่มีข้อมูล หรือแท็บล่าสุด
+    activeDataset = tabsDatasets[tabsDatasets.length - 1];
+  }
+
+  var termsMeta = tabsDatasets.map(function(td) {
+    return {
+      termId: td.termId,
+      termName: td.termName,
+      sortOrder: td.sortOrder,
+      staffCount: td.records.length,
+      months: td.months
+    };
+  });
+
+  var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+
   return {
     success: true,
-    source: dataset.source,
-    spreadsheetId: dataset.spreadsheetId,
-    spreadsheetTitle: dataset.spreadsheetTitle,
-    sheetTitle: dataset.sheetTitle,
-    syncedAt: dataset.syncedAt,
-    months: dataset.months,
-    records: dataset.records,
+    source: 'gas_live',
+    spreadsheetId: CONFIG.SPREADSHEET_ID,
+    spreadsheetTitle: ss.getName(),
+    sheetTitle: activeDataset ? activeDataset.termName : '',
+    syncedAt: syncedAt,
+    terms: termsMeta,
+    activeTermId: activeDataset ? activeDataset.termId : '',
+    months: activeDataset ? activeDataset.months : [],
+    records: activeDataset ? activeDataset.records : [],
     settings: {
+      visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,
       announcement: settings.announcement,
       updatedAt: settings.updatedAt
     },
-    customPinKeys: Object.keys(customPins),
+    customPinKeys: Object.keys(customPins.byKey),
+    customPinCores: Object.keys(customPins.byCore),
     corrections: corrections
   };
 }
@@ -642,13 +1024,12 @@ function handleSaveAdminSettings(payload) {
   if (!verifyAdminAuth(ss, payload)) {
     return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
   }
-  var updates = {
-    updatedAt: new Date().toISOString()
-  };
+  var updates = { updatedAt: new Date().toISOString() };
   if (payload.newAdminPinHash) {
     updates.adminPinHash = String(payload.newAdminPinHash).trim();
   }
   if (payload.settings) {
+    if (payload.settings.visibleTerms !== undefined) updates.visibleTerms = payload.settings.visibleTerms;
     if (payload.settings.visibleMonths !== undefined) updates.visibleMonths = payload.settings.visibleMonths;
     if (payload.settings.announcement !== undefined) updates.announcement = payload.settings.announcement;
   }
@@ -662,11 +1043,11 @@ function handleSaveStaffPins(payload) {
     return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
   }
   var sheet = getOrCreateHelperSheet(ss, CONFIG.TAB_PINS, ['StaffKey', 'StaffName', 'PinHash', 'UpdatedAt']);
-  var incoming = payload.pins || {}; // [{ key, name, pinHash }] or { staffKey: hash }
+  var incoming = payload.pins || [];
   var nowStr = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
 
   var existingRows = sheet.getLastRow() > 1
-    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues()
+    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getDisplayValues()
     : [];
 
   var entries = Array.isArray(incoming)
@@ -675,10 +1056,15 @@ function handleSaveStaffPins(payload) {
 
   entries.forEach(function(item) {
     var k = String(item.key || '').trim();
-    if (!k) return;
+    var itemName = String(item.name || '').trim();
+    var itemCore = stripNamePrefix(itemName);
+    if (!k && !itemCore) return;
+
     var foundRow = -1;
     for (var i = 0; i < existingRows.length; i++) {
-      if (String(existingRows[i][0]).trim() === k) {
+      var rk = String(existingRows[i][0]).trim();
+      var rCore = stripNamePrefix(existingRows[i][1]);
+      if ((k && rk === k) || (itemCore && rCore && rCore === itemCore)) {
         foundRow = i + 2;
         break;
       }
@@ -687,8 +1073,8 @@ function handleSaveStaffPins(payload) {
       if (foundRow > 0) {
         sheet.getRange(foundRow, 3, 1, 2).setValues([[String(item.pinHash), nowStr]]);
       } else {
-        sheet.appendRow([k, String(item.name || ''), String(item.pinHash), nowStr]);
-        existingRows.push([k]);
+        sheet.appendRow([k, itemName, String(item.pinHash), nowStr]);
+        existingRows.push([k, itemName]);
       }
     } else if (foundRow > 0) {
       sheet.getRange(foundRow, 3, 1, 2).setValues([['', nowStr]]);

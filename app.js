@@ -142,7 +142,28 @@
   // -------------------- 3. APPLICATION STATE --------------------
   const seedStaff = Array.isArray(window.KBS_ATTENDANCE_STAFF_SEED) ? window.KBS_ATTENDANCE_STAFF_SEED : [];
   const seedMap = new Map(seedStaff.map(s => [s.key, s]));
+  const seedNameHashes = window.KBS_ATTENDANCE_NAME_HASHES || {};
   const fallbackData = window.KBS_ATTENDANCE_FALLBACK_DATA || null;
+
+  function stripNamePrefix(s) {
+    return String(s || '')
+      .replace(/^(ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  const initialMonths = (fallbackData && fallbackData.months)
+    ? fallbackData.months
+    : DEFAULT_MONTHS_META.map(m => ({ ...m, recordedCells: 0, activeDays: 0, hasData: false }));
+
+  const initialTerms = [{
+    termId: '0',
+    termName: (fallbackData && fallbackData.sheetTitle) || 'ข้อมูลลงเวลา 2/69',
+    sortOrder: 25692,
+    staffCount: (fallbackData && fallbackData.records) ? fallbackData.records.length : seedStaff.length,
+    months: initialMonths
+  }];
 
   const state = {
     mode: 'teacher', // 'teacher' | 'admin'
@@ -150,21 +171,27 @@
     dataSource: fallbackData ? 'snapshot' : 'none',
     vercelProxyAvailable: false,
     syncedAt: fallbackData ? fallbackData.syncedAt : '',
-    months: (fallbackData && fallbackData.months) ? fallbackData.months : DEFAULT_MONTHS_META.map(m => ({ ...m, recordedCells: 0, activeDays: 0, hasData: false })),
+    terms: initialTerms,
+    months: initialMonths,
     staffCatalog: buildInitialCatalog(),
-    adminRecords: null, // populated on admin login or fallback
+    adminSelectedTermId: '0',
+    adminRecordsByTerm: fallbackData && fallbackData.records ? { '0': fallbackData.records } : {},
+    adminRecords: null,
     settings: {
-      visibleMonths: buildDefaultVisibleMonths(),
+      visibleTerms: { '0': true },
+      visibleMonths: buildDefaultVisibleMonths('0', initialMonths),
       announcement: '',
       gasUrl: (APP_CFG.GAS_API_URL || '').trim(),
       adminPinHash: sha256Hex('kbs-att-admin:' + DEFAULT_ADMIN_PIN),
       updatedAt: ''
     },
     customPinHashes: {}, // staffKey -> sha256Hex(`${staffKey}:${pin4}`)
-    customPinKeysFromGas: new Set(), // keys reported as having custom PIN in Google Sheets
+    customPinKeysFromGas: new Set(),
+    customPinCoresFromGas: new Set(),
     corrections: [],
-    currentTeacher: null, // { key, name, position, group, department, avatarUrl, months }
-    teacherAuthSession: null, // { staffKey, pinHash }
+    currentTeacher: null, // { key, coreName, name, position, group, department, avatarUrl, terms: [...] }
+    teacherAuthSession: null, // { staffKey, coreName, pinHash, namePinHash }
+    teacherSelectedTermId: null,
     teacherSelectedMonthTab: 'all', // 'all' | monthId
     teacherCalendarMonthId: null,
     adminSessionHash: null,
@@ -181,6 +208,7 @@
     if (fallbackData && Array.isArray(fallbackData.records)) {
       return fallbackData.records.map(r => ({
         key: r.key,
+        coreName: stripNamePrefix(r.name),
         rowNumber: r.rowNumber,
         seq: r.seq,
         name: r.name,
@@ -189,21 +217,21 @@
         department: r.department || r.group,
         avatarUrl: '',
         hasSeedPin: false,
-        pinHash: null
+        pinHash: null,
+        namePinHash: null
       }));
     }
     return [];
   }
 
-  function buildDefaultVisibleMonths() {
+  function buildDefaultVisibleMonths(termId = '0', monthsList = null) {
     const out = {};
-    const months = (fallbackData && fallbackData.months) ? fallbackData.months : DEFAULT_MONTHS_META;
+    const months = monthsList || ((fallbackData && fallbackData.months) ? fallbackData.months : DEFAULT_MONTHS_META);
     months.forEach(m => {
-      out[m.id] = Boolean(m.hasData);
+      out[`${termId}::${m.id}`] = Boolean(m.hasData);
     });
-    // หากไม่มีข้อมูลเริ่มต้น ให้เปิด ต.ค. 69 ไว้เป็นค่าเริ่มต้น
     if (!Object.values(out).some(Boolean) && months.length > 0) {
-      out[months[0].id] = true;
+      out[`${termId}::${months[0].id}`] = true;
     }
     return out;
   }
@@ -256,8 +284,43 @@
     return Number.isInteger(num) ? String(num) : num.toFixed(1).replace(/\.0$/, '');
   }
 
-  function getVisibleMonthsList() {
-    return state.months.filter(m => Boolean(state.settings.visibleMonths && state.settings.visibleMonths[m.id]));
+  function isTermVisible(termId) {
+    const vt = state.settings.visibleTerms || {};
+    if (vt[termId] !== undefined) return Boolean(vt[termId]);
+    return termId === '0';
+  }
+
+  function isMonthVisible(termId, monthId) {
+    const vm = state.settings.visibleMonths || {};
+    const scopedKey = `${termId}::${monthId}`;
+    if (vm[scopedKey] !== undefined) return Boolean(vm[scopedKey]);
+    if (termId === '0' && vm[monthId] !== undefined) return Boolean(vm[monthId]);
+    return false;
+  }
+
+  function getOpenTermsList() {
+    return state.terms.filter(tm => isTermVisible(tm.termId));
+  }
+
+  function getVisibleMonthsList(termId = null) {
+    if (termId) {
+      const tm = state.terms.find(x => x.termId === termId);
+      if (!tm || !isTermVisible(tm.termId)) return [];
+      return (tm.months || []).filter(m => isMonthVisible(tm.termId, m.id));
+    }
+    // ถ้าไม่ระบุ termId ให้รวมเดือนที่เปิดในภาคเรียนที่กำลังเลือก (หรือเทอมแรกที่เปิด)
+    const openTerms = getOpenTermsList();
+    if (openTerms.length === 0) return [];
+    const targetTerm = openTerms.find(t => t.termId === state.teacherSelectedTermId) || openTerms[openTerms.length - 1];
+    return (targetTerm.months || []).filter(m => isMonthVisible(targetTerm.termId, m.id));
+  }
+
+  function getAllOpenMonthsCount() {
+    let total = 0;
+    getOpenTermsList().forEach(tm => {
+      total += (tm.months || []).filter(m => isMonthVisible(tm.termId, m.id)).length;
+    });
+    return total;
   }
 
   function getCodeMeta(rawCode) {
@@ -441,6 +504,7 @@
             ...state.settings,
             ...parsed,
             gasUrl: parsed.gasUrl || (APP_CFG.GAS_API_URL || '').trim(),
+            visibleTerms: { ...state.settings.visibleTerms, ...(parsed.visibleTerms || {}) },
             visibleMonths: { ...state.settings.visibleMonths, ...(parsed.visibleMonths || {}) }
           };
         }
@@ -465,6 +529,7 @@
         adminPinHash: state.adminSessionHash,
         newAdminPinHash: partialUpdate.adminPinHash || undefined,
         settings: {
+          visibleTerms: state.settings.visibleTerms,
           visibleMonths: state.settings.visibleMonths,
           announcement: state.settings.announcement
         }
@@ -476,6 +541,9 @@
     if (!serverSettings || typeof serverSettings !== 'object') return;
     state.settings = {
       ...state.settings,
+      visibleTerms: serverSettings.visibleTerms
+        ? { ...state.settings.visibleTerms, ...serverSettings.visibleTerms }
+        : state.settings.visibleTerms,
       visibleMonths: serverSettings.visibleMonths
         ? { ...state.settings.visibleMonths, ...serverSettings.visibleMonths }
         : state.settings.visibleMonths,
@@ -490,6 +558,12 @@
       const res = await callGasApi('getPublicCatalog', { forceRefresh });
       state.dataSource = 'gas_live';
       state.syncedAt = res.syncedAt || new Date().toISOString();
+      if (Array.isArray(res.terms) && res.terms.length) {
+        state.terms = res.terms;
+        if (!state.terms.some(t => t.termId === state.adminSelectedTermId)) {
+          state.adminSelectedTermId = state.terms[state.terms.length - 1].termId;
+        }
+      }
       if (Array.isArray(res.months) && res.months.length) {
         state.months = res.months;
       }
@@ -499,14 +573,17 @@
       if (Array.isArray(res.staffCatalog) && res.staffCatalog.length) {
         const nextCustomKeys = new Set();
         state.staffCatalog = res.staffCatalog.map(item => {
+          const core = item.coreName || stripNamePrefix(item.name);
           const seed = seedMap.get(item.key);
           if (item.hasCustomPin) nextCustomKeys.add(item.key);
           return {
             ...item,
+            coreName: core,
             department: (seed && seed.department) || (item.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ'),
             avatarUrl: (seed && seed.avatarUrl) || '',
-            hasSeedPin: Boolean(item.hasSeedPin || (seed && seed.hasSeedPin)),
-            pinHash: seed ? seed.pinHash : null
+            hasSeedPin: Boolean(item.hasSeedPin || (seed && seed.hasSeedPin) || seedNameHashes[core]),
+            pinHash: seed ? seed.pinHash : null,
+            namePinHash: seedNameHashes[core] || (seed && seed.namePinHash) || null
           };
         });
         state.customPinKeysFromGas = nextCustomKeys;
@@ -523,9 +600,16 @@
   function updateSyncBadge() {
     const badge = $('header-sync-badge');
     const visBadge = $('header-visible-months-badge');
-    const visibleCount = getVisibleMonthsList().length;
+    const subEl = $('header-term-subtitle');
+    const openTerms = getOpenTermsList();
+    const visibleCount = getAllOpenMonthsCount();
+    if (subEl) {
+      subEl.textContent = openTerms.length
+        ? `โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เปิดให้ดู ${openTerms.map(t => t.termName).join(', ')}`
+        : 'โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • ระบบข้อมูลรายภาคเรียน/ปี';
+    }
     if (visBadge) {
-      visBadge.innerHTML = `<i data-lucide="calendar-check" class="w-3.5 h-3.5"></i><span>เปิดให้ดู ${visibleCount} เดือน</span>`;
+      visBadge.innerHTML = `<i data-lucide="calendar-check" class="w-3.5 h-3.5"></i><span>เปิด ${openTerms.length} เทอม (${visibleCount} เดือน)</span>`;
     }
     if (badge) {
       const dotCls = state.dataSource === 'gas_live' ? 'bg-emerald-400' : 'bg-amber-400';
@@ -594,16 +678,23 @@
     }
 
     const pillsEl = $('teacher-open-months-pills');
-    const openMonths = getVisibleMonthsList();
-    if (openMonths.length === 0) {
-      pillsEl.innerHTML = `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-medium">ยังไม่เปิดให้เข้าชมเดือนใดในขณะนี้</span>`;
+    const openTerms = getOpenTermsList();
+    const openPills = [];
+    openTerms.forEach(tm => {
+      const ms = (tm.months || []).filter(m => isMonthVisible(tm.termId, m.id));
+      if (ms.length > 0) {
+        openPills.push(`
+          <div class="w-full sm:w-auto inline-flex flex-wrap items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs">
+            <span class="font-bold text-kbs-navy">${esc(tm.termName)}:</span>
+            ${ms.map(m => `<span class="px-2 py-0.5 rounded-lg bg-white border border-emerald-200 text-emerald-700 font-semibold">${esc(m.shortLabel)}</span>`).join('')}
+          </div>
+        `);
+      }
+    });
+    if (openPills.length === 0) {
+      pillsEl.innerHTML = `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-medium">ยังไม่เปิดให้เข้าชมภาคเรียนหรือเดือนใดในขณะนี้</span>`;
     } else {
-      pillsEl.innerHTML = openMonths.map(m => `
-        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          ${esc(m.label)}
-        </span>
-      `).join('');
+      pillsEl.innerHTML = openPills.join('');
     }
   }
 
@@ -670,80 +761,112 @@
   }
 
   async function authenticateTeacher(staffKey, rawPinInput, isRemembered = false, silent = false) {
-    const person = state.staffCatalog.find(s => s.key === staffKey);
+    const person = state.staffCatalog.find(s => s.key === staffKey || (s.coreName && s.coreName === stripNamePrefix(staffKey)));
     if (!person) throw new Error('กรุณาเลือกรายชื่อของท่านจากรายการ');
 
+    const coreName = person.coreName || stripNamePrefix(person.name);
     const digitsOnly = String(rawPinInput || '').replace(/\D/g, '');
     let pin4 = '';
     let computedHash = '';
+    let computedNameHash = '';
 
     if (digitsOnly.length === 13) {
       pin4 = digitsOnly.slice(-4);
-      computedHash = sha256Hex(`${staffKey}:${pin4}`);
+      computedHash = sha256Hex(`${person.key}:${pin4}`);
+      computedNameHash = sha256Hex(`name:${coreName}:${pin4}`);
     } else if (digitsOnly.length >= 4 && digitsOnly.length <= 6 && String(rawPinInput).trim() === digitsOnly) {
       pin4 = digitsOnly.slice(-4);
-      computedHash = sha256Hex(`${staffKey}:${pin4}`);
+      computedHash = sha256Hex(`${person.key}:${pin4}`);
+      computedNameHash = sha256Hex(`name:${coreName}:${pin4}`);
+    } else if (typeof rawPinInput === 'object' && rawPinInput && rawPinInput.pinHash) {
+      computedHash = rawPinInput.pinHash;
+      computedNameHash = rawPinInput.namePinHash || '';
     } else if (/^[a-f0-9]{64}$/i.test(String(rawPinInput || ''))) {
-      // Restored session hash
       computedHash = String(rawPinInput);
     } else {
       throw new Error('กรุณากรอกเลข 4 หลักสุดท้ายของบัตรประชาชน หรือรหัส PIN 4 หลัก');
     }
 
-    const customHash = state.customPinHashes[staffKey];
-    const seedHash = person.pinHash || (seedMap.get(staffKey) ? seedMap.get(staffKey).pinHash : null);
-    const expectedHash = customHash || seedHash;
-
-    // ดึงข้อมูลสดจาก Google Sheets (ผ่าน /api/gas หรือ GAS URL โดยตรง)
+    // ดึงข้อมูลสดจาก Google Sheets (รองรับทุกภาคเรียน/ปีที่แอดมินเปิดให้ดู)
     if (hasGasEndpoint()) {
       const res = await callGasApi('getTeacherAttendance', {
-        staffKey,
+        staffKey: person.key,
+        coreName,
+        staffName: person.name,
         pin4: pin4 || undefined,
-        pinHash: computedHash
+        pinHash: computedHash,
+        namePinHash: computedNameHash || undefined
       });
-      if (res.record) {
+      if (res.terms || res.record) {
         state.dataSource = 'gas_live';
         state.syncedAt = res.syncedAt || state.syncedAt;
-        if (Array.isArray(res.months) && res.months.length) state.months = res.months;
         if (res.settings) applySettingsFromServer(res.settings);
-        setAuthenticatedTeacher(person, res.record, computedHash, isRemembered);
+        const termsPayload = Array.isArray(res.terms) && res.terms.length
+          ? res.terms
+          : (res.record ? [{
+              termId: state.terms[0] ? state.terms[0].termId : '0',
+              termName: state.terms[0] ? state.terms[0].termName : 'ข้อมูลลงเวลา',
+              months: res.months || state.months,
+              record: res.record
+            }] : []);
+        setAuthenticatedTeacher(person, termsPayload, { pinHash: computedHash, namePinHash: computedNameHash }, isRemembered);
         if (!silent) toast(`ยินดีต้อนรับ ${person.name}`);
         return;
       }
     }
 
-    // โหมด Snapshot ออฟไลน์ (เมื่อยังไม่ได้เชื่อม GAS API)
-    if (!expectedHash) {
+    // โหมด Snapshot ออฟไลน์
+    const customHash = state.customPinHashes[person.key] || state.customPinHashes[coreName];
+    const seedHash = person.pinHash || (seedMap.get(person.key) ? seedMap.get(person.key).pinHash : null);
+    const seedNameHash = person.namePinHash || seedNameHashes[coreName] || null;
+    if (!customHash && !seedHash && !seedNameHash) {
       throw new Error('รายชื่อนี้ยังไม่ได้กำหนดรหัสยืนยันตัวตนในระบบ กรุณาติดต่อแอดมินกลุ่มบริหารงานบุคคลเพื่อตั้งรหัส PIN 4 หลัก');
     }
-    if (computedHash !== expectedHash) {
+    const matched = (customHash && computedHash === customHash)
+      || (seedHash && computedHash === seedHash)
+      || (seedNameHash && computedNameHash && computedNameHash === seedNameHash);
+    if (!matched) {
       throw new Error('รหัสยืนยันตัวตนไม่ถูกต้อง กรุณาตรวจสอบเลขท้าย 4 ตัวบัตรประชาชน หรือ PIN ที่แอดมินแจ้ง');
     }
 
-    // ดึงแถวข้อมูลของบุคคลนี้จาก Snapshot (หรือจาก adminRecords ถ้ามี)
     const sourceRecords = state.adminRecords || (fallbackData && fallbackData.records) || [];
-    const rec = sourceRecords.find(r => r.key === staffKey);
+    const rec = sourceRecords.find(r => r.key === person.key || stripNamePrefix(r.name) === coreName);
     if (!rec) {
       throw new Error('ไม่พบข้อมูลการลงเวลาในระบบ กรุณาติดต่อแอดมินเพื่อเชื่อมต่อ Google Sheets');
     }
-    setAuthenticatedTeacher(person, rec, computedHash, isRemembered);
+    const fallbackTerm = [{
+      termId: '0',
+      termName: (state.terms[0] && state.terms[0].termName) || 'ข้อมูลลงเวลา 2/69',
+      months: state.terms[0] ? state.terms[0].months : state.months,
+      record: rec
+    }];
+    setAuthenticatedTeacher(person, fallbackTerm, { pinHash: computedHash, namePinHash: computedNameHash }, isRemembered);
     if (!silent) toast(`ยินดีต้อนรับ ${person.name}`);
   }
 
-  function setAuthenticatedTeacher(person, record, pinHash, remember) {
+  function setAuthenticatedTeacher(person, teacherTerms, authHashes, remember) {
     state.currentTeacher = {
       key: person.key,
+      coreName: person.coreName || stripNamePrefix(person.name),
       seq: person.seq,
       name: person.name,
       position: person.position,
       group: person.group,
       department: person.department || person.group,
       avatarUrl: person.avatarUrl || '',
-      months: record.months
+      terms: teacherTerms || []
     };
-    state.teacherAuthSession = { staffKey: person.key, pinHash };
+    state.teacherAuthSession = {
+      staffKey: person.key,
+      coreName: state.currentTeacher.coreName,
+      pinHash: authHashes.pinHash,
+      namePinHash: authHashes.namePinHash || ''
+    };
 
-    const openMonths = getVisibleMonthsList();
+    const openTerms = getOpenTermsList();
+    const activeTerm = openTerms.length ? openTerms[openTerms.length - 1] : null;
+    state.teacherSelectedTermId = activeTerm ? activeTerm.termId : null;
+    const openMonths = activeTerm ? getVisibleMonthsList(activeTerm.termId) : [];
     state.teacherSelectedMonthTab = 'all';
     state.teacherCalendarMonthId = openMonths.length ? openMonths[openMonths.length - 1].id : null;
 
@@ -791,8 +914,13 @@
       $('td-announcement-box').classList.add('hidden');
     }
 
-    const openMonths = getVisibleMonthsList();
-    if (openMonths.length === 0) {
+    const openTerms = getOpenTermsList().filter(tm => {
+      const hasTermInPayload = (t.terms || []).some(tt => tt.termId === tm.termId);
+      const ms = getVisibleMonthsList(tm.termId);
+      return hasTermInPayload && ms.length > 0;
+    });
+
+    if (openTerms.length === 0) {
       $('td-empty-months-state').classList.remove('hidden');
       $('td-dashboard-content').classList.add('hidden');
       return;
@@ -800,6 +928,33 @@
 
     $('td-empty-months-state').classList.add('hidden');
     $('td-dashboard-content').classList.remove('hidden');
+
+    if (!state.teacherSelectedTermId || !openTerms.some(tm => tm.termId === state.teacherSelectedTermId)) {
+      state.teacherSelectedTermId = openTerms[openTerms.length - 1].termId;
+    }
+
+    const activeTermObj = openTerms.find(tm => tm.termId === state.teacherSelectedTermId) || openTerms[0];
+    const activeTeacherTerm = (t.terms || []).find(tt => tt.termId === activeTermObj.termId) || t.terms[0];
+    const activeRecord = activeTeacherTerm.record || activeTeacherTerm;
+    const openMonths = getVisibleMonthsList(activeTermObj.termId);
+
+    // Render Term Switcher Pills
+    const termPillsEl = $('td-term-pills');
+    if (termPillsEl) {
+      termPillsEl.innerHTML = openTerms.map(tm => {
+        const active = tm.termId === activeTermObj.termId;
+        return `<button type="button" data-td-term="${esc(tm.termId)}" class="td-term-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold transition ${active ? 'bg-kbs-gold text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">${esc(tm.termName)}</button>`;
+      }).join('');
+      termPillsEl.querySelectorAll('.td-term-pill-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          state.teacherSelectedTermId = b.getAttribute('data-td-term');
+          state.teacherSelectedMonthTab = 'all';
+          const ms = getVisibleMonthsList(state.teacherSelectedTermId);
+          state.teacherCalendarMonthId = ms.length ? ms[ms.length - 1].id : null;
+          renderTeacherDashboard();
+        });
+      });
+    }
 
     const openIds = openMonths.map(m => m.id);
     if (state.teacherSelectedMonthTab !== 'all' && !openIds.includes(state.teacherSelectedMonthTab)) {
@@ -809,7 +964,7 @@
       state.teacherCalendarMonthId = openMonths[openMonths.length - 1].id;
     }
 
-    $('td-open-months-banner').textContent = `กำลังแสดงผลเฉพาะ ${openMonths.length} เดือนที่แอดมินเปิดให้เข้าดู (${openMonths.map(m => m.shortLabel).join(', ')})`;
+    $('td-open-months-banner').textContent = `${activeTermObj.termName} — แสดงเฉพาะ ${openMonths.length} เดือนที่แอดมินเปิดให้เข้าดู (${openMonths.map(m => m.shortLabel).join(', ')})`;
 
     // Month tabs
     const tabsEl = $('td-month-tabs');
@@ -832,7 +987,7 @@
     });
 
     const scopeMonthIds = state.teacherSelectedMonthTab === 'all' ? openIds : [state.teacherSelectedMonthTab];
-    const stats = sumStats(t, scopeMonthIds);
+    const stats = sumStats(activeRecord, scopeMonthIds);
 
     // 4 KPI Cards
     const totalWorkDays = stats.present + stats.duty;
@@ -877,7 +1032,7 @@
 
     // Calendar section
     renderCalendarForContainer(
-      t,
+      activeRecord,
       state.teacherCalendarMonthId,
       openMonths,
       $('td-calendar-month-title'),
@@ -887,23 +1042,25 @@
       newId => {
         state.teacherCalendarMonthId = newId;
         renderTeacherDashboard();
-      }
+      },
+      activeTermObj.months
     );
 
     // Charts
-    renderTeacherCharts(t, openMonths, stats);
+    renderTeacherCharts(activeRecord, openMonths, stats);
 
     // Summary Table
-    renderTeacherSummaryTable(t, openMonths, scopeMonthIds);
+    renderTeacherSummaryTable(activeRecord, openMonths, scopeMonthIds);
 
     // Print area
-    renderTeacherPrintArea(t, openMonths);
+    renderTeacherPrintArea({ ...t, months: activeRecord.months }, openMonths, activeTermObj.termName);
 
     refreshIcons();
   }
 
-  function renderCalendarForContainer(record, activeMonthId, availableMonths, titleEl, switcherEl, gridEl, legendEl, onSwitchMonth) {
-    const mMeta = state.months.find(m => m.id === activeMonthId) || availableMonths[0];
+  function renderCalendarForContainer(record, activeMonthId, availableMonths, titleEl, switcherEl, gridEl, legendEl, onSwitchMonth, allTermMonths = null) {
+    const searchPool = allTermMonths || state.months;
+    const mMeta = searchPool.find(m => m.id === activeMonthId) || availableMonths[0];
     if (!mMeta) return;
 
     titleEl.textContent = `ปฏิทินการลงเวลา: เดือน${mMeta.label}`;
@@ -1095,13 +1252,13 @@
     tbody.innerHTML = rowsHtml + totalRow;
   }
 
-  function renderTeacherPrintArea(record, openMonths) {
+  function renderTeacherPrintArea(record, openMonths, termName = '') {
     const tot = sumStats(record, openMonths.map(m => m.id));
     const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     $('td-print-area').innerHTML = `
       <div class="border-b-2 border-black pb-3 mb-4 flex items-center justify-between">
         <div>
-          <h1 class="text-xl font-bold">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (ภาคเรียนที่ 2/2569)</h1>
+          <h1 class="text-xl font-bold">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (${esc(termName || 'ภาคเรียน')})</h1>
           <p class="text-sm">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
         </div>
         <div class="text-right text-xs">
@@ -1200,24 +1357,41 @@
     renderActiveModeView();
   }
 
-  async function loadAdminRecords(forceRefresh = false) {
+  function getAdminTermObj() {
+    return state.terms.find(t => t.termId === state.adminSelectedTermId) || state.terms[state.terms.length - 1] || state.terms[0];
+  }
+
+  async function loadAdminRecords(forceRefresh = false, requestedTermId = null) {
+    const targetTermId = requestedTermId || state.adminSelectedTermId || '';
     if (hasGasEndpoint() && state.adminSessionHash) {
       try {
         const res = await callGasApi('getAdminAllData', {
           adminPinHash: state.adminSessionHash,
+          termId: targetTermId || undefined,
           forceRefresh
         });
+        if (Array.isArray(res.terms) && res.terms.length) {
+          state.terms = res.terms;
+        }
+        if (res.activeTermId) {
+          state.adminSelectedTermId = res.activeTermId;
+        }
         if (Array.isArray(res.records)) {
-          state.adminRecords = res.records.map(r => {
+          const mapped = res.records.map(r => {
             const seed = seedMap.get(r.key);
             return {
               ...r,
               department: (seed && seed.department) || (r.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ')
             };
           });
+          state.adminRecords = mapped;
+          if (state.adminSelectedTermId) {
+            state.adminRecordsByTerm[state.adminSelectedTermId] = mapped;
+          }
           if (Array.isArray(res.months) && res.months.length) state.months = res.months;
           if (res.settings) applySettingsFromServer(res.settings);
           if (Array.isArray(res.customPinKeys)) state.customPinKeysFromGas = new Set(res.customPinKeys);
+          if (Array.isArray(res.customPinCores)) state.customPinCoresFromGas = new Set(res.customPinCores);
           if (Array.isArray(res.corrections)) {
             state.corrections = res.corrections;
             renderRequestsBadge();
@@ -1234,6 +1408,7 @@
     }
     if (!state.adminRecords && fallbackData && Array.isArray(fallbackData.records)) {
       state.adminRecords = fallbackData.records;
+      state.adminRecordsByTerm['0'] = fallbackData.records;
     }
   }
 
@@ -1276,13 +1451,90 @@
     refreshIcons();
   }
 
-  // ---- Admin Tab 1: Month Visibility Controller ----
+  // ---- Admin Tab 1: Term & Month Visibility Controller ----
   function renderAdminMonthsTab() {
-    const grid = $('ad-months-toggle-grid');
-    const vis = state.settings.visibleMonths || {};
+    const termGrid = $('ad-terms-toggle-grid');
+    const selectedTerm = getAdminTermObj();
+    if (selectedTerm) state.adminSelectedTermId = selectedTerm.termId;
 
-    grid.innerHTML = state.months.map(m => {
-      const isOpen = Boolean(vis[m.id]);
+    // 1. Term / Year Visibility Cards
+    termGrid.innerHTML = state.terms.map(tm => {
+      const isOpen = isTermVisible(tm.termId);
+      const isSelected = selectedTerm && tm.termId === selectedTerm.termId;
+      const openMCount = (tm.months || []).filter(m => isMonthVisible(tm.termId, m.id)).length;
+      return `
+        <div class="rounded-2xl border-2 p-4 transition-all ${isSelected ? 'ring-2 ring-amber-400 ' : ''}${isOpen ? 'border-kbs-navy bg-blue-50/40 shadow-md' : 'border-slate-200 bg-slate-50/70 opacity-90'}">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold uppercase tracking-wider ${isOpen ? 'text-emerald-700' : 'text-rose-600'}">
+                ${isOpen ? '● เปิดปี/เทอมนี้อยู่' : '○ ปิดปี/เทอมนี้ไว้'}
+              </span>
+              <h4 class="text-base font-bold text-slate-900 truncate">${esc(tm.termName)}</h4>
+              <p class="text-[11px] text-slate-500 mt-0.5">${tm.staffCount || '-'} คน • ${(tm.months || []).length} เดือน (เปิด ${openMCount})</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="${isOpen}"
+              data-toggle-term="${esc(tm.termId)}"
+              class="term-switch-btn relative inline-flex h-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${isOpen ? 'bg-emerald-500' : 'bg-slate-300'}"
+              style="width: 52px;"
+            >
+              <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ${isOpen ? 'translate-x-6' : 'translate-x-0'}"></span>
+            </button>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-200/70 flex items-center justify-between gap-2">
+            <button type="button" data-select-term="${esc(tm.termId)}" class="btn-select-term w-full py-1.5 px-3 rounded-xl text-xs font-bold transition ${isSelected ? 'bg-kbs-navy text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'}">
+              ${isSelected ? 'กำลังจัดการเดือนของเทอมนี้' : 'คลิกเพื่อเลือกจัดการรายเดือน'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    termGrid.querySelectorAll('.term-switch-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tId = btn.getAttribute('data-toggle-term');
+        const nextTerms = { ...(state.settings.visibleTerms || {}) };
+        nextTerms[tId] = !isTermVisible(tId);
+        btn.disabled = true;
+        try {
+          await saveSettingsToCloud({ visibleTerms: nextTerms });
+          const tObj = state.terms.find(x => x.termId === tId);
+          toast(`${nextTerms[tId] ? 'เปิดทั้งภาคเรียน/ปี' : 'ปิดทั้งภาคเรียน/ปี'} "${tObj ? tObj.termName : tId}" แล้ว`);
+          renderAllActiveViews();
+        } catch (err) {
+          toast('บันทึกไม่สำเร็จ: ' + err.message, 'error');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
+    termGrid.querySelectorAll('.btn-select-term').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tId = btn.getAttribute('data-select-term');
+        state.adminSelectedTermId = tId;
+        if (state.adminRecordsByTerm[tId]) {
+          state.adminRecords = state.adminRecordsByTerm[tId];
+        } else {
+          await loadAdminRecords(false, tId);
+        }
+        renderAdminMonthsTab();
+      });
+    });
+
+    // 2. Month Visibility Cards for Selected Term
+    const grid = $('ad-months-toggle-grid');
+    if (!selectedTerm) {
+      grid.innerHTML = '';
+      return;
+    }
+    $('ad-selected-term-label').textContent = selectedTerm.termName;
+    const termMonths = selectedTerm.months || [];
+
+    grid.innerHTML = termMonths.map(m => {
+      const isOpen = isMonthVisible(selectedTerm.termId, m.id);
       const dataBadge = m.hasData
         ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">บันทึกแล้ว ${m.activeDays} วัน (${m.recordedCells.toLocaleString()} รายการ)</span>`
         : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">ยังไม่มีข้อมูลในชีต</span>`;
@@ -1319,13 +1571,14 @@
     grid.querySelectorAll('.month-switch-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const mId = btn.getAttribute('data-toggle-month');
+        const scopedKey = `${selectedTerm.termId}::${mId}`;
         const nextVis = { ...(state.settings.visibleMonths || {}) };
-        nextVis[mId] = !nextVis[mId];
+        nextVis[scopedKey] = !isMonthVisible(selectedTerm.termId, mId);
         btn.disabled = true;
         try {
           await saveSettingsToCloud({ visibleMonths: nextVis });
-          const mObj = state.months.find(x => x.id === mId);
-          toast(`${nextVis[mId] ? 'เปิดให้ครูดู' : 'ปิดการมองเห็น'} เดือน${mObj ? mObj.label : mId} แล้ว`);
+          const mObj = termMonths.find(x => x.id === mId);
+          toast(`${nextVis[scopedKey] ? 'เปิดให้ครูดู' : 'ปิดการมองเห็น'} เดือน${mObj ? mObj.label : mId} แล้ว`);
           renderAllActiveViews();
         } catch (err) {
           toast('บันทึกไม่สำเร็จ: ' + err.message, 'error');
@@ -1335,10 +1588,11 @@
       });
     });
 
-    const openList = getVisibleMonthsList();
+    const openList = getVisibleMonthsList(selectedTerm.termId);
+    const termOpenNote = isTermVisible(selectedTerm.termId) ? 'เปิดเทอมนี้อยู่' : '⚠️ ปิดเทอมนี้ทั้งปี/เทอมอยู่ (ครูจะยังไม่เห็นแม้เปิดเดือน)';
     $('ad-live-preview-note').innerHTML = `
       <i data-lucide="info" class="w-4 h-4 text-kbs-navy flex-shrink-0"></i>
-      <span>สรุปสถานะปัจจุบัน: กำลังเปิดให้ครูเข้าดู <strong>${openList.length} เดือน</strong> ${openList.length ? `(${openList.map(m => m.label).join(', ')})` : '(ปิดทุกเดือน — ครูจะยังไม่เห็นข้อมูลรายเดือน)'}</span>
+      <span><strong>${esc(selectedTerm.termName)}</strong> (${termOpenNote}): เปิดให้ดู <strong>${openList.length} เดือน</strong> ${openList.length ? `(${openList.map(m => m.shortLabel).join(', ')})` : ''}</span>
     `;
 
     const annInput = $('ad-announcement-input');
@@ -1349,13 +1603,24 @@
 
   // ---- Admin Tab 2: School-wide Overview ----
   function renderAdminOverviewTab() {
-    const records = state.adminRecords || [];
+    const termSelectEl = $('ad-term-select');
+    const selectedTerm = getAdminTermObj();
+    if (termSelectEl) {
+      termSelectEl.innerHTML = state.terms.map(tm => `
+        <option value="${esc(tm.termId)}">${esc(tm.termName)} ${isTermVisible(tm.termId) ? '' : '(ปิดอยู่)'}</option>
+      `).join('');
+      if (selectedTerm) termSelectEl.value = selectedTerm.termId;
+    }
+
+    const termMonths = (selectedTerm && selectedTerm.months) || state.months;
+    const records = (selectedTerm && state.adminRecordsByTerm[selectedTerm.termId]) || state.adminRecords || [];
     const scopeEl = $('ad-scope-select');
-    const prevScope = scopeEl.value || 'visible';
+    const prevScope = scopeEl.value || 'all';
+    const openMonthsInTerm = selectedTerm ? getVisibleMonthsList(selectedTerm.termId) : [];
     scopeEl.innerHTML = `
-      <option value="visible">เฉพาะเดือนที่เปิดให้ครูดู (${getVisibleMonthsList().length} เดือน)</option>
-      <option value="all">ทุกเดือนทั้งภาคเรียน 2/2569 (6 เดือน)</option>
-      ${state.months.map(m => `<option value="${esc(m.id)}">เฉพาะเดือน${esc(m.label)}</option>`).join('')}
+      <option value="all">ทุกเดือนในภาคเรียนนี้ (${termMonths.length} เดือน)</option>
+      <option value="visible">เฉพาะเดือนที่เปิดให้ครูดู (${openMonthsInTerm.length} เดือน)</option>
+      ${termMonths.map(m => `<option value="${esc(m.id)}">เฉพาะเดือน${esc(m.label)}</option>`).join('')}
     `;
     if ([...scopeEl.options].some(o => o.value === prevScope)) scopeEl.value = prevScope;
 
@@ -1368,8 +1633,8 @@
 
     const scopeVal = scopeEl.value;
     let monthIds = [];
-    if (scopeVal === 'visible') monthIds = getVisibleMonthsList().map(m => m.id);
-    else if (scopeVal === 'all') monthIds = state.months.map(m => m.id);
+    if (scopeVal === 'visible') monthIds = openMonthsInTerm.map(m => m.id);
+    else if (scopeVal === 'all') monthIds = termMonths.map(m => m.id);
     else monthIds = [scopeVal];
 
     const groupVal = $('ad-group-filter').value;
@@ -1455,16 +1720,16 @@
     });
 
     // Charts
-    renderAdminOverviewCharts(filtered, computedRows, monthIds);
+    renderAdminOverviewCharts(filtered, computedRows, monthIds, termMonths);
   }
 
-  function renderAdminOverviewCharts(filteredRecords, computedRows, selectedMonthIds) {
+  function renderAdminOverviewCharts(filteredRecords, computedRows, selectedMonthIds, termMonths) {
     const monthlyCanvas = $('ad-chart-monthly');
     const issuesCanvas = $('ad-chart-issues');
     if (state.charts.adMonthly) state.charts.adMonthly.destroy();
     if (state.charts.adIssues) state.charts.adIssues.destroy();
 
-    const activeMonths = state.months.filter(m => m.hasData || selectedMonthIds.includes(m.id));
+    const activeMonths = (termMonths || state.months).filter(m => m.hasData || selectedMonthIds.includes(m.id));
     const labels = activeMonths.map(m => m.shortLabel);
     const lateData = activeMonths.map(m => filteredRecords.reduce((acc, r) => acc + calcMonthStats(r.months[m.id]).late, 0));
     const noScanData = activeMonths.map(m => filteredRecords.reduce((acc, r) => {
@@ -1516,17 +1781,20 @@
   }
 
   function openAdminStaffDetailModal(staffKey) {
-    const rec = (state.adminRecords || []).find(r => r.key === staffKey);
+    const selectedTerm = getAdminTermObj();
+    const termMonths = (selectedTerm && selectedTerm.months) || state.months;
+    const records = (selectedTerm && state.adminRecordsByTerm[selectedTerm.termId]) || state.adminRecords || [];
+    const rec = records.find(r => r.key === staffKey);
     if (!rec) return;
     $('modal-staff-name').textContent = rec.name;
-    $('modal-staff-pos').textContent = `${rec.position} • ${rec.group}`;
+    $('modal-staff-pos').textContent = `${rec.position} • ${rec.group} (${selectedTerm ? selectedTerm.termName : ''})`;
 
     const body = $('modal-staff-body');
-    const firstMonth = state.months.find(m => m.hasData) || state.months[0];
-    let currentModalMonth = firstMonth ? firstMonth.id : '2569-10';
+    const firstMonth = termMonths.find(m => m.hasData) || termMonths[0];
+    let currentModalMonth = firstMonth ? firstMonth.id : '';
 
     const renderModalContent = () => {
-      const stAll = sumStats(rec, state.months.map(m => m.id));
+      const stAll = sumStats(rec, termMonths.map(m => m.id));
       body.innerHTML = `
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200"><div class="text-slate-500">มาปกติ / ราชการ</div><div class="text-lg font-bold text-emerald-700">${stAll.present} / ${stAll.duty}</div></div>
@@ -1548,7 +1816,7 @@
       renderCalendarForContainer(
         rec,
         currentModalMonth,
-        state.months,
+        termMonths,
         $('modal-cal-title'),
         $('modal-cal-switcher'),
         $('modal-cal-grid'),
@@ -1556,7 +1824,8 @@
         newId => {
           currentModalMonth = newId;
           renderModalContent();
-        }
+        },
+        termMonths
       );
     };
 
@@ -1569,8 +1838,9 @@
   function renderAdminPinsTab() {
     let seedCount = 0, customCount = 0, missingCount = 0;
     const enriched = state.staffCatalog.map(s => {
-      const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || s.hasCustomPin);
-      const hasSeed = Boolean(s.pinHash || s.hasSeedPin || (seedMap.get(s.key) && seedMap.get(s.key).pinHash));
+      const core = s.coreName || stripNamePrefix(s.name);
+      const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || state.customPinCoresFromGas.has(core) || s.hasCustomPin);
+      const hasSeed = Boolean(s.pinHash || s.namePinHash || seedNameHashes[core] || s.hasSeedPin || (seedMap.get(s.key) && seedMap.get(s.key).pinHash));
       let status = 'missing';
       if (hasCustom) { status = 'custom'; customCount++; }
       else if (hasSeed) { status = 'seed'; seedCount++; }
@@ -1673,8 +1943,9 @@
 
   async function batchAssignMissingPins() {
     const missing = state.staffCatalog.filter(s => {
-      const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || s.hasCustomPin);
-      const hasSeed = Boolean(s.pinHash || s.hasSeedPin || (seedMap.get(s.key) && seedMap.get(s.key).pinHash));
+      const core = s.coreName || stripNamePrefix(s.name);
+      const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || state.customPinCoresFromGas.has(core) || s.hasCustomPin);
+      const hasSeed = Boolean(s.pinHash || s.namePinHash || seedNameHashes[core] || s.hasSeedPin || (seedMap.get(s.key) && seedMap.get(s.key).pinHash));
       return !hasCustom && !hasSeed;
     });
     if (missing.length === 0) {
@@ -1793,11 +2064,13 @@
 
   // -------------------- 11. EXPORT CSV & MODALS --------------------
   function exportAdminCsv() {
-    const records = state.adminRecords || [];
+    const selectedTerm = getAdminTermObj();
+    const termMonths = (selectedTerm && selectedTerm.months) || state.months;
+    const records = (selectedTerm && state.adminRecordsByTerm[selectedTerm.termId]) || state.adminRecords || [];
     const scopeVal = $('ad-scope-select').value;
     let monthIds = [];
-    if (scopeVal === 'visible') monthIds = getVisibleMonthsList().map(m => m.id);
-    else if (scopeVal === 'all') monthIds = state.months.map(m => m.id);
+    if (scopeVal === 'visible') monthIds = selectedTerm ? getVisibleMonthsList(selectedTerm.termId).map(m => m.id) : [];
+    else if (scopeVal === 'all') monthIds = termMonths.map(m => m.id);
     else monthIds = [scopeVal];
 
     const headers = ['ลำดับ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'กลุ่ม', 'มาปกติ', 'ไปราชการ', 'ลากิจ(ครั้ง)', 'ลากิจ(วัน)', 'ลาป่วย(ครั้ง)', 'ลาป่วย(วัน)', 'ลาอื่นๆ(ครั้ง)', 'ลาอื่นๆ(วัน)', 'รวมลา(ครั้ง)', 'รวมลา(วัน)', 'ไม่สแกนเข้า', 'ไม่สแกนออก', 'สาย', 'ขาดราชการ', 'ขอออก'];
@@ -1869,7 +2142,8 @@
     $('td-btn-logout').addEventListener('click', logoutTeacher);
     $('td-btn-print').addEventListener('click', () => window.print());
     $('td-btn-request-correction').addEventListener('click', () => {
-      const openMonths = getVisibleMonthsList();
+      const activeTerm = state.terms.find(tm => tm.termId === state.teacherSelectedTermId) || getOpenTermsList()[0];
+      const openMonths = activeTerm ? getVisibleMonthsList(activeTerm.termId) : [];
       if (!openMonths.length) {
         toast('ยังไม่มีเดือนที่เปิดให้แจ้งตรวจสอบ', 'warning');
         return;
@@ -1887,16 +2161,20 @@
       e.preventDefault();
       if (!state.currentTeacher) return;
       const btn = $('btn-submit-correction');
+      const activeTerm = state.terms.find(tm => tm.termId === state.teacherSelectedTermId) || getOpenTermsList()[0];
       const mId = $('corr-month-select').value;
-      const mObj = state.months.find(m => m.id === mId);
+      const mObj = ((activeTerm && activeTerm.months) || state.months).find(m => m.id === mId);
       const day = Number($('corr-day-input').value);
       const reason = $('corr-reason-input').value.trim();
       setButtonLoading(btn, true, 'กำลังส่งคำร้อง...');
       try {
         const docData = {
           staffKey: state.currentTeacher.key,
+          coreName: state.currentTeacher.coreName,
           staffName: state.currentTeacher.name,
           pinHash: state.teacherAuthSession ? state.teacherAuthSession.pinHash : '',
+          namePinHash: state.teacherAuthSession ? state.teacherAuthSession.namePinHash : '',
+          termName: activeTerm ? activeTerm.termName : '',
           monthId: mId,
           monthLabel: mObj ? mObj.label : mId,
           day,
@@ -1970,39 +2248,45 @@
       btn.addEventListener('click', () => switchAdminTab(btn.getAttribute('data-ad-tab')));
     });
 
-    // Admin Tab 1 quick month toggles
+    // Admin Tab 1 quick month toggles (scoped to selected term)
     $('btn-open-months-with-data').addEventListener('click', async () => {
       const btn = $('btn-open-months-with-data');
+      const selectedTerm = getAdminTermObj();
+      if (!selectedTerm) return;
       setButtonLoading(btn, true, 'กำลังบันทึก...');
       try {
-        const nextVis = {};
-        state.months.forEach(m => { nextVis[m.id] = Boolean(m.hasData); });
+        const nextVis = { ...(state.settings.visibleMonths || {}) };
+        (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = Boolean(m.hasData); });
         await saveSettingsToCloud({ visibleMonths: nextVis });
-        toast('เปิดเฉพาะเดือนที่มีข้อมูลในชีตแล้ว');
+        toast(`เปิดเฉพาะเดือนที่มีข้อมูลใน ${selectedTerm.termName} แล้ว`);
         renderAllActiveViews();
       } finally { setButtonLoading(btn, false); }
     });
 
     $('btn-open-all-months').addEventListener('click', async () => {
       const btn = $('btn-open-all-months');
+      const selectedTerm = getAdminTermObj();
+      if (!selectedTerm) return;
       setButtonLoading(btn, true, 'กำลังบันทึก...');
       try {
-        const nextVis = {};
-        state.months.forEach(m => { nextVis[m.id] = true; });
+        const nextVis = { ...(state.settings.visibleMonths || {}) };
+        (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = true; });
         await saveSettingsToCloud({ visibleMonths: nextVis });
-        toast('เปิดการมองเห็นครบทั้ง 6 เดือนแล้ว');
+        toast(`เปิดทุกเดือนใน ${selectedTerm.termName} แล้ว`);
         renderAllActiveViews();
       } finally { setButtonLoading(btn, false); }
     });
 
     $('btn-close-all-months').addEventListener('click', async () => {
       const btn = $('btn-close-all-months');
+      const selectedTerm = getAdminTermObj();
+      if (!selectedTerm) return;
       setButtonLoading(btn, true, 'กำลังบันทึก...');
       try {
-        const nextVis = {};
-        state.months.forEach(m => { nextVis[m.id] = false; });
+        const nextVis = { ...(state.settings.visibleMonths || {}) };
+        (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = false; });
         await saveSettingsToCloud({ visibleMonths: nextVis });
-        toast('ปิดการมองเห็นทุกเดือนแล้ว');
+        toast(`ปิดทุกเดือนใน ${selectedTerm.termName} แล้ว`);
         renderAllActiveViews();
       } finally { setButtonLoading(btn, false); }
     });
@@ -2019,6 +2303,16 @@
     });
 
     // Admin Tab 2 filters
+    $('ad-term-select').addEventListener('change', async () => {
+      const tId = $('ad-term-select').value;
+      state.adminSelectedTermId = tId;
+      if (state.adminRecordsByTerm[tId]) {
+        state.adminRecords = state.adminRecordsByTerm[tId];
+      } else {
+        await loadAdminRecords(false, tId);
+      }
+      renderAdminOverviewTab();
+    });
     ['ad-scope-select', 'ad-group-filter', 'ad-dept-filter'].forEach(id => {
       $(id).addEventListener('change', renderAdminOverviewTab);
     });
@@ -2124,9 +2418,9 @@
     const savedSess = sessionStorage.getItem(SS_TEACHER_AUTH_KEY) || localStorage.getItem(LS_TEACHER_AUTH_KEY);
     if (savedSess) {
       try {
-        const { staffKey, pinHash } = JSON.parse(savedSess);
-        if (staffKey && pinHash) {
-          await authenticateTeacher(staffKey, pinHash, false, true);
+        const parsedSess = JSON.parse(savedSess);
+        if (parsedSess && parsedSess.staffKey && parsedSess.pinHash) {
+          await authenticateTeacher(parsedSess.staffKey, { pinHash: parsedSess.pinHash, namePinHash: parsedSess.namePinHash || '' }, false, true);
         }
       } catch (e) {
         sessionStorage.removeItem(SS_TEACHER_AUTH_KEY);
