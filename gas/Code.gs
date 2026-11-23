@@ -11,12 +11,28 @@
 
 var CONFIG = {
   SPREADSHEET_ID: '1AuOkjvEAy2JTS6DqDt1hUZMlVV6TO1EFcxclfVOfAfs',
+  EPROFILE_SPREADSHEET_ID: '1-N4DD6OaR4j8kNubJjRyShffuN3rXZqrfjjwwN9ly_A',
+  EPROFILE_TABS: [
+    'ผู้บริหาร',
+    'แนะแนว/วัดผล',
+    'วิทยาศาสตร์และเทคโนโลยี',
+    'คณิตศาสตร์',
+    'ภาษาไทย',
+    'ภาษาต่างประเทศฯ',
+    'สังคมศึกษาฯ',
+    'สุขศึกษาและพละศึกษา',
+    'การงานอาชีพ',
+    'ศิลปะ',
+    'เจ้าหน้าที่ อื่นๆ'
+  ],
   TAB_SETTINGS: '_Dashboard_Settings',
   TAB_PINS: '_Staff_Pins',
   TAB_CORRECTIONS: '_Correction_Requests',
   TIMEZONE: 'Asia/Bangkok',
   CACHE_PREFIX: 'kbs_att_tab_v3_',
+  CACHE_EPROFILE_KEY: 'kbs_eprofile_live_map_v1',
   CACHE_TTL_SECONDS: 300,
+  CACHE_EPROFILE_TTL: 600,
   DEFAULT_ADMIN_PIN: '123456'
 };
 
@@ -273,10 +289,54 @@ function sha256Hex(str) {
 
 function stripNamePrefix(s) {
   return String(s || '')
-    .replace(/^(ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
+    .replace(/^(ว่าที่\s*ร้อยตรี\s*หญิง|ว่าที่\s*ร้อยตรี|ว่าที่\s*ร\.?\s*ต\.?\s*หญิง|ว่าที่\s*ร\.?\s*ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
     .replace(/\s+/g, ' ')
+    .replace('วิภารัตน์ ลูกอ้อน', 'วิภารัตน์ ลูกอ้น')
     .trim()
     .toLowerCase();
+}
+
+function loadLiveEprofileMap(forceRefresh) {
+  var cache = CacheService.getScriptCache();
+  if (!forceRefresh) {
+    var cached = cache.get(CONFIG.CACHE_EPROFILE_KEY);
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+  }
+  var hashes = {};
+  var depts = {};
+  try {
+    var eps = SpreadsheetApp.openById(CONFIG.EPROFILE_SPREADSHEET_ID);
+    for (var ti = 0; ti < CONFIG.EPROFILE_TABS.length; ti++) {
+      var tabName = CONFIG.EPROFILE_TABS[ti];
+      var sh = eps.getSheetByName(tabName);
+      if (!sh || sh.getLastRow() < 2) continue;
+      var isStaff = (tabName === 'เจ้าหน้าที่ อื่นๆ');
+      var maxCol = isStaff ? 6 : 8;
+      var rows = sh.getRange(2, 1, sh.getLastRow() - 1, maxCol).getDisplayValues();
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        var rawName = String(row[1] || '').replace(/[\u200B\uFEFF]/g, '').trim();
+        if (!rawName || rawName === 'ชื่อ - ชื่อสกุล' || rawName.indexOf('รวม') !== -1 || rawName === '-') continue;
+        var core = stripNamePrefix(rawName);
+        if (!depts[core]) depts[core] = tabName;
+        var rawId = isStaff ? row[5] : row[7];
+        var idDigits = String(rawId || '').replace(/[\u200B\uFEFF]/g, '').replace(/\D/g, '');
+        if (idDigits.length >= 4) {
+          hashes[core] = sha256Hex('name:' + core + ':' + idDigits.slice(-4));
+        }
+      }
+    }
+    var payload = { hashes: hashes, depts: depts };
+    try {
+      var serialized = JSON.stringify(payload);
+      if (serialized.length < 95000) cache.put(CONFIG.CACHE_EPROFILE_KEY, serialized, CONFIG.CACHE_EPROFILE_TTL);
+    } catch (e) {}
+    return payload;
+  } catch (err) {
+    return { hashes: {}, depts: {} };
+  }
 }
 
 function getOrCreateHelperSheet(ss, tabName, headers) {
@@ -743,9 +803,10 @@ function handleGetPublicCatalog(forceRefresh) {
   var tabsInfo = discoverAttendanceTabs(ss);
   var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
   var customPins = readCustomPinsFromSheet(ss);
+  var liveEprof = loadLiveEprofileMap(forceRefresh);
   var settings = readSettingsFromSheet(ss, tabsDatasets);
 
-  // รวมรายชื่อบุคลากรไม่ซ้ำจากทุกภาคเรียนที่พบ (เรียงตามภาคเรียนล่าสุดก่อน)
+  // รวมรายชื่อบุคลากรไม่ซ้ำจากทุกภาคเรียนที่พบ (คงลำดับตามแถวในชีต)
   var catalogMap = {};
   var catalogList = [];
   for (var ti = tabsDatasets.length - 1; ti >= 0; ti--) {
@@ -755,7 +816,7 @@ function handleGetPublicCatalog(forceRefresh) {
       var core = rec.coreName || stripNamePrefix(rec.name);
       if (!catalogMap[core]) {
         var hasCustom = Boolean(customPins.byKey[rec.key] || customPins.byCore[core]);
-        var hasSeed = Boolean(SEED_PIN_HASHES[rec.key] || SEED_NAME_PIN_HASHES[core]);
+        var hasSeed = Boolean(SEED_PIN_HASHES[rec.key] || SEED_NAME_PIN_HASHES[core] || (liveEprof.hashes && liveEprof.hashes[core]));
         var entry = {
           key: rec.key,
           coreName: core,
@@ -764,6 +825,7 @@ function handleGetPublicCatalog(forceRefresh) {
           name: rec.name,
           position: rec.position,
           group: rec.group,
+          department: (liveEprof.depts && liveEprof.depts[core]) || '',
           hasCustomPin: hasCustom,
           hasSeedPin: hasSeed
         };
@@ -772,7 +834,7 @@ function handleGetPublicCatalog(forceRefresh) {
       }
     }
   }
-  catalogList.sort(function(a, b) { return a.seq - b.seq; });
+  catalogList.sort(function(a, b) { return a.rowNumber - b.rowNumber; });
 
   var termsMeta = tabsDatasets.map(function(td) {
     return {
@@ -806,10 +868,11 @@ function handleGetPublicCatalog(forceRefresh) {
   };
 }
 
-function verifyTeacherPin(ss, staffKey, coreName, pin4, pinHashInput, namePinHashInput) {
+function verifyTeacherPin(ss, staffKey, coreName, pin4, pinHashInput, namePinHashInput, forceRefresh) {
   var customPins = readCustomPinsFromSheet(ss);
+  var liveEprof = loadLiveEprofileMap(forceRefresh);
   var keyExpected = customPins.byKey[staffKey] || SEED_PIN_HASHES[staffKey] || '';
-  var coreExpected = customPins.byCore[coreName] || SEED_NAME_PIN_HASHES[coreName] || '';
+  var coreExpected = customPins.byCore[coreName] || (liveEprof.hashes && liveEprof.hashes[coreName]) || SEED_NAME_PIN_HASHES[coreName] || '';
 
   if (!keyExpected && !coreExpected) {
     return { ok: false, error: 'ยังไม่ได้กำหนดรหัสยืนยันตัวตนสำหรับรายชื่อนี้ กรุณาติดต่อแอดมิน' };
@@ -849,7 +912,7 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
     }
   }
 
-  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash);
+  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash, forceRefresh);
   if (!auth.ok) return { success: false, error: auth.error };
 
   var settings = readSettingsFromSheet(ss, tabsDatasets);
@@ -932,7 +995,7 @@ function handleSubmitCorrection(payload) {
   var staffKey = String(payload.staffKey || '').trim();
   var coreName = stripNamePrefix(payload.coreName || payload.staffName || '');
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash);
+  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash, forceRefresh);
   if (!auth.ok) return { success: false, error: auth.error };
 
   var sheet = getOrCreateHelperSheet(ss, CONFIG.TAB_CORRECTIONS, [

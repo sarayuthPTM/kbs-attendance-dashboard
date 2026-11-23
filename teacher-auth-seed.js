@@ -1,6 +1,6 @@
 /**
- * ข้อมูลรายชื่อบุคลากรและ Hash รหัสยืนยันตัวตน (ไม่เก็บเลขบัตรประชาชนดิบในไฟล์)
- * รองรับทั้งการยืนยันตามรหัสแถวและชื่อ-สกุล (ใช้ได้ข้ามเทอม 2/69, 1/70, 2/70)
+ * ข้อมูลรายชื่อบุคลากรทั้ง 133 คนจากชีต และ Hash รหัสยืนยันตัวตนจากระบบ KBS E-Profile
+ * (ไม่เก็บเลขบัตรประชาชนดิบในไฟล์ ใช้ SHA-256 Hash เท่านั้น)
  */
 window.KBS_ATTENDANCE_STAFF_SEED = [
   {
@@ -752,12 +752,12 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "name": "ว่าที่ร.ต.หญิงชญานี ชัยสวัสดิ์",
     "position": "ครู/ภาษาต่างประเทศ(ภาษาอังกฤษ)",
     "group": "ข้าราชการครูและบุคลากร",
-    "department": "เจ้าหน้าที่ / อื่นๆ",
+    "department": "ภาษาต่างประเทศฯ",
     "avatarUrl": "",
-    "hasSeedPin": false,
-    "pinHash": null,
+    "hasSeedPin": true,
+    "pinHash": "8725bd1af024cbfcba8bc17a5137200abe2cd8f4b3b445597e43e6fd81e3f63c",
     "coreName": "ชญานี ชัยสวัสดิ์",
-    "namePinHash": null
+    "namePinHash": "0c0fb2a5568b33535da5fba8d0a23d0e58b2b4bb4f34664731e2d304b6a255b2"
   },
   {
     "key": "staff_58",
@@ -1426,10 +1426,10 @@ window.KBS_ATTENDANCE_STAFF_SEED = [
     "group": "ข้าราชการครูและบุคลากร",
     "department": "เจ้าหน้าที่ อื่นๆ",
     "avatarUrl": "",
-    "hasSeedPin": false,
-    "pinHash": null,
-    "coreName": "วิภารัตน์ ลูกอ้อน",
-    "namePinHash": null
+    "hasSeedPin": true,
+    "pinHash": "5aeb941adc5a326930ffd874c66bcf8673f984caf611cc0d4f460b6c2858d09f",
+    "coreName": "วิภารัตน์ ลูกอ้น",
+    "namePinHash": "44ee712a69a0de1e8ca06cd1d98de6aa6060b4729aa6132c70b57aaf09218725"
   },
   {
     "key": "staff_106",
@@ -1923,7 +1923,7 @@ window.KBS_ATTENDANCE_NAME_HASHES = {
   "สุชาดา เพชรสุก": "566836127357606e24038ff618de8585c2d2251e88391856cd3c293584de2c0c",
   "อัจฉรา นุ่นชูผล": "8698c0a282f130c2a75458a67338aab5366eeab6dd8dd8f7fb675cf751bcbd37",
   "อภิวัฒน์ กาพย์เกิด": "a225674ebb577c70ab6ce7978dbb5e44100d82dc0cd00e84f6a412bd42eed482",
-  "ว่าที่ร้อยตรีหญิงชญานี ชัยสวัสดิ์": "45d77ec282b09482b3d8360e0f3d8cbbb6b9775e96475377cb11326dd3a3f193",
+  "ชญานี ชัยสวัสดิ์": "0c0fb2a5568b33535da5fba8d0a23d0e58b2b4bb4f34664731e2d304b6a255b2",
   "เริงสรรค์ ยะลา": "9c5684e37b64e72aa4e5bd9c27b94811e8460b23e755707e33aee86c7c5da9ff",
   "ชลธิชา บัวแต่ง": "838ef02ce636998bd77d4c5adbaebf3de1d1e3964295aef644ed844a2e903fa9",
   "กานต์ลดา สายนุ้ย": "62c388482161e404dc60a563986dc895f6fd82c5b77cc18a01b8bab0761a4a0e",
@@ -1977,5 +1977,6 @@ window.KBS_ATTENDANCE_NAME_HASHES = {
   "วณิชยา ลิ่มสกุล": "7d7f90cd40bb898e2d832ab51b7ed8b9d310d87557a26e372737eecbe1998bdf",
   "ศุภณัฐ กัณหกุล": "20d70bb056c56f4dfa9ada9d9323f8c1798c953103b30849f02d7e7cf1a53153",
   "เกียรติชานนท์ เสียงดัง": "cdb43d4197027b203fbe9df9616f97a1527e70b6bef33f75618af99877123964",
-  "ทินภัทร อนุการ": "190c7f9e6b345e6e181bd9e45cfe87a7e0b6a034223f76c2ba89c666362e195f"
+  "ทินภัทร อนุการ": "190c7f9e6b345e6e181bd9e45cfe87a7e0b6a034223f76c2ba89c666362e195f",
+  "วิภารัตน์ ลูกอ้น": "44ee712a69a0de1e8ca06cd1d98de6aa6060b4729aa6132c70b57aaf09218725"
 };

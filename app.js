@@ -147,8 +147,9 @@
 
   function stripNamePrefix(s) {
     return String(s || '')
-      .replace(/^(ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
+      .replace(/^(ว่าที่\s*ร้อยตรี\s*หญิง|ว่าที่\s*ร้อยตรี|ว่าที่\s*ร\.?\s*ต\.?\s*หญิง|ว่าที่\s*ร\.?\s*ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
       .replace(/\s+/g, ' ')
+      .replace('วิภารัตน์ ลูกอ้อน', 'วิภารัตน์ ลูกอ้น')
       .trim()
       .toLowerCase();
   }
@@ -579,7 +580,7 @@
           return {
             ...item,
             coreName: core,
-            department: (seed && seed.department) || (item.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ'),
+            department: item.department || (seed && seed.department) || (item.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ'),
             avatarUrl: (seed && seed.avatarUrl) || '',
             hasSeedPin: Boolean(item.hasSeedPin || (seed && seed.hasSeedPin) || seedNameHashes[core]),
             pinHash: seed ? seed.pinHash : null,
@@ -707,9 +708,10 @@
         s.name.toLowerCase().includes(q) ||
         (s.position || '').toLowerCase().includes(q) ||
         (s.department || '').toLowerCase().includes(q) ||
+        (s.group || '').toLowerCase().includes(q) ||
         String(s.seq).includes(q)
       );
-    }).slice(0, 40);
+    });
 
     if (matches.length === 0) {
       dd.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">ไม่พบรายชื่อที่ตรงกับ "${esc(query)}"</div>`;
@@ -717,13 +719,18 @@
       return;
     }
 
-    dd.innerHTML = matches.map(s => `
+    const headerBar = `<div class="sticky top-0 z-10 px-4 py-2 bg-slate-50/95 backdrop-blur border-b border-slate-200 text-[11px] font-semibold text-slate-500 flex items-center justify-between">
+      <span>แสดง ${matches.length} รายชื่อ (จากทั้งหมด ${state.staffCatalog.length} คน)</span>
+      <span>เลื่อนดูหรือพิมพ์ค้นหา</span>
+    </div>`;
+
+    dd.innerHTML = headerBar + matches.map(s => `
       <button type="button" data-staff-key="${esc(s.key)}" class="teacher-dd-item w-full text-left px-4 py-2.5 hover:bg-blue-50 flex items-center justify-between gap-3 transition">
         <div class="min-w-0">
           <p class="text-xs sm:text-sm font-semibold text-slate-800 truncate">${esc(s.name)}</p>
           <p class="text-[11px] text-slate-500 truncate">${esc(s.position)} • ${esc(s.department || s.group)}</p>
         </div>
-        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 flex-shrink-0">ลำดับ ${s.seq}</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 flex-shrink-0">${esc(s.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา #' + s.seq : 'ลำดับ ' + s.seq)}</span>
       </button>
     `).join('');
     dd.classList.remove('hidden');
