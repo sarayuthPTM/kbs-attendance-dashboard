@@ -151,11 +151,11 @@
           <span>เปิดให้ดู 0 เดือน</span>
         </span>
 
-        <div class="inline-flex rounded-xl bg-slate-950/45 p-1 border border-white/15 backdrop-blur-sm">
+        <div id="mode-switcher-wrap" class="hidden inline-flex rounded-xl bg-slate-950/45 p-1 border border-white/15 backdrop-blur-sm">
           <button id="btn-mode-teacher" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow">
             สำหรับครู/บุคลากร
           </button>
-          <button id="btn-mode-admin" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white">
+          <button id="btn-mode-admin" type="button" class="hidden px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white">
             สำหรับแอดมิน
           </button>
         </div>
@@ -465,57 +465,6 @@
 
         <!-- Print-Only Official A4 Layout -->
         <div id="td-print-area" class="print-only font-doc text-black"></div>
-      </div>
-    </section>
-
-    <!-- ========================================================= -->
-    <!-- VIEW 3: ADMIN LOGIN                                       -->
-    <!-- ========================================================= -->
-    <section id="view-admin-login" class="hidden animate-fade-up max-w-md mx-auto pt-4">
-      <div class="rounded-3xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-2xl shadow-blue-950/15 overflow-hidden">
-        <div class="bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid px-6 py-5 text-white border-b-2 border-amber-400/70">
-          <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-300">
-              <i data-lucide="lock-keyhole" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h2 class="text-lg font-bold">เข้าสู่ระบบผู้ดูแล (Admin Control)</h2>
-              <p class="text-xs text-blue-100">จัดการเปิด-ปิดเดือนที่ครูมองเห็น และดูภาพรวมทั้งโรงเรียน</p>
-            </div>
-          </div>
-        </div>
-
-        <form id="form-admin-login" class="p-6 space-y-4" autocomplete="off">
-          <div>
-            <label for="admin-pin-input" class="block text-sm font-semibold text-slate-700 mb-1.5">
-              รหัส PIN ผู้ดูแลระบบ
-            </label>
-            <div class="relative">
-              <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
-              <input
-                id="admin-pin-input"
-                type="password"
-                inputmode="numeric"
-                placeholder="กรอกรหัส PIN แอดมิน (ค่าเริ่มต้น: 123456)"
-                class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none text-sm tracking-widest transition"
-              >
-              <button id="btn-toggle-admin-pin" type="button" class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 p-0.5">
-                <i data-lucide="eye" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          <div id="admin-login-error" class="hidden rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-xs text-red-700 font-medium"></div>
-
-          <button id="btn-admin-login" type="submit" class="w-full py-3 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition disabled:opacity-60">
-            <i data-lucide="unlock" class="w-4 h-4"></i>
-            <span>เข้าสู่หน้าจัดการแอดมิน</span>
-          </button>
-
-          <button id="btn-back-to-teacher" type="button" class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold transition">
-            กลับไปหน้าสำหรับครู/บุคลากร
-          </button>
-        </form>
       </div>
     </section>
 
@@ -892,9 +841,9 @@
         <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
-              <h3 class="text-base font-bold text-kbs-navyDark">จัดการเลขบัตรประชาชน / รหัสเข้าใช้งานรายบุคคล</h3>
+              <h3 class="text-base font-bold text-kbs-navyDark">จัดการเลขบัตรประชาชน รหัสเข้าใช้งาน &amp; สิทธิ์แอดมินรายบุคคล</h3>
               <p class="text-xs text-slate-500 mt-0.5">
-                บุคลากรที่มีเลขบัตรประชาชน 13 หลักในฐานข้อมูล <strong>KBS E-Profile</strong> เข้าใช้งานด้วยเลขบัตรฯ ได้ทันที ส่วนครูต่างชาติหรือผู้ที่ยังไม่มีเลขบัตรฯ ในชีต E-Profile แอดมินสามารถกำหนดเลขบัตรฯ หรือรหัสเข้าใช้เฉพาะตัวได้
+                บุคลากรที่มีเลขบัตรประชาชน 13 หลักในฐานข้อมูล <strong>KBS E-Profile</strong> เข้าใช้งานได้ทันที และแอดมินสามารถกำหนดรหัสเฉพาะตัวรวมถึง <strong>ให้สิทธิ์/ถอดสิทธิ์แอดมิน</strong> ให้บุคลากรในตารางนี้ได้โดยไม่ต้องใช้รหัส PIN แยก
               </p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -905,11 +854,12 @@
             </div>
           </div>
 
-          <div id="ad-pins-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+          <div id="ad-pins-stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
           <div class="flex flex-col sm:flex-row gap-3">
             <select id="ad-pin-filter-select" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 outline-none">
               <option value="all">ทั้งหมด (133 คน)</option>
+              <option value="admin">เฉพาะผู้มีสิทธิ์แอดมิน</option>
               <option value="missing">ยังไม่มีเลขบัตรฯ / รหัสเข้าใช้</option>
               <option value="custom">กำหนดรหัส/เลขบัตรฯ เองในระบบ</option>
               <option value="seed">เชื่อมเลขบัตรฯ 13 หลักจาก KBS E-Profile</option>
@@ -924,8 +874,8 @@
                   <th class="px-3 py-2.5">#</th>
                   <th class="px-3 py-2.5">ชื่อ-สกุล</th>
                   <th class="px-3 py-2.5">ตำแหน่ง / กลุ่ม</th>
-                  <th class="px-3 py-2.5">สถานะเลขบัตรฯ / รหัสเข้าใช้</th>
-                  <th class="px-3 py-2.5 text-right">จัดการรหัสเข้าใช้</th>
+                  <th class="px-3 py-2.5">สถานะเลขบัตรฯ / สิทธิ์แอดมิน</th>
+                  <th class="px-3 py-2.5 text-right">จัดการรหัส &amp; สิทธิ์แอดมิน</th>
                 </tr>
               </thead>
               <tbody id="ad-pins-table-body" class="divide-y divide-slate-100"></tbody>
@@ -973,20 +923,16 @@
           <div id="ad-gas-test-result" class="hidden rounded-xl p-3 text-xs"></div>
         </div>
 
-        <!-- Change Admin PIN & Vercel/GitHub Guide -->
+        <!-- Admin Role Policy & Vercel/GitHub Guide -->
         <div class="space-y-5">
-          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-3">
+          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-2.5">
             <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
-              <i data-lucide="key-round" class="w-5 h-5 text-kbs-gold"></i>
-              <span>เปลี่ยนรหัส PIN ผู้ดูแลระบบ</span>
+              <i data-lucide="shield-check" class="w-5 h-5 text-kbs-gold"></i>
+              <span>ระบบสิทธิ์ผู้ดูแลระบบ (Role-Based Admin)</span>
             </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input id="ad-new-pin-input" type="password" inputmode="numeric" placeholder="รหัส PIN ใหม่ (อย่างน้อย 4 ตัว)" class="rounded-xl border border-slate-300 px-3 py-2.5 text-xs outline-none focus:border-kbs-navy">
-              <input id="ad-confirm-pin-input" type="password" inputmode="numeric" placeholder="ยืนยันรหัส PIN ใหม่อีกครั้ง" class="rounded-xl border border-slate-300 px-3 py-2.5 text-xs outline-none focus:border-kbs-navy">
-            </div>
-            <button id="btn-change-admin-pin" type="button" class="px-4 py-2.5 rounded-xl bg-kbs-gold hover:bg-amber-600 text-white text-xs font-bold transition disabled:opacity-60">
-              อัปเดตรหัส PIN แอดมิน
-            </button>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              ระบบใช้การยืนยันตัวตนด้วย <strong>เลขประจำตัวประชาชน 13 หลัก</strong> เพียงจุดเดียว ผู้ที่มีสิทธิ์แอดมินจะมีปุ่มสลับโหมด <strong>สำหรับครู/บุคลากร</strong> และ <strong>สำหรับแอดมิน</strong> ปรากฏด้านบนขวาโดยอัตโนมัติ (สามารถเพิ่ม/ถอดสิทธิ์แอดมินให้บุคลากรอื่นได้ใน <strong>แท็บ 3</strong>)
+            </p>
           </div>
 
           <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-2.5">

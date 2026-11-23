@@ -10,12 +10,13 @@
 
   // -------------------- 1. CONSTANTS & STORAGE KEYS --------------------
   const APP_CFG = window.KBS_ATTENDANCE_CONFIG || {};
-  const DEFAULT_ADMIN_PIN = APP_CFG.DEFAULT_ADMIN_PIN || '123456';
+  const PRIMARY_ADMIN_CORES = Array.isArray(APP_CFG.PRIMARY_ADMIN_CORES) && APP_CFG.PRIMARY_ADMIN_CORES.length
+    ? APP_CFG.PRIMARY_ADMIN_CORES
+    : ['ศรายุทธ พงค์ทองเมือง'];
   const LS_SETTINGS_KEY = 'KBS_ATT_SETTINGS_LOCAL_V2';
   const LS_CUSTOM_PINS_KEY = 'KBS_ATT_CUSTOM_PINS_LOCAL_V2';
   const LS_TEACHER_AUTH_KEY = 'KBS_ATT_TEACHER_REMEMBER_V1';
   const SS_TEACHER_AUTH_KEY = 'KBS_ATT_TEACHER_SESSION_V1';
-  const SS_ADMIN_HASH_KEY = 'KBS_ATT_ADMIN_SESSION_HASH_V1';
 
   const DEFAULT_MONTHS_META = [
     { id: '2569-10', label: 'ตุลาคม 2569', shortLabel: 'ต.ค. 69', yearBE: 2569, yearCE: 2026, month: 10, daysInMonth: 31, startCol: 3 },
@@ -184,19 +185,21 @@
       visibleMonths: buildDefaultVisibleMonths('0', initialMonths),
       announcement: '',
       gasUrl: (APP_CFG.GAS_API_URL || '').trim(),
-      adminPinHash: sha256Hex('kbs-att-admin:' + DEFAULT_ADMIN_PIN),
+      adminCores: [...PRIMARY_ADMIN_CORES],
       updatedAt: ''
     },
+    adminCores: [...PRIMARY_ADMIN_CORES],
+    primaryAdminCores: [...PRIMARY_ADMIN_CORES],
     customPinHashes: {}, // staffKey -> sha256Hex('cid:' + normalizedCidOrCode)
     customPinKeysFromGas: new Set(),
     customPinCoresFromGas: new Set(),
     corrections: [],
-    currentTeacher: null, // { key, coreName, name, position, group, department, avatarUrl, terms: [...] }
+    currentTeacher: null, // { key, coreName, name, position, group, department, avatarUrl, isAdmin, isPrimaryAdmin, terms: [...] }
     teacherAuthSession: null, // { staffKey, coreName, cidHash }
     teacherSelectedTermId: null,
     teacherSelectedMonthTab: 'all', // 'all' | monthId
     teacherCalendarMonthId: null,
-    adminSessionHash: null,
+    adminCidHash: null,
     charts: {
       tdMonthly: null,
       tdBreakdown: null,
@@ -539,14 +542,14 @@
     };
     saveSettingsLocal();
 
-    if (hasGasEndpoint() && state.adminSessionHash) {
+    if (hasGasEndpoint() && state.adminCidHash) {
       await callGasApi('saveAdminSettings', {
-        adminPinHash: state.adminSessionHash,
-        newAdminPinHash: partialUpdate.adminPinHash || undefined,
+        adminCidHash: state.adminCidHash,
         settings: {
           visibleTerms: state.settings.visibleTerms,
           visibleMonths: state.settings.visibleMonths,
-          announcement: state.settings.announcement
+          announcement: state.settings.announcement,
+          adminCores: partialUpdate.adminCores !== undefined ? partialUpdate.adminCores : undefined
         }
       });
     }
@@ -634,27 +637,64 @@
     refreshIcons();
   }
 
-  function switchMode(mode) {
-    state.mode = mode;
+  function updateHeaderModeSwitcher() {
+    const wrap = $('mode-switcher-wrap');
     const btnTeacher = $('btn-mode-teacher');
     const btnAdmin = $('btn-mode-admin');
-    if (mode === 'teacher') {
-      btnTeacher.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow';
-      btnAdmin.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
-    } else {
+    if (!wrap || !btnTeacher || !btnAdmin) return;
+
+    if (!state.currentTeacher) {
+      wrap.classList.add('hidden');
+      btnAdmin.classList.add('hidden');
+      return;
+    }
+
+    wrap.classList.remove('hidden');
+    const isAdmin = Boolean(state.currentTeacher.isAdmin);
+    btnAdmin.classList.toggle('hidden', !isAdmin);
+
+    if (state.mode === 'admin' && isAdmin) {
       btnAdmin.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow';
       btnTeacher.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
+    } else {
+      btnTeacher.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow';
+      btnAdmin.className = (isAdmin ? '' : 'hidden ') + 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
     }
+  }
+
+  async function switchMode(mode) {
+    if (mode === 'admin') {
+      if (!(state.currentTeacher && state.currentTeacher.isAdmin)) {
+        state.mode = 'teacher';
+        renderActiveModeView();
+        return;
+      }
+      state.mode = 'admin';
+      renderActiveModeView();
+      if (!state.adminRecords && state.adminCidHash) {
+        try {
+          await loadAdminRecords(false);
+          renderAdminDashboard();
+        } catch (err) {
+          toast('โหลดข้อมูลแอดมินไม่สำเร็จ: ' + err.message, 'error');
+        }
+      }
+      return;
+    }
+    state.mode = 'teacher';
     renderActiveModeView();
   }
 
   function renderActiveModeView() {
     $('view-teacher-login').classList.add('hidden');
     $('view-teacher-dashboard').classList.add('hidden');
-    $('view-admin-login').classList.add('hidden');
     $('view-admin-dashboard').classList.add('hidden');
 
-    if (state.mode === 'teacher') {
+    if (state.mode === 'admin' && state.currentTeacher && state.currentTeacher.isAdmin) {
+      $('view-admin-dashboard').classList.remove('hidden');
+      renderAdminDashboard();
+    } else {
+      state.mode = 'teacher';
       if (state.currentTeacher) {
         $('view-teacher-dashboard').classList.remove('hidden');
         renderTeacherDashboard();
@@ -662,14 +702,8 @@
         $('view-teacher-login').classList.remove('hidden');
         renderTeacherLoginView();
       }
-    } else {
-      if (state.adminSessionHash && state.adminSessionHash === state.settings.adminPinHash) {
-        $('view-admin-dashboard').classList.remove('hidden');
-        renderAdminDashboard();
-      } else {
-        $('view-admin-login').classList.remove('hidden');
-      }
     }
+    updateHeaderModeSwitcher();
     refreshIcons();
   }
 
@@ -776,6 +810,8 @@
               department: staffInfo.department || staffInfo.group || '',
               avatarUrl: ''
             };
+        person.isAdmin = Boolean(res.isAdmin || staffInfo.isAdmin);
+        person.isPrimaryAdmin = Boolean(res.isPrimaryAdmin || staffInfo.isPrimaryAdmin);
         const termsPayload = Array.isArray(res.terms) && res.terms.length
           ? res.terms
           : (res.record ? [{
@@ -785,7 +821,7 @@
               record: res.record
             }] : []);
         setAuthenticatedTeacher(person, termsPayload, { cidHash: res.cidHash || cidHash }, isRemembered);
-        if (!silent) toast(`ยินดีต้อนรับ ${person.name}`);
+        if (!silent) toast(`ยินดีต้อนรับ ${person.name}${person.isAdmin ? ' (สิทธิ์ผู้ดูแลระบบ)' : ''}`);
         return;
       }
     }
@@ -810,6 +846,11 @@
     }
 
     const coreName = person.coreName || stripNamePrefix(person.name);
+    const offlinePerson = {
+      ...person,
+      isPrimaryAdmin: PRIMARY_ADMIN_CORES.includes(coreName),
+      isAdmin: PRIMARY_ADMIN_CORES.includes(coreName) || (state.adminCores || []).includes(coreName)
+    };
     const sourceRecords = state.adminRecords || (fallbackData && fallbackData.records) || [];
     const rec = sourceRecords.find(r => r.key === person.key || stripNamePrefix(r.name) === coreName);
     if (!rec) {
@@ -821,27 +862,37 @@
       months: state.terms[0] ? state.terms[0].months : state.months,
       record: rec
     }];
-    setAuthenticatedTeacher(person, fallbackTerm, { cidHash }, isRemembered);
-    if (!silent) toast(`ยินดีต้อนรับ ${person.name}`);
+    setAuthenticatedTeacher(offlinePerson, fallbackTerm, { cidHash }, isRemembered);
+    if (!silent) toast(`ยินดีต้อนรับ ${offlinePerson.name}${offlinePerson.isAdmin ? ' (สิทธิ์ผู้ดูแลระบบ)' : ''}`);
   }
 
   function setAuthenticatedTeacher(person, teacherTerms, authHashes, remember) {
+    const coreName = person.coreName || stripNamePrefix(person.name);
+    const isPrimary = Boolean(person.isPrimaryAdmin || PRIMARY_ADMIN_CORES.includes(coreName));
+    const isAdmin = Boolean(person.isAdmin || isPrimary);
+
     state.currentTeacher = {
       key: person.key,
-      coreName: person.coreName || stripNamePrefix(person.name),
+      coreName,
       seq: person.seq,
       name: person.name,
       position: person.position,
       group: person.group,
       department: person.department || person.group,
       avatarUrl: person.avatarUrl || '',
+      isAdmin,
+      isPrimaryAdmin: isPrimary,
       terms: teacherTerms || []
     };
     state.teacherAuthSession = {
       staffKey: person.key,
-      coreName: state.currentTeacher.coreName,
+      coreName,
       cidHash: authHashes.cidHash
     };
+    state.adminCidHash = isAdmin ? authHashes.cidHash : null;
+    if (!isAdmin) {
+      state.mode = 'teacher';
+    }
 
     const openTerms = getOpenTermsList();
     const activeTerm = openTerms.length ? openTerms[openTerms.length - 1] : null;
@@ -861,6 +912,10 @@
   function logoutTeacher() {
     state.currentTeacher = null;
     state.teacherAuthSession = null;
+    state.adminCidHash = null;
+    state.adminRecords = null;
+    state.adminRecordsByTerm = fallbackData && fallbackData.records ? { '0': fallbackData.records } : {};
+    state.mode = 'teacher';
     sessionStorage.removeItem(SS_TEACHER_AUTH_KEY);
     localStorage.removeItem(LS_TEACHER_AUTH_KEY);
     const cidInp = $('teacher-cid-input');
@@ -1313,41 +1368,16 @@
   }
 
   // -------------------- 10. ADMIN AUTH & CONTROL PANEL --------------------
-  async function loginAdmin(pin) {
-    const hash = sha256Hex('kbs-att-admin:' + String(pin || '').trim());
-    if (hasGasEndpoint()) {
-      try {
-        state.adminSessionHash = hash;
-        await loadAdminRecords(false);
-        sessionStorage.setItem(SS_ADMIN_HASH_KEY, hash);
-        renderActiveModeView();
-        return;
-      } catch (err) {
-        state.adminSessionHash = null;
-        if (String(err.message || '').includes('ไม่ถูกต้อง')) {
-          throw err;
-        }
-      }
-    }
-    if (hash !== state.settings.adminPinHash) {
-      throw new Error('รหัส PIN ผู้ดูแลระบบไม่ถูกต้อง');
-    }
-    state.adminSessionHash = hash;
-    sessionStorage.setItem(SS_ADMIN_HASH_KEY, hash);
-    await loadAdminRecords(false);
-    renderActiveModeView();
-  }
-
   function getAdminTermObj() {
     return state.terms.find(t => t.termId === state.adminSelectedTermId) || state.terms[state.terms.length - 1] || state.terms[0];
   }
 
   async function loadAdminRecords(forceRefresh = false, requestedTermId = null) {
     const targetTermId = requestedTermId || state.adminSelectedTermId || '';
-    if (hasGasEndpoint() && state.adminSessionHash) {
+    if (hasGasEndpoint() && state.adminCidHash) {
       try {
         const res = await callGasApi('getAdminAllData', {
-          adminPinHash: state.adminSessionHash,
+          adminCidHash: state.adminCidHash,
           termId: targetTermId || undefined,
           forceRefresh
         });
@@ -1356,6 +1386,13 @@
         }
         if (res.activeTermId) {
           state.adminSelectedTermId = res.activeTermId;
+        }
+        if (Array.isArray(res.primaryAdminCores) && res.primaryAdminCores.length) {
+          state.primaryAdminCores = res.primaryAdminCores;
+        }
+        if (Array.isArray(res.adminCores)) {
+          state.adminCores = res.adminCores;
+          state.settings.adminCores = res.adminCores;
         }
         if (Array.isArray(res.records)) {
           const mapped = res.records.map(r => {
@@ -1384,7 +1421,7 @@
         }
       } catch (err) {
         console.warn('[KBS-Attendance] โหลดข้อมูลแอดมินจาก GAS ไม่สำเร็จ:', err.message);
-        if (forceRefresh || String(err.message || '').includes('ไม่ถูกต้อง')) throw err;
+        if (forceRefresh || String(err.message || '').includes('สิทธิ์')) throw err;
       }
     }
     if (!state.adminRecords && fallbackData && Array.isArray(fallbackData.records)) {
@@ -1394,9 +1431,6 @@
   }
 
   function logoutAdmin() {
-    state.adminSessionHash = null;
-    state.adminRecords = null;
-    sessionStorage.removeItem(SS_ADMIN_HASH_KEY);
     switchMode('teacher');
   }
 
@@ -2060,30 +2094,38 @@
     refreshIcons();
   }
 
-  // ---- Admin Tab 3: Staff CID & Access Code Manager ----
+  // ---- Admin Tab 3: Staff CID, Access Code & Admin Role Manager ----
   function renderAdminPinsTab() {
-    let seedCount = 0, customCount = 0, missingCount = 0;
+    let seedCount = 0, customCount = 0, missingCount = 0, adminCount = 0;
+    const primarySet = new Set(state.primaryAdminCores || PRIMARY_ADMIN_CORES);
+    const adminSet = new Set([...(state.adminCores || []), ...primarySet]);
+
     const enriched = state.staffCatalog.map(s => {
       const core = s.coreName || stripNamePrefix(s.name);
       const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || state.customPinCoresFromGas.has(core) || s.hasCustomPin);
       const hasSeed = Boolean(s.hasSeedPin || seedCidCoreSet.has(core) || (seedMap.get(s.key) && seedMap.get(s.key).hasSeedPin));
+      const isPrimaryAdmin = primarySet.has(core);
+      const isAdmin = isPrimaryAdmin || adminSet.has(core);
+      if (isAdmin) adminCount++;
       let status = 'missing';
       if (hasCustom) { status = 'custom'; customCount++; }
       else if (hasSeed) { status = 'seed'; seedCount++; }
       else { missingCount++; }
-      return { ...s, status };
+      return { ...s, core, status, isAdmin, isPrimaryAdmin };
     });
 
     $('ad-pins-stats').innerHTML = `
       <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200"><div class="text-xs text-emerald-700 font-semibold">มีเลขบัตรประชาชนใน E-Profile</div><div class="text-xl font-bold text-emerald-900 mt-0.5">${seedCount} คน</div></div>
       <div class="p-3.5 rounded-2xl bg-blue-50 border border-blue-200"><div class="text-xs text-blue-700 font-semibold">กำหนดเลขบัตร / รหัสเองแล้ว</div><div class="text-xl font-bold text-blue-900 mt-0.5">${customCount} คน</div></div>
       <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200"><div class="text-xs text-amber-800 font-semibold">ยังไม่มีเลขบัตร / รหัสเข้าใช้</div><div class="text-xl font-bold text-amber-950 mt-0.5">${missingCount} คน</div></div>
+      <div class="p-3.5 rounded-2xl bg-purple-50 border border-purple-200"><div class="text-xs text-purple-800 font-semibold">ผู้มีสิทธิ์แอดมิน</div><div class="text-xl font-bold text-purple-950 mt-0.5">${adminCount} คน</div></div>
     `;
 
     const filter = $('ad-pin-filter-select').value;
     const q = ($('ad-pin-search-input').value || '').trim().toLowerCase();
     const list = enriched.filter(s => {
-      if (filter !== 'all' && s.status !== filter) return false;
+      if (filter === 'admin' && !s.isAdmin) return false;
+      else if (filter !== 'all' && filter !== 'admin' && s.status !== filter) return false;
       if (q && !s.name.toLowerCase().includes(q) && !(s.position || '').toLowerCase().includes(q)) return false;
       return true;
     });
@@ -2095,13 +2137,24 @@
           ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">เลขบัตรฯ 13 หลัก (E-Profile)</span>'
           : '<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">ยังไม่มีเลขบัตร / รหัส</span>');
 
+      const adminBadge = s.isPrimaryAdmin
+        ? '<span class="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-bold">แอดมินหลัก</span>'
+        : (s.isAdmin
+          ? '<span class="px-2 py-0.5 rounded-full bg-purple-100 border border-purple-200 text-purple-800 text-[10px] font-bold">แอดมิน</span>'
+          : '');
+
+      const roleBtn = s.isPrimaryAdmin
+        ? '<span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">สิทธิ์ถาวร</span>'
+        : `<button type="button" data-toggle-admin="${esc(s.key)}" class="btn-toggle-staff-admin px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${s.isAdmin ? 'bg-purple-100 hover:bg-rose-100 text-purple-900 hover:text-rose-800 border border-purple-200' : 'bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-900 border border-slate-200'}">${s.isAdmin ? 'ถอดสิทธิ์แอดมิน' : 'ให้สิทธิ์แอดมิน'}</button>`;
+
       return `
         <tr class="hover:bg-slate-50">
           <td class="px-3 py-2.5 text-slate-500">${s.seq}</td>
           <td class="px-3 py-2.5 font-semibold text-slate-800">${esc(s.name)}</td>
           <td class="px-3 py-2.5 text-slate-500">${esc(s.position)} • ${esc(s.group)}</td>
-          <td class="px-3 py-2.5">${badge}</td>
+          <td class="px-3 py-2.5"><div class="flex flex-wrap items-center gap-1">${badge}${adminBadge}</div></td>
           <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
+            ${roleBtn}
             <button type="button" data-set-pin="${esc(s.key)}" class="btn-set-staff-pin px-2.5 py-1 rounded-lg bg-kbs-navy hover:bg-kbs-navyDark text-white text-[11px] font-semibold">กำหนดเลขบัตร/รหัส</button>
             ${s.status === 'custom' ? `<button type="button" data-reset-pin="${esc(s.key)}" class="btn-reset-staff-pin px-2 py-1 rounded-lg border border-slate-300 text-slate-600 text-[11px]">ล้างรหัส</button>` : ''}
           </td>
@@ -2109,12 +2162,49 @@
       `;
     }).join('');
 
+    document.querySelectorAll('.btn-toggle-staff-admin').forEach(btn => {
+      btn.addEventListener('click', () => toggleStaffAdminRole(btn.getAttribute('data-toggle-admin')));
+    });
     document.querySelectorAll('.btn-set-staff-pin').forEach(btn => {
       btn.addEventListener('click', () => promptSetStaffPin(btn.getAttribute('data-set-pin')));
     });
     document.querySelectorAll('.btn-reset-staff-pin').forEach(btn => {
       btn.addEventListener('click', () => clearStaffCustomPin(btn.getAttribute('data-reset-pin')));
     });
+  }
+
+  async function toggleStaffAdminRole(staffKey) {
+    const person = state.staffCatalog.find(s => s.key === staffKey);
+    if (!person) return;
+    const core = person.coreName || stripNamePrefix(person.name);
+    const primarySet = new Set(state.primaryAdminCores || PRIMARY_ADMIN_CORES);
+    if (primarySet.has(core)) {
+      toast('ไม่สามารถถอดสิทธิ์แอดมินหลักได้', 'warning');
+      return;
+    }
+
+    const current = Array.isArray(state.adminCores) ? [...state.adminCores] : [...PRIMARY_ADMIN_CORES];
+    const hasAdmin = current.includes(core);
+
+    const confirmRes = await Swal.fire({
+      title: hasAdmin ? 'ยืนยันถอดสิทธิ์แอดมิน?' : 'ยืนยันการให้สิทธิ์แอดมิน?',
+      text: `${person.name} จะ${hasAdmin ? 'ถูกถอดสิทธิ์แอดมิน (เข้าได้เฉพาะหน้าครู/บุคลากร)' : 'สามารถเข้าถึงหน้าจัดการแอดมินได้ทันทีหลังล็อกอินด้วยเลขบัตรฯ'}`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: hasAdmin ? 'ถอดสิทธิ์แอดมิน' : 'ให้สิทธิ์แอดมิน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: hasAdmin ? '#dc2626' : '#1e3a8a'
+    });
+    if (!confirmRes.isConfirmed) return;
+
+    const nextCores = hasAdmin
+      ? current.filter(c => c !== core)
+      : [...current, core];
+
+    state.adminCores = nextCores;
+    await saveSettingsToCloud({ adminCores: nextCores });
+    toast(`${hasAdmin ? 'ถอดสิทธิ์แอดมินของ' : 'เพิ่มสิทธิ์แอดมินให้'} ${person.name} เรียบร้อยแล้ว`);
+    renderAdminPinsTab();
   }
 
   async function promptSetStaffPin(staffKey) {
@@ -2159,9 +2249,9 @@
     }
     saveSettingsLocal();
 
-    if (hasGasEndpoint() && state.adminSessionHash) {
+    if (hasGasEndpoint() && state.adminCidHash) {
       await callGasApi('saveStaffPins', {
-        adminPinHash: state.adminSessionHash,
+        adminCidHash: state.adminCidHash,
         pins: [{ key: staffKey, name: person ? person.name : '', pinHash: hash || '' }]
       });
     }
@@ -2210,8 +2300,8 @@
         assignedList.push({ name: s.name, position: s.position, code });
       }
       saveSettingsLocal();
-      if (hasGasEndpoint() && state.adminSessionHash) {
-        await callGasApi('saveStaffPins', { adminPinHash: state.adminSessionHash, pins: gasPins });
+      if (hasGasEndpoint() && state.adminCidHash) {
+        await callGasApi('saveStaffPins', { adminCidHash: state.adminCidHash, pins: gasPins });
       }
       renderAdminPinsTab();
 
@@ -2304,9 +2394,9 @@
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-toggle-req');
         const nextStatus = btn.getAttribute('data-cur') === 'resolved' ? 'pending' : 'resolved';
-        if (hasGasEndpoint() && state.adminSessionHash) {
+        if (hasGasEndpoint() && state.adminCidHash) {
           await callGasApi('updateCorrectionStatus', {
-            adminPinHash: state.adminSessionHash,
+            adminCidHash: state.adminCidHash,
             id,
             status: nextStatus
           });
@@ -2366,7 +2456,6 @@
   function bindEvents() {
     $('btn-mode-teacher').addEventListener('click', () => switchMode('teacher'));
     $('btn-mode-admin').addEventListener('click', () => switchMode('admin'));
-    $('btn-back-to-teacher').addEventListener('click', () => switchMode('teacher'));
 
     // Teacher single CID / access code login
     const cidInput = $('teacher-cid-input');
@@ -2453,29 +2542,6 @@
         toast('ส่งคำร้องบันทึกลง Google Sheets เรียบร้อยแล้ว');
       } catch (err) {
         toast('ส่งคำร้องไม่สำเร็จ: ' + err.message, 'error');
-      } finally {
-        setButtonLoading(btn, false);
-      }
-    });
-
-    // Admin login
-    $('btn-toggle-admin-pin').addEventListener('click', () => {
-      const inp = $('admin-pin-input');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
-    });
-    $('form-admin-login').addEventListener('submit', async e => {
-      e.preventDefault();
-      const pin = $('admin-pin-input').value;
-      const errBox = $('admin-login-error');
-      const btn = $('btn-admin-login');
-      errBox.classList.add('hidden');
-      setButtonLoading(btn, true, 'กำลังเข้าสู่ระบบ...');
-      try {
-        await loginAdmin(pin);
-        $('admin-pin-input').value = '';
-      } catch (err) {
-        errBox.textContent = err.message;
-        errBox.classList.remove('hidden');
       } finally {
         setButtonLoading(btn, false);
       }
@@ -2646,26 +2712,6 @@
         setButtonLoading(btn, false);
       }
     });
-
-    $('btn-change-admin-pin').addEventListener('click', async () => {
-      const p1 = $('ad-new-pin-input').value.trim();
-      const p2 = $('ad-confirm-pin-input').value.trim();
-      if (p1.length < 4) { toast('รหัส PIN ใหม่ต้องมีอย่างน้อย 4 ตัวอักษร', 'warning'); return; }
-      if (p1 !== p2) { toast('รหัส PIN ยืนยันไม่ตรงกัน', 'error'); return; }
-      const btn = $('btn-change-admin-pin');
-      setButtonLoading(btn, true, 'กำลังเปลี่ยน PIN...');
-      try {
-        const newHash = sha256Hex('kbs-att-admin:' + p1);
-        await saveSettingsToCloud({ adminPinHash: newHash });
-        state.adminSessionHash = newHash;
-        sessionStorage.setItem(SS_ADMIN_HASH_KEY, newHash);
-        $('ad-new-pin-input').value = '';
-        $('ad-confirm-pin-input').value = '';
-        toast('เปลี่ยนรหัส PIN แอดมินเรียบร้อยแล้ว');
-      } finally {
-        setButtonLoading(btn, false);
-      }
-    });
   }
 
   // -------------------- 13. BOOTSTRAP --------------------
@@ -2674,10 +2720,10 @@
     loadSettingsLocal();
     bindEvents();
 
-    // ลองเชื่อมต่อ Google Sheets ผ่าน /api/gas (Vercel) หรือ config.js ทันทีที่เปิดหน้า
+    // ลองเชื่อมต่อ Google Sheets ผ่าน GAS / /api/gas ทันทีที่เปิดหน้า
     await refreshPublicCatalogFromGas(false);
 
-    // Restore teacher session if saved
+    // Restore teacher/admin session if saved
     const savedSess = sessionStorage.getItem(SS_TEACHER_AUTH_KEY) || localStorage.getItem(LS_TEACHER_AUTH_KEY);
     if (savedSess) {
       try {
@@ -2688,20 +2734,6 @@
       } catch (e) {
         sessionStorage.removeItem(SS_TEACHER_AUTH_KEY);
         localStorage.removeItem(LS_TEACHER_AUTH_KEY);
-      }
-    }
-
-    // Restore admin session if active in this tab
-    const savedAdminHash = sessionStorage.getItem(SS_ADMIN_HASH_KEY);
-    if (savedAdminHash) {
-      state.adminSessionHash = savedAdminHash;
-      try {
-        await loadAdminRecords(false);
-      } catch (e) {
-        if (savedAdminHash !== state.settings.adminPinHash) {
-          state.adminSessionHash = null;
-          sessionStorage.removeItem(SS_ADMIN_HASH_KEY);
-        }
       }
     }
 

@@ -13,5 +13,5 @@ window.KBS_ATTENDANCE_CONFIG = {
   SPREADSHEET_ID: '1AuOkjvEAy2JTS6DqDt1hUZMlVV6TO1EFcxclfVOfAfs',
   SCHOOL_NAME: 'โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่',
   TERM_LABEL: 'ภาคเรียนที่ 2/2569',
-  DEFAULT_ADMIN_PIN: '123456'
+  PRIMARY_ADMIN_CORES: ['ศรายุทธ พงค์ทองเมือง']
 };

@@ -35,7 +35,7 @@ var CONFIG = {
   CACHE_EPROFILE_KEY: 'kbs_eprofile_live_map_v1',
   CACHE_TTL_SECONDS: 180,
   CACHE_EPROFILE_TTL: 600,
-  DEFAULT_ADMIN_PIN: '123456'
+  PRIMARY_ADMIN_CORES: ['ศรายุทธ พงค์ทองเมือง']
 };
 
 var THAI_MONTH_MAP = {
@@ -628,7 +628,7 @@ function readSettingsFromSheet(ss, tabsDatasets) {
     visibleTerms: defaultVisibleTerms,
     visibleMonths: defaultVisibleMonths,
     announcement: '',
-    adminPinHash: sha256Hex('kbs-att-admin:' + CONFIG.DEFAULT_ADMIN_PIN),
+    adminCores: normalizeAdminCoresList(null),
     updatedAt: ''
   };
 
@@ -658,13 +658,39 @@ function readSettingsFromSheet(ss, tabsDatasets) {
       } catch (e) {}
     } else if (key === 'announcement') {
       settings.announcement = val;
-    } else if (key === 'adminPinHash' && val) {
-      settings.adminPinHash = val.trim();
+    } else if (key === 'adminCores' && val) {
+      try {
+        settings.adminCores = normalizeAdminCoresList(JSON.parse(val));
+      } catch (e) {}
     } else if (key === 'updatedAt' && val) {
       settings.updatedAt = val.trim();
     }
   }
   return settings;
+}
+
+function normalizeAdminCoresList(list) {
+  var seen = {};
+  var out = [];
+  var addCore = function(name) {
+    var c = stripNamePrefix(name);
+    if (c && !seen[c]) {
+      seen[c] = true;
+      out.push(c);
+    }
+  };
+  (CONFIG.PRIMARY_ADMIN_CORES || []).forEach(addCore);
+  if (Array.isArray(list)) {
+    list.forEach(addCore);
+  }
+  return out;
+}
+
+function isCoreAdmin(coreName, settings) {
+  var c = stripNamePrefix(coreName);
+  if (!c) return false;
+  var admins = normalizeAdminCoresList(settings && settings.adminCores);
+  return admins.indexOf(c) !== -1;
 }
 
 function writeSettingsToSheet(ss, updates) {
@@ -743,11 +769,12 @@ function readCorrectionsFromSheet(ss) {
 }
 
 function verifyAdminAuth(ss, payload) {
+  var adminCidHash = String((payload && payload.adminCidHash) || '').trim();
+  if (!adminCidHash) return false;
+  var resolved = resolveCoreByCid(ss, '', adminCidHash, false);
+  if (!resolved.ok || !resolved.coreName) return false;
   var settings = readSettingsFromSheet(ss, null);
-  var expected = settings.adminPinHash;
-  if (payload.adminPinHash && String(payload.adminPinHash).trim() === expected) return true;
-  if (payload.adminPin && sha256Hex('kbs-att-admin:' + String(payload.adminPin).trim()) === expected) return true;
-  return false;
+  return isCoreAdmin(resolved.coreName, settings);
 }
 
 function doGet(e) {
@@ -1024,12 +1051,17 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
   var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
   var fallbackLatest = teacherTerms.length ? teacherTerms[teacherTerms.length - 1] : null;
 
+  var adminStatus = isCoreAdmin(coreName, settings);
+  var primaryStatus = (CONFIG.PRIMARY_ADMIN_CORES || []).indexOf(coreName) !== -1;
+
   return {
     success: true,
     source: 'gas_live',
     spreadsheetTitle: bundle.ssTitle,
     syncedAt: syncedAt,
     cidHash: cidHashOut,
+    isAdmin: adminStatus,
+    isPrimaryAdmin: primaryStatus,
     profile: {
       key: latestFoundProfile.key,
       coreName: latestFoundProfile.coreName,
@@ -1037,7 +1069,9 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
       name: latestFoundProfile.name,
       position: latestFoundProfile.position,
       group: latestFoundProfile.group,
-      department: (liveEprof.depts && liveEprof.depts[coreName]) || latestFoundProfile.group
+      department: (liveEprof.depts && liveEprof.depts[coreName]) || latestFoundProfile.group,
+      isAdmin: adminStatus,
+      isPrimaryAdmin: primaryStatus
     },
     settings: {
       visibleTerms: settings.visibleTerms,
@@ -1087,7 +1121,7 @@ function handleSubmitCorrection(payload) {
 function handleGetAdminAllData(payload, forceRefresh) {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   if (!verifyAdminAuth(ss, payload)) {
-    return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
+    return { success: false, error: 'คุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)' };
   }
 
   var tabsInfo = discoverAttendanceTabs(ss);
@@ -1138,8 +1172,11 @@ function handleGetAdminAllData(payload, forceRefresh) {
       visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,
       announcement: settings.announcement,
+      adminCores: normalizeAdminCoresList(settings.adminCores),
       updatedAt: settings.updatedAt
     },
+    adminCores: normalizeAdminCoresList(settings.adminCores),
+    primaryAdminCores: CONFIG.PRIMARY_ADMIN_CORES,
     customPinKeys: Object.keys(customPins.byKey),
     customPinCores: Object.keys(customPins.byCore),
     corrections: corrections
@@ -1149,16 +1186,16 @@ function handleGetAdminAllData(payload, forceRefresh) {
 function handleSaveAdminSettings(payload) {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   if (!verifyAdminAuth(ss, payload)) {
-    return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
+    return { success: false, error: 'คุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)' };
   }
   var updates = { updatedAt: new Date().toISOString() };
-  if (payload.newAdminPinHash) {
-    updates.adminPinHash = String(payload.newAdminPinHash).trim();
-  }
   if (payload.settings) {
     if (payload.settings.visibleTerms !== undefined) updates.visibleTerms = payload.settings.visibleTerms;
     if (payload.settings.visibleMonths !== undefined) updates.visibleMonths = payload.settings.visibleMonths;
     if (payload.settings.announcement !== undefined) updates.announcement = payload.settings.announcement;
+    if (payload.settings.adminCores !== undefined) {
+      updates.adminCores = normalizeAdminCoresList(payload.settings.adminCores);
+    }
   }
   writeSettingsToSheet(ss, updates);
   invalidateFastBundleCaches();
@@ -1168,7 +1205,7 @@ function handleSaveAdminSettings(payload) {
 function handleSaveStaffPins(payload) {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   if (!verifyAdminAuth(ss, payload)) {
-    return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
+    return { success: false, error: 'คุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)' };
   }
   var sheet = getOrCreateHelperSheet(ss, CONFIG.TAB_PINS, ['StaffKey', 'StaffName', 'PinHash', 'UpdatedAt']);
   var incoming = payload.pins || [];
@@ -1216,7 +1253,7 @@ function handleSaveStaffPins(payload) {
 function handleUpdateCorrectionStatus(payload) {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   if (!verifyAdminAuth(ss, payload)) {
-    return { success: false, error: 'รหัส PIN แอดมินไม่ถูกต้อง' };
+    return { success: false, error: 'คุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)' };
   }
   var sheet = ss.getSheetByName(CONFIG.TAB_CORRECTIONS);
   if (!sheet || sheet.getLastRow() <= 1) return { success: false, error: 'ไม่พบคำร้อง' };
