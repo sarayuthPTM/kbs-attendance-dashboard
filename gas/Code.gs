@@ -52,221 +52,119 @@ var THAI_MONTH_MAP = {
 };
 
 // Hash (SHA-256) สำหรับยืนยันตัวตนฝั่งเซิร์ฟเวอร์ (ไม่เก็บเลขบัตรดิบ)
-var SEED_PIN_HASHES = {
-  "staff_4": "0205f69ba3159f0846e61fe5e57d47a4dce00ab01b6ab7988db7f0e3b6746fdb",
-  "staff_5": "cb5ac4ac074dd95ec6893fd1fe66768383343649bec8ce3cca2550a7285346b4",
-  "staff_6": "485b1066c5612ae2e8bf28793a34d41263b0d9168580bec31d9706d130a8c1b6",
-  "staff_7": "9a0641213f776f07b42dca898afd90291d30d4ea66d121976f1ad51ce2337a73",
-  "staff_8": "a35999fa29cabe563c36d73b4b477045d319071a2981977ab9d3edcf8a5f72b0",
-  "staff_9": "34949d5c7d0642e5a9d94d2e0c3fc1b5a14a38d8aa64e45de473d3e6a39da5b7",
-  "staff_10": "24bbbd7530a7ad77e26f17a90f0226ddd868bd64987b9a1cf748af1643ff70fd",
-  "staff_11": "f42d3d46176585d72de351d833b67adde8516ec2950532b5f1a26bf0c7d00d51",
-  "staff_12": "a3174eb6759f34e34f3d1ea83e7dd2fcdf3ab27e1542786934b683652ba7e347",
-  "staff_13": "db159432487d22fdf123295397b0e6a4e9ffce3ab981eaf88a252b420dea2440",
-  "staff_14": "0c9db57468a1c8d325d0abd8cb216c5ed185172f6bc465c2463d7dd621125465",
-  "staff_15": "6a5efe50daaaaa40187c91202e6ea7ac79378b9c4774e7b6e5d9bae7b5acf3c0",
-  "staff_16": "2b90a0e31b4b11667b4693399f8d3adabc810e37397db7c3ffa2051b3fa6b3c7",
-  "staff_17": "bc08d765290f211937ed75f3444a73673f1252010f968bc25a7a5ea74c207477",
-  "staff_18": "3176a5b05aa1647f0ba47387d7aedbc0f2dbda8b60571646254338ceaff599eb",
-  "staff_19": "b16d064cf32c4ed1554d1690617df5a0a6daa7611bc89e35d484af0827157b2b",
-  "staff_20": "e3ed04c44c867a89aae1a46bb7897b8d69997e1374d9c2c44176c8ad053661fe",
-  "staff_21": "3eae0b2ecb9cdf0642253197ea840ded23936916b1fe3671a7cc9fe2f98f7613",
-  "staff_22": "e97f7e56544b1e8eab7914d9a2b993d4cc48e0549f9d8510bacc7119210d58c5",
-  "staff_23": "38b675295909848d78266bf25f6d4a62d472888bfb7b4377a4fcbf3857d954a4",
-  "staff_24": "98b55526acec3b7ded15f4f3e15b0521e55ce45db9d2ddfcf46edaab00769815",
-  "staff_25": "752305c876130221407a1b2ae59a0e114b565c7d86ba0622cc25aedc4caf0520",
-  "staff_26": "b6f661c6afccb43817fe9a6b26fd1eeaf84e116361f86e8e39cd7bc020281801",
-  "staff_27": "43c5ad5c546f9eb8ba6a0ee6ce339666bf435fb4f5fbb896b3250dbc099a9671",
-  "staff_28": "cca28a0934c886c495a96c73a4c294b2910b13da023e4d4e2bb40583faee01d3",
-  "staff_29": "ef1cf32469a733f897f426f03076e9f8958130e69e0ca0f46386f3e556c4e966",
-  "staff_30": "da8df44124d9203ba30379ff1943ffd50b866a6fc8859d2c60dfe29a022191ad",
-  "staff_31": "f8bef0a8a4e453fd61d6ee07323266168ba414384b134f255057a0fd9f02d449",
-  "staff_32": "fca2b80d830a5e5671e64d5b7057bf440ec7a601cb6a7fb9d207a013320bbc47",
-  "staff_33": "911fca30e00c3b9cc2d183113b6a1b56c745766d3ca4ee43522690093340e16b",
-  "staff_34": "32dfe66787080aa31076bb2494b96b3482cc9d30c075d5d77ed280ead2f68931",
-  "staff_35": "85510c3517c831b384a98339e17dccc3eca8b2967a50b98eeee81f9edf5c814b",
-  "staff_36": "213b362a746757936dcc498345db7ac94a86e13aad8b45594599dd0e10195120",
-  "staff_37": "8896fc048a2574d3ee3be1818b8bbacab672bfd99ff92f2cf20911b663977a75",
-  "staff_38": "c860422e10b56647fc6ad817f79154b573a5f68ced99a74b166185facd40b27e",
-  "staff_39": "1069a406d2782048642100eb8ebf836c6403094ed20ddf96557cfcea13d68567",
-  "staff_40": "f327ac38117f90f021c914b15fc8c3e7d9a4ab89fb781150d0af5068e52a4bc2",
-  "staff_41": "716c0f712a213e40ff4d44ebaf6f30b37673b5517dd05ac33d2ded938568feea",
-  "staff_42": "d14177390fc06b740d48bda1cb55b5bce61bfbc2d1237f42954bf98a1ab7b006",
-  "staff_43": "d6633400f571fc410d6b9e9d39917006b45fed7b6773d41e7982c54b44d89387",
-  "staff_44": "74f0ad7e8c0a01e086d1f5fa449c8868f7df1e4922d2542055cdd61683d6ae70",
-  "staff_45": "69adcdddb215683239f188c23539cdb32503427fd7419a793b1affe18538c466",
-  "staff_46": "0168bd31e21f125ae1f4e959a4ff903842ae6bc7f7f411aa457a0efae842db41",
-  "staff_47": "b635e0ed6f373fce53bb9898cf9e6e97308df2faebe1a19490f915526c297291",
-  "staff_48": "270b374e35a945ddb925f4385173bb606207160e9f0c0035f9fe3e805287c486",
-  "staff_49": "7ea2877e1b8e62c5f10fbc1be8b9d0564de160e72553cb4250778e52b3ec088d",
-  "staff_50": "59bd9d6309e17d122d4620b796ecedd379403283972e2154e1be2f17923fa734",
-  "staff_51": "94bdce001f36db2aa48eaa3af82ad47d8ac24edfee5537443bfd96fc81cfaf1b",
-  "staff_52": "8a3bae686dc7a73e91160b95b06461816534f2d96c0238171b6ddb5a71cfd0e0",
-  "staff_53": "63efcb5f8eb15f4b7ecad1576e4a30b4eb29621a44533b4e086282e2a060eac9",
-  "staff_54": "efe5846f8dfacb2406ef17465cf6ca237ec8e940521079a6902d7165bc825e2f",
-  "staff_55": "56eb59222e8b0ee192fd513e01ff1801154585d9ad650e185e0a414d382f4ee9",
-  "staff_56": "88fc610ba119960dea386ca00a8e0061f235b1a76fff00f523ac06fb71ffce35",
-  "staff_58": "f24dc34b1155925dc4bcae4c522d8aff5fe808f55b43efe93890af1f8b7a234b",
-  "staff_59": "9bdacff66c0a4dd4416c248c6fc9ecacd3c8831715f29364f5182155815750b1",
-  "staff_60": "4e2868c323e8eb2b6386092a2381b0665ec7108620e2a460c7cb4e2e68cf7452",
-  "staff_61": "906950ca2ad2d112fd0b0e968450fab196837a91c68333587ef3b54ba67ccd7e",
-  "staff_62": "6fda025aad167739180bf7ea2116c742ff650384574ab6bc0e596c42b55a7f15",
-  "staff_63": "730484a60edc84b3131ea0385d07f83792b6b3d09528a02c0cacc7ec8c404473",
-  "staff_64": "e5adf94aeacbd7b30fcc26c1938b0440944b19c07067ea17c08dbd052882423a",
-  "staff_65": "8930e868570c96a96ed46a1448864e77837390235fd1058334c0c035c588efc8",
-  "staff_66": "20e18f19bee046169e5ab41dd8fb97f9c884238a5ce3be2b15b3e673f8f407d3",
-  "staff_67": "a260eba2a8145b479b2b91c21ed489666157e7f547b57a971b285bb5df71e4be",
-  "staff_68": "24b475fa8e36fe7ccefda5b73f943f60119b3d7446703683bc51f6f3db57acf5",
-  "staff_69": "e8279eda85a15de67700f17f72dbaca31b87030ba510ee6f4ce8be210d988e0a",
-  "staff_70": "247f1021335fde81fb03f2c73c43ab99f2a0bebda3cac239bc938c8b87ec9793",
-  "staff_71": "ccbeb8ce8e4d1a9c02cc631202528db6bb30d3e051973d0b3c7dd1a0eb5b0049",
-  "staff_72": "5fee48a0cc80ad8c3d9466b7607a9b1e1355db95f0fddeb4003fda2df22ee51d",
-  "staff_73": "1dd656b406d7702e38bac973921ff7883959936bd9d35c3285067d49c849e3d5",
-  "staff_74": "1535b04d92daa3027f6edb65ecfaabc3af66d92a0b7710670cfe2b5352d19f14",
-  "staff_75": "85bc1f01d3497d0c05d65f6cc700cbf87c1c9cd01b19ff553b1bc708ab6efc6a",
-  "staff_76": "b785eaebb062a77dd9702ad0ed754c5a0ff1ddddf4e071e156f9071e8add37fe",
-  "staff_77": "e7f48822722ccbe93525dcefa5d3f39fd6d5f2cbca3947aeb57b6d9cd393824d",
-  "staff_78": "6317392d233b54df43660a5c97463ab7dab8ad24cf12e31cfbf4350fe415d119",
-  "staff_79": "c034e858fde0834adb64a2d00aa5edc7d9899fccfe533cd44c41e1c6b0184764",
-  "staff_80": "429b5b957a6bfd5ec10a8d4401c37d598e92305636fe9fdc1821852f495d625a",
-  "staff_81": "504972bd2f59bf107a25258c155c49920d602bf18c0384888b5fe1e9e34e4314",
-  "staff_82": "0df76a8759faec676bdba7aa73e09938baf2d5374ae0d20dd41e7e1a46f4ddb8",
-  "staff_83": "b39b87acd38400b44270db984946dd0eeb7616981271fdb3d491df1adb80ddbd",
-  "staff_84": "ef84153f934a8c3870bc7486ea04435a166e862447d0646cf3b8a9dda7fb7e12",
-  "staff_85": "5fa3aee42f9727739cb580870157c9da639794c90d2cf93f6d2816d9eb33b9d3",
-  "staff_86": "46bdfe5770b72111ecc2f432e0f0cbc3f290bbbfd87f74dcd168919e3dcd5505",
-  "staff_87": "4f9e992dad41841bfd9424c1b2f46607d154686d8622d7f2114f32b93e3ae255",
-  "staff_88": "65d8806a60423b460415b2740f2ca9665cd797c28ccabf44866c1e277e2a08f1",
-  "staff_89": "34061015a6734f34bdbadb0501f1a11c53b56a6b75793b5f4e3de9e212999fc5",
-  "staff_90": "42a2609c9cfd81904c8f28b774f989ecdfd0915c6b8c226f1dcda11c743610e1",
-  "staff_91": "9d93637ce10f909161ad408abfb5665a15da47fa2755eeff5a3158ae5333e17c",
-  "staff_92": "cc0598b90c6c255c143c89c749b906ec9a36676f75fa46d1f3f1e7f0fa6a9196",
-  "staff_93": "91ad5f334a21f45c43983f1ffd9358854ba1a07c7b0eb12af46a12167c6a85ab",
-  "staff_94": "af5c17dd7cdf6616c81347d149f46346addf81e3c4bab7c9af7384fbe13a9c3c",
-  "staff_95": "40c7a09a1a04caa8c371e838da6bca453a6ead07ab80828130a45fbd6279b99e",
-  "staff_96": "8532fa05cc698692d81383516a0d6dd69573a75523d1c1db8bb2a1183bdb3649",
-  "staff_97": "37f29168516aacf5e57d379031a83aa7c6fc107369e3b57f051f6473a3a3c384",
-  "staff_104": "2fde8025ab997f30a820a9cc8fced4ff400f12dc6a7553be4fffbfe1f387db4f",
-  "staff_106": "4fcb32aab4eb72c1d6abe5637b6273c13e43363c5f0eb07d565e75209118559f",
-  "staff_121": "24d1066cf8a0330fb73e4b14a4738b2fbf00706b789b3afd3cb3045e46a81155",
-  "staff_122": "0caa55d46903dc13efa8e340b1864324fbc6659f030baa68c5085720adb3ad01",
-  "staff_123": "47ddc1ff23d28f7ac34451d48adc719c64ee14b5159b7f6a275a832048eac1e4",
-  "staff_124": "1a4fce4dc73f52a6a41d1108ca66f8673ca04bfef3e83f245073577957fb4c46",
-  "staff_125": "91093f40160deb275a39b1021c73871653083646a28bcbb9a3e84cc233fefdb0",
-  "staff_126": "4238833d0151160a516777786d3a3f3646c4d9860cdb6330ee23fd7fc603a0c1"
-};
-var SEED_NAME_PIN_HASHES = {
-  "เกียรติมงคล พูดเพราะ": "44ac5055589bcb436257ecc4bd8fc9c6481cd63879c2eac4280a62322d50bfbe",
-  "คนึงนิตย์ แฉล้มรักษ์": "7d08678d5bc921af5ee2762e2c2713064c2f6ee322bb148dd8db26cd3499f54c",
-  "วัชระ เปียกบุตร": "581f56b20838823838db40337d28906ee8bb450b489409639cac9331cee0a332",
-  "ศรายุทธ พงค์ทองเมือง": "79fb5b8278e5e2ac98991744a5272105cd0ad1d10ef1d415e0925a388cfc30ff",
-  "สุธิดา ธนบัตร": "dc2f4c83886f913e37648a4d824f771838f17c60b29f8f81cb19b3bec7e5a971",
-  "เปรมฤดี จูหลง": "9ad133b4038f138dc015d8e3d93774a4991cfcd8517d5655b48dd60383e0077b",
-  "ณัฐปภัสร์ จันท์เสถียร": "126066f06f139f0ecb8027d8d3f0090168f25ff62ee8e1a74c76fabfc21c7897",
-  "รติกาล กลับคง": "e59eab74a1c59e7a143acf45e5dd27b2d26529d06d8a3aa7d4c6733bcee9730a",
-  "มูฮัมหมัดฟาเดล ยาลาแว": "4506206cc0bb23cc4ba05976686f6751c5fc755266fed8556115a5ccc7a11f6d",
-  "สิริรัตน์ ส่งศรี": "20b8c49368d8aac0cd35650debb9d7872b4fdcb24193a53b8326cffc75554045",
-  "อนุรัตน์ นาคสง่า": "d4f5c4060562730d15ba33b301535cf85815e3bf6804b286f1c73c1348adc371",
-  "ทัศนีย์ ธรรมทักษ์": "a8d5ca0078fcaabff0f7398f0cbf128c4a31359ea0ebace5a4e34dda143af657",
-  "พรพัฒน์ ขวัญนิมิตร": "8da22b6143f97a42f1d49b1e63e6e857cdc01e734d2a4e786188ed926d25bd23",
-  "ฟ้ารุ่ง ขวัญเพ็ชร": "8fcb6bf06797d3e140422a9dc446f9fde139be8109e0f954cb2eaff6e6789a41",
-  "จันทนา สักคุณา": "a9dc056d52a231e9ee93b50949b1b2800d1ac055dcf44a99011fb80ce7617c9b",
-  "นัทธมน ณัฎฐเดช": "123ea89d3ba8e48679a3e6b024ea0c698149c051eb807f26849fcabe1ef2fb7d",
-  "ยุพิน ทองแก้ว": "e1abe4268021166d627d90748d8885eff9f0b5697711ee43398f4098f4f5d4a3",
-  "รุ่งนภา สุชาฎา": "574da1600b48910ae3df82d2f6edb5e3180b4ce540af9e1f6553c6226296098c",
-  "อนุชา หัทยา": "69186bf6e1f79667ce3c1c37703b97250d919b08bf2dd3693bc8cc8cefbd8856",
-  "วาทินี เสล่ราษฎร์": "c04c6f19df8fc1b3dcb46c125c5bf603f274d6aa69c7ec3104c1ce34799447fb",
-  "อารมณ์ หยีหาสัน": "887c8ce96847eecef3a634c703fa6ffa19e2846cef3734257c8333345994be95",
-  "กานต์ชนก กานต์นภัทร": "8dc5a354ecb18b68f225862e3fcd47fa886b21fdf29c34623461a3b99517afaa",
-  "สุทิศา ปานแดง": "ccdb96e51f5a9293294f7016af906e0dc5a7d4d496111c4505e6335e99a07c51",
-  "ธีติมา มูรติการ": "8cfd7f1a106286246ae22b234f1e8ac53e6e221bf70f3ee34abccd8b0bb037db",
-  "ดัยนา หัทยา": "6d5a374967b95d67e439792ce3e7f709acf65b9254e993f5b13acc7d30c33745",
-  "ด้าโอด ลูกเด็น": "b8f53440e0e7c3c7a5556d3fd543f610b3d461839e6531a0c8ed3a5d81d28c94",
-  "เสาวภาค จันทร์คง": "60eb2c488a34f0cc69c22792c0b8d940309d5982c518000790b3d01f371e6966",
-  "สมจารี คันธชาติกุล": "079c80e5a7cb2f1173c6f50abcddc8c8b2d522783bc16e87d1b10035a9d4ec8c",
-  "อภิสิทธิ์ ทองสีนุช": "6edc0d43248bca1b9771ac58dd5d34d719bcf09ef25188d2b511faec342152df",
-  "บดี กังงา": "0daddb3dbd87b137cc96dd8a75ed889ebd0f667c360ad70becd3d18e438ed6f6",
-  "พรศักดิ์ เจียวก๊ก": "f66c6f7cbf03d45d6009b2bb2043effb8697e0057610c7148b51f8b9b7c146bf",
-  "ยาใจ มาชู (เสียชีวิต)": "4d64a7a1e9280766971530447565be732e8f177ed9938e77c420a266c141430b",
-  "ปิยะมาศ ผกาวรรณ": "32772a3d883748030fb637b99c75e5a571c8d7d5ff5f293a4d3dcc20de025653",
-  "พรทิพย์ คงมาก": "1226c018f84064b00b07885632aa6bf2cb7baf6422e3c4149e613de2755f1dbf",
-  "ธนพร สระทองแยง": "910f69b88b9562d81087a684d3e75c91bfa53363c25d4f3d000f904725f4d5e0",
-  "สุทธวรรณ รักการ": "d2821b3a088efc372062d305611931c6798c54a43f7ae1ac399dd1b7308994bd",
-  "อมรรัตน์ ทวีพงศ์ศักดิ์": "53e2495482e54a1a5aedf8a537107135e9477172838339f88e9a60f77bcde67d",
-  "กัญญารัตน์ เพ็งจันทร์": "e467d56882292ac9180dc688f9c0d020ee481916c18bbe324b5481810e459072",
-  "นภิสรา อุษณีษ์พันธุ์": "76babd3ed93d3c1699c5e8b24117640cb88d8cc96af51a1223a7fd76d9a795af",
-  "สายน้ำผึ้ง หมึกดำ": "8ce94d96dd5279f2fee20a4c5be9188eff7f93aa718a200ef6d837296a337605",
-  "ทิพย์เกษร แก้วกาญจน์": "da02eb0ad6d431b3b0da533e417b54712998242dbcf72e797b5ca78dd6717e64",
-  "ศศิกร สงขาว": "7faae52af920652b7faacffdc2c8ecd98fbe068db6d2b9c29db3a35e66c07fd5",
-  "อรสา สมาพงษ์": "99fd103c2626b01e633005597542a2e48c216f8b9ac1d992f9be4a6769c44fea",
-  "ชญานิษฐ์ เอ่งฉ้วน": "3111c14e8d9dd6c63f84b9ac82a2b957117254e6e4bb9b9ff0c67708a012c4bb",
-  "ลัดดา จันทรดี": "faa69a661fef852be59789095d509986920ed0fdf71d42ea7a23f8b7dac616ee",
-  "หทัยรัตน์ ศรีวรเดชไพศาล": "1031c35d222f97e694363bfdef1354465cfd8da8e14b0343df92063397f1f682",
-  "ศศิญา จูฑามาตย์": "a50389e8c5456006da8a2968e638de181350b69f82833d2c094398a492f68c17",
-  "ปาริชาติ ดำด้วง": "eb55aee9e5efd4078c04b6c4b0d46b2142205e3ec799ee215998da88efa7e4fd",
-  "ฐิติยาภรณ์ หล่อสุพรรณพร": "50c61c8c99194a5942f979caf33d9f861066c073c20df2297c64ea53c79a5f71",
-  "วีรญา ช้างน้ำ": "a64a3ad16d13e8206a3b2434bbe9b19e354e3996ed7a82264a68dd4a4f6e7b28",
-  "ปริญญา สมแก้ว": "e8e4bff0bfc52ad404baed44ea011130b4b03de7fe74b9ba4351962fc71e1cc1",
-  "วิภาวี สิทธิการ": "68858aeb33d640f817476d422625e6393a9d707441731380c254d78797ff786c",
-  "นันท์นภัส กิติบุญญา": "a0a6cfda5e16061a5e5e618c52416098478d656eaf211d291394778025578d4f",
-  "สุชาดา เพชรสุก": "566836127357606e24038ff618de8585c2d2251e88391856cd3c293584de2c0c",
-  "อัจฉรา นุ่นชูผล": "8698c0a282f130c2a75458a67338aab5366eeab6dd8dd8f7fb675cf751bcbd37",
-  "อภิวัฒน์ กาพย์เกิด": "a225674ebb577c70ab6ce7978dbb5e44100d82dc0cd00e84f6a412bd42eed482",
-  "ว่าที่ร้อยตรีหญิงชญานี ชัยสวัสดิ์": "45d77ec282b09482b3d8360e0f3d8cbbb6b9775e96475377cb11326dd3a3f193",
-  "เริงสรรค์ ยะลา": "9c5684e37b64e72aa4e5bd9c27b94811e8460b23e755707e33aee86c7c5da9ff",
-  "ชลธิชา บัวแต่ง": "838ef02ce636998bd77d4c5adbaebf3de1d1e3964295aef644ed844a2e903fa9",
-  "กานต์ลดา สายนุ้ย": "62c388482161e404dc60a563986dc895f6fd82c5b77cc18a01b8bab0761a4a0e",
-  "สุนันทา รักราวี": "567ac7436f6f8b5cda9d26d1e680db07290bdee4a05de557ce506a16f1acd778",
-  "จุไรรัตน์ เรืองอ่อน": "6a604279376fb7dd9d6bbc2e7cfb4dcc8733d2e0a2fe9b441cc01e8a46a54725",
-  "ศุภิสรา ยาวส่ง": "5d23b047c28d92b583167e52323a7e338d068db12a3667b2f8c6819c926d3d5d",
-  "ชนกนันท์ จันทร์สงค์": "b3f43af1faab25385192ca2b3016275ce73a3781e8a5a6cc54491e48e42f44a4",
-  "ชนะชัย สุวรรณชล": "b7156819a0740d29cd670da9522c56118889d802679454749d9f5838fdf3f974",
-  "ภาวิณี ช่วยพัทลุง": "b9245c3cd8331e523f565331f2a9404bf4328291c348ce89369dfbe4e67fea10",
-  "ธัญญา กัลยกรกุล": "b812eebdb5cfcc70447f80bd63f1817312e07ceac09d6bdb9a335000c8a69919",
-  "วาสนา หนูมาก": "b57d7f73fc31e23567b72740a3e22497c753cd622559f2a8c1abc4b8aac3cfd0",
-  "สรารัตน์ โพชสาลี": "38642e1ff2ef65e65ed2dc61483de94cf5c8cac63f3984281bdf7777871a2098",
-  "กนกรัตน์ เลี่ยนเส้ง": "88fe8af819a0a295c6ce409fdc407dcb4f44b203ebb516e49c6331821a1d2d3f",
-  "ปิยะวรรณ จันทร์ประกอบ": "220236619c30f59b30ff8379acc0bb4549f72597b3e111497467c0095ea286a6",
-  "ธนพร ธนาวุฑฒ์": "7ccbcef2429fadb57a8e724fd0ff0feaf66ddae6d2b2f9493e6b0a56a1f1dabc",
-  "ธีรยุทธ เหล่ชาย": "1ebb1bc252bd95b366373ba1ff8bf2de78289f1d6c2febc9a974cb80dd656d60",
-  "ชลธิชา หนูชูแก้ว": "a1ad88a09a0489e43fc4cb92cdbf90c17c4532899a28c4488e086e0448f26dc1",
-  "สมิตา ไชยสาลี": "928d89a22e34f13cb5385c6ef87728db9e8bb554c24f87b958cc70109ad8b026",
-  "ปภัสรา รักฤทธิ์": "fe0299f1fa280202a0f9f9b0887f588e9a8446224939e595b7154c3eea0acb3f",
-  "มานิตย์ บัวเพชร": "2d10d78a5008343980806935d1428161db23c275c667114fd1ba2196f617dcf9",
-  "ปัทมา ญาณแก้ว": "a0958ed1182910e627cdfe67d811ad13375985256fdbab05e1e88625bef6e9cc",
-  "ณัฐธิดา แก้วสาระ": "0416024bd866e4c905bf0d345ed80b346e8ecd7b0fb74a6d0ae61f9815550b5e",
-  "มาติณห์ สัญจร": "64a6c7c07f6029509a75bccb1e30b3b7c43ae81487d251f5e05896c6aa7d3577",
-  "วิทยา เต็มบางงอน": "911ef5b1790d4cab816dde9c30dbbdf2737bc52207ceed50cb4c8cefc32f39aa",
-  "จีรพจน์ ทองขาว": "0a0e6fa666ce98112c36807d990593a6001316828ad7087101353bf791c15a46",
-  "ณรงค์ศักดิ์ จงจิตร": "96a924743062eec94f04f5735cdea65b5cf11a77939a3a8e9eab7e0e1e95169a",
-  "วรวรรณ เพ็ชรฤทธิ์": "3295e92ad7f5f814aff603013b49f3ca2af7109b5af7ec434739734186912c93",
-  "ธนากร ชื่นบุตร": "bde5ba25448cd7f316d4e11f25c3bc4c017f9f6f3d8bbeb0af02ccb12e67a2f0",
-  "อุไร สังหาร": "a2d4efd75c85a4a40a1a755fa0ffe9cc03df56e3775cc82b5ef3f7c23f6d4f01",
-  "วันเฉลิม กัณหะกุล": "66310e598659f7170af0017364d16b3bc5dcc47b4e1c495435d02eeca1843b94",
-  "รัชนีวรรณ ชาตรี": "fd2664150ef0993765a5c091f756dd9aa94ebc779b8c757a32849fbae3febb1d",
-  "พิมพ์ปวีณ์ เศรษสระ": "50e6bb31600032da6dbb190ac57bec98627bd64ae5caf00c595658f735e384e9",
-  "ชัยวัฒน์ ริยาพันธ์": "93c4d0f4366ca70121cd47c082c0d9c48553fb1b4a03f2122f6e8bdd8f16d213",
-  "รมิตา จุลนันโท": "c01eb5eab294fffa610679183d0f7f22e5763da6dcf991a7f88f2265440e0f1b",
-  "โกษิต ดาวกระจ่าง": "b8815f17d77ac51938e7f377f9786c9980876c35520a47593d09625422adbe6d",
-  "อรฤดี เพ็งลำ": "73141f908f7485ddd68f8d6dee9c0a8a7bdf41f13a24362531b11dd0a3212fce",
-  "นัฒพล เทียบแก้ว": "8f940ea54c76b428282623aa948ce510415836dd3733fad774da53ccb634b9be",
-  "วิชชา ไชยกุล": "d4aeffdbde62f468b7354a40c6189537524c858d1dc2a83a4b4fa5f7157d9ca9",
-  "จุมพล เพ็ชรพวง": "6bbaa31083d9ffcbd629fb7a4e25725412ef3cc9216ad9086cef262f226206ce",
-  "ศราวุธ เกื้อขาว": "92c24d45836c3d1bf698416caa5fe76653d4cc0a84583a86f1bd926d0b826271",
-  "ศรีสุดา สุวรรณโชติ": "b3aceb07f4c67dcfb8b262c6bb877931171c69be1cfa51ecbf6f56247bdb457c",
-  "อลิษา แท่นดี": "26c0f4fc528876de6479e489f47005b0e040fde1304c697e6681fd24dad296d3",
-  "เสาวนีย์ ชลธี": "23d4ac9d18693acff3b4364fbb75b5e4ed230262481630d42cec395bd81ab86a",
-  "กรรณิกา คงภักดี": "800e0a64f46018051d64bfba05107d6bd7ccf622516c20e8b86dd5d76f538d64",
-  "คณิน คำกิ่ง": "7925e1698d4744467ef6ee84c56390af1f84367afbcf0c96d4f3aeb3545f2f7e",
-  "สกาวเดือน เศษคง": "1ae7c3b362b8fa4f81186136d80febc0ce1c2edaeab1763f9fd10262195d22ca",
-  "ธนากร หนูอิน": "de3721b003046a283f206c3a89fee505e2f07acc9f830dd81790d5d4f7c444fa",
-  "สราวุธ แก้วสร": "f0a930283ce944b72a5564b499b6a99639e7a480a38e73865b085e2eb8e44afc",
-  "ญาณปรีชา ภูขะมา": "4b84b3c380141dd77b308bf6191054108ecccb489e77181c2e19c656024edc96",
-  "เอกสิทธิ์ สมันบุตร": "f0b515dc2b619834e21635cd034cefa73a078c1cdd1353316f8d5c8a88e68279",
-  "วณิชยา ลิ่มสกุล": "7d7f90cd40bb898e2d832ab51b7ed8b9d310d87557a26e372737eecbe1998bdf",
-  "ศุภณัฐ กัณหกุล": "20d70bb056c56f4dfa9ada9d9323f8c1798c953103b30849f02d7e7cf1a53153",
-  "เกียรติชานนท์ เสียงดัง": "cdb43d4197027b203fbe9df9616f97a1527e70b6bef33f75618af99877123964",
-  "ทินภัทร อนุการ": "190c7f9e6b345e6e181bd9e45cfe87a7e0b6a034223f76c2ba89c666362e195f"
+var SEED_CID_HASHES = {
+  "3b043672c162bfc6ca862170ddcd29afa503196956b28836806af40f1c510874": "เกียรติมงคล พูดเพราะ",
+  "76f7f9f6ff77605feef3fb2383963c2005f50648589906e093ce854abf67f0b3": "คนึงนิตย์ แฉล้มรักษ์",
+  "de7b2ceed0a31534f039dc1445846195a5d6022b4ea5d3ea43c7007868f0e10b": "วัชระ เปียกบุตร",
+  "aaa637bfef7f797565e31cec6072b19c33c7cdd7335cb372392b1a8fc05e85b9": "ศรายุทธ พงค์ทองเมือง",
+  "f9e479425da5701dc3145fffa23edb500b3398279d5455bbf15f9fdbc60a4bf1": "สุธิดา ธนบัตร",
+  "7f8ad915318e2ebfe232d051f4cbbacf5352de96611927ae7727ab1d8ebf199a": "เปรมฤดี จูหลง",
+  "44668e2d2173cb633fbe38655a12d5c78b76bca11645c63bf8d6e97a78189186": "ณัฐปภัสร์ จันท์เสถียร",
+  "33ec0b822081514b4d18c383c23e34ae1a4639cb3534b3b69c2c5120a6fd301f": "รติกาล กลับคง",
+  "e7406f2d6d3b6c804c3219fc1a08d9ceaa629f9c38f76cb6cbc68e635d3ae1f5": "มูฮัมหมัดฟาเดล ยาลาแว",
+  "d72b47f2d2dcae1f26044ce6391908c7a785f19f4f5ae92375471a9e08bff15e": "สิริรัตน์ ส่งศรี",
+  "36779d4883fda6e64006d456633d166deb1df36a23fb7fc5dc5a6d7046594e3f": "อนุรัตน์ นาคสง่า",
+  "f4b589b6059e2f49703034017634328972a45cb177bc6bb01e4f451d0b7ba91e": "ทัศนีย์ ธรรมทักษ์",
+  "146922beba8aaf0c1f09f613ac917b205771c8ece18c658834b7e28f8b37f808": "พรพัฒน์ ขวัญนิมิตร",
+  "fa249deb6cb5855dd607818b328ecc984aeb361e2dc21393490d9ebe0cd7bb2b": "ฟ้ารุ่ง ขวัญเพ็ชร",
+  "ca36f92dc36508ed5e139dbd1aad89534ce4a736d6bd81d59dc4c6214fc88069": "จันทนา สักคุณา",
+  "494ea1632f541e101024d2eb379d45f9629001c8950049fd9775c071bec4cff4": "นัทธมน ณัฎฐเดช",
+  "515a3741f37dbe293d2cc39bb1de1bcd1140497e9ed1c11a32df149def031819": "ยุพิน ทองแก้ว",
+  "ca291978877aa5842f87e55a080e5cfc3a5138f99bbb8b9913aefe164972d669": "รุ่งนภา สุชาฎา",
+  "9dfe20df900e5b2cc8cf0dbc96c6b818d490955e1c4bcb4e8c25427e986ce962": "อนุชา หัทยา",
+  "55c687c2be8141c39739f7e19cf6ba23c0f53326068e8ca687df4531177b0ac4": "วาทินี เสล่ราษฎร์",
+  "b87fd39660155c9cec6e88273ecdf0c8780bd0f76f03eb576f4ccd13be2684f2": "อารมณ์ หยีหาสัน",
+  "c4da1df4293302f91273df9b6fcaf88f2b3ed15f6e91aca061415a4490e45e58": "กานต์ชนก กานต์นภัทร",
+  "4b9089cc7063d3c87a35fa2560406eb1898ed811869f3d9ecfc6fbc683068b90": "สุทิศา ปานแดง",
+  "651d891e75687ccdc67848744071fa908d6896e38968ee760f3b52374a2ada22": "ธีติมา มูรติการ",
+  "55eb7b0b0034af8149f9e4c311f6fc492d2e6dd99274fd46958264a2f9bf09b9": "ดัยนา หัทยา",
+  "9be68ee7abe7170f43e046b3a38e4c13143a224af8d5e115058428fff49f9dba": "ด้าโอด ลูกเด็น",
+  "731436e4f0d1a7e65e615d66a4e505f5f16ff03c1d682e365f92ffac2eeba40e": "เสาวภาค จันทร์คง",
+  "b9d6468e3669952bf329d5c1721288e8f5b3e0880cb34f7778115c1cd0313e19": "สมจารี คันธชาติกุล",
+  "8aca94a426cf52d50999d32edef9ac23b950fdccde386974216fa3b73704315e": "อภิสิทธิ์ ทองสีนุช",
+  "52a26afbb01b337c0e5ceec7170d2c60e6c786bce165b4f8478185496e7eccfa": "บดี กังงา",
+  "e3af957a432f8879a8797db96bd89c394687f8af354ce23a2b3f9da1a6921cc7": "พรศักดิ์ เจียวก๊ก",
+  "459053c780a5dfc576a516311355ad2c7728e2f838a8f302a8f1f5772acd9b5b": "ยาใจ มาชู (เสียชีวิต)",
+  "16224fae9d6aaf24d4ab8039e205a4a7290e61f08d36956ca4c86bcd9db46c06": "ปิยะมาศ ผกาวรรณ",
+  "f62d1e1d8967877f4231393c603113fe7b90198e883a93d4919a49c2ecbdf79d": "พรทิพย์ คงมาก",
+  "a7dcc1bda09f81602c967f593bc962b97dd6c77862959ed06671a4c3f21feee4": "ธนพร สระทองแยง",
+  "a95309db26f94e8b18a68a594975ec0caab0153e91f2f3dff9d1d012a6f531df": "สุทธวรรณ รักการ",
+  "bff96e9523b8b9dfd0a5ac99782b6a69a974aaac7da017bf6e9b773bc3ebe97a": "อมรรัตน์ ทวีพงศ์ศักดิ์",
+  "570fab5a6e5afa4361ebfcbb8e26dfcb8602592411bf89b8bd17cc51dba7bf36": "กัญญารัตน์ เพ็งจันทร์",
+  "b2144edae73b44c6bc3270a468b8dd5cbd6c7574f35b478088e5ef62892354fa": "นภิสรา อุษณีษ์พันธุ์",
+  "d4b0d0642e52d6331745bd4ae4d48623b28819c332c87f00655263fe6429f6f4": "สายน้ำผึ้ง หมึกดำ",
+  "02137340591099bb0fcee8ecbe678f5987516ce9e32e18bce9835d3cb60e12e0": "ทิพย์เกษร แก้วกาญจน์",
+  "f9a1d8dd00904c5eae5caada267e9d7137d6610695fe23c9a68ae064b5a07522": "ศศิกร สงขาว",
+  "bc88aafb4ff8f4e2b9cffe9f22cff2760b20cfceb319f133b05dd5a65fb5454a": "อรสา สมาพงษ์",
+  "48b3bd3e9980a0833713342b1366698a6f49c1b3934ed67a1ced6dc6c05d74e3": "ชญานิษฐ์ เอ่งฉ้วน",
+  "784b3f069e6f2f459bb6f992d177b45976a55ed7578ddf8f0825cdd847e16149": "ลัดดา จันทรดี",
+  "f4a74293c82d0b7d55b33f41badaf6b2a0b9ea0fa6c7b39441b26802d3e28c67": "หทัยรัตน์ ศรีวรเดชไพศาล",
+  "167fb70bf76ec0f5eaea2fafb17b56d17717a981217e2cfadf6f1216beac3bdb": "ศศิญา จูฑามาตย์",
+  "d5326000ffc117551617f57416f497a5c19db43b2a1a84db14e03bf6d8f40b0d": "ปาริชาติ ดำด้วง",
+  "7e0ac94b8a77ad8ce8fa82395663b301d12ce052f23e440b66d1a3e8aa49189e": "ฐิติยาภรณ์ หล่อสุพรรณพร",
+  "48e44e4992980a20dbf7b442619fd238eb8ed96aeb2c8d5204d3cf5fad5e987c": "วีรญา ช้างน้ำ",
+  "7b723c205bb7d48275ede21e9376fde55e26c2d591021c636a03cee627b46f90": "ปริญญา สมแก้ว",
+  "6cb5aa845b64fb842ebfea8062294a8e8b09b11d6919d7d4aa50952addfeca79": "วิภาวี สิทธิการ",
+  "646cd4867805ba63389ce6f649545c5d988b258d47424a4312d2168f70aa2941": "นันท์นภัส กิติบุญญา",
+  "83192f3c22f598f122bc3dad9f6c2a6cd0f3e82005436fa33a8daaa6d85eaad6": "สุชาดา เพชรสุก",
+  "febbce77d44d4e8f6b0aeff65af82edadb997c12d61149519cc5bda745e9864a": "อัจฉรา นุ่นชูผล",
+  "67ff2035f73a5b1daf14d0b9675a3701fa4967c4b03f54324f8e0e2e37281677": "อภิวัฒน์ กาพย์เกิด",
+  "2744e629cbb744b25074a8c980030ef724d994754236fd6cad0bd107c70e1598": "ชญานี ชัยสวัสดิ์",
+  "95f54c75a358f9a2a06c9b6e8aa150afabe89a3d468bc3aead2676ce1a159e43": "เริงสรรค์ ยะลา",
+  "dd1067aa2edcedf4b4ba1de7dc2472053b20756c14068de56275a8223428b5e8": "ชลธิชา บัวแต่ง",
+  "26bc9f93cfecede1f3085f7fb120a867e06bc8a92e396388121dd7174068805e": "กานต์ลดา สายนุ้ย",
+  "4fd9f8e9915c7bb4bdf1c18855ca34b122113535d5e16b33b02967731bbb4e35": "สุนันทา รักราวี",
+  "b43c22c4044330efa2bc8123e258f993459ae937a8ad6044dab69d20c20f33a6": "จุไรรัตน์ เรืองอ่อน",
+  "c50f76f2528f3a38895d4b520b0e7fafa21e2a8057756da15da17c16468cfd77": "ศุภิสรา ยาวส่ง",
+  "a3af9da9e0dde7e66869148c630db6e96a0f1b52d74e44652e41cfeb2000c3a2": "ชนกนันท์ จันทร์สงค์",
+  "0821d2a994c346fd154739ff30ca808440649ed203201c57571409342314b23d": "ชนะชัย สุวรรณชล",
+  "000fbf76a20b95ac34df1f3f73fc1990277e9ab728a43253ecee0fdbd934ec6e": "ภาวิณี ช่วยพัทลุง",
+  "aaf3ffc672475d316200eb3e627dcc04a69a4decde31a273e3d0bd3afb06105e": "ธัญญา กัลยกรกุล",
+  "159041ccd8023924cc97127fe427d340e143fffa4af18af0734f59809ffca0be": "วาสนา หนูมาก",
+  "86891dc8f7939a0b9161caa06f489a21f68af179737128062c14f040084e13c2": "สรารัตน์ โพชสาลี",
+  "369dd0c2255071d9f8cc262522f66e0716480b362f62fd499b73d411a972bd7c": "กนกรัตน์ เลี่ยนเส้ง",
+  "1b39ef639a1ebdc92bcb16fa2890cfb9aa33aeb7ae177c7a8b1fa77791aa73ae": "ปิยะวรรณ จันทร์ประกอบ",
+  "7e517008e591ad37fa989181bff36325ba0c8fd018d0221e7c806a883c65a4e5": "ธนพร ธนาวุฑฒ์",
+  "ed88a860029ef7b9499d574718e8365eeb7c10f8850c1ba10adb5f2ae916019f": "ธีรยุทธ เหล่ชาย",
+  "2b8326fe5e8c3d75cbbfe62b3a6f213c9ef45f267b7e434b581a82a84e0a2a47": "ชลธิชา หนูชูแก้ว",
+  "894804d4a7fa654f294a1b4c65697719597a97cd26311547b13d9fc2a34bb9df": "สมิตา ไชยสาลี",
+  "5f7765db64b31b4b3c79b34c159627bbff65f71d183e77621405be903ac85d69": "ปภัสรา รักฤทธิ์",
+  "a19477abe64042cb05b1fb8522e4c0be096e5815436aae4f6add709f47858220": "มานิตย์ บัวเพชร",
+  "4005b9e993a0ec0daa30026a13de9ac8593191bbce3322290bda0a52770cf21c": "ปัทมา ญาณแก้ว",
+  "a739ce24c04d72b46be65c38c0fed984b7ab5ef9e0b2d4edca0df780f8baacf4": "ณัฐธิดา แก้วสาระ",
+  "f4081e382f6bfba4a0b3d499f4bdd206f34a348342357336939ebe5d7582d700": "มาติณห์ สัญจร",
+  "82a9a7921793fca7c726db40767ee889a94bba39167bd3d290e731ffc2f6e172": "วิทยา เต็มบางงอน",
+  "9236ef634fb89d2e90b4b37a6752610e9608372123012c630ac8d24f7f841d3c": "จีรพจน์ ทองขาว",
+  "0034446da1e16feefccb64a8025f7ce344e953a26e69a697d87df1ee47246ce9": "ณรงค์ศักดิ์ จงจิตร",
+  "44e0a0a50f9227cf11dbbbad3f289568cebbe9e6a24402f6fae712eac5415b32": "วรวรรณ เพ็ชรฤทธิ์",
+  "4f2710d0feb06ef9f8f38c14762df9664105ebd7ef62a1eca16c4702ab55c27a": "ธนากร ชื่นบุตร",
+  "5ab05a1bd0ae1f1f15930d075924e999fb57d94f75d4a84062bc7b149e72f7cd": "อุไร สังหาร",
+  "161a8cf836a53accaf71472f82826772cb896be7c016ac0c7355405802903b44": "วันเฉลิม กัณหะกุล",
+  "200dc2bc2b53f91ef4b5a3fefe607798fc017473b41369d33153c728386aa082": "รัชนีวรรณ ชาตรี",
+  "9fa7ab0b914923aefc662bd0ffd0d61eb559f6529e233b32d6f7433815e5fd88": "พิมพ์ปวีณ์ เศรษสระ",
+  "21ee79c2ccc4245ecec538fd762ce3cfb7128fcb0110cfba1fe505018aa964be": "ชัยวัฒน์ ริยาพันธ์",
+  "e2df7cbd4283fde1a42512c6a1048aec9953410c9f8183222e07f8a6efba69f5": "รมิตา จุลนันโท",
+  "fe316aa3107c0cb1ccd4e6111871d15db297ab8a12056d2480a6c705c2b0cc3f": "โกษิต ดาวกระจ่าง",
+  "011269cdc1dfac619ba701ad3a92ab1ef706302449bbf810caad4a271c977a57": "อรฤดี เพ็งลำ",
+  "345d80c6ce7bc8b3ebc5a5f1964bd3cf7185ed51f69691c5dd5d89e3f83f4a1e": "นัฒพล เทียบแก้ว",
+  "ea24c73a1786cb8c32ebb3d6bd6068fa648878d75e64943c82960589f1f56cf4": "วิชชา ไชยกุล",
+  "a47a301198a7fe7ef82a714a4f3e6f8171d26697287b7a56b0b41844f918e8f5": "จุมพล เพ็ชรพวง",
+  "8d2caf5a162122d354bdeabcc717533deedd0c49f7a104417f28ec1013d46ca1": "ศราวุธ เกื้อขาว",
+  "b089469a3f55cd492e33525f666db3b2cb82958bc5af514fcc39dbc07d2617a1": "ศรีสุดา สุวรรณโชติ",
+  "65e6b1b53e2a2f65a04432dc9b5b6982bc495a611c881e08da101c9a81cb51f3": "อลิษา แท่นดี",
+  "7a1228e1f9c17bed95bc5f5f965a8b7212d7c5baf34b939bb0a1b27216e20a91": "เสาวนีย์ ชลธี",
+  "f9bc3e73367db077b5de8b0bc7c3ccb4efb607fc1e43d4b819781fcb3909b6fe": "กรรณิกา คงภักดี",
+  "d3b31405401bbdfeb627675a8c952a08d55758a7d6916cf4d3295a1cd48891aa": "คณิน คำกิ่ง",
+  "1a3e68f118f0d6f1bb68af26ed95aa1fe160c89b854147f9519f4f354ee3de8f": "สกาวเดือน เศษคง",
+  "d295e9ffc5d6b7c1b2928905371a33ce4c9560aa2572a29ffaed963d59960911": "ธนากร หนูอิน",
+  "0b753d480230c7b33df76579f8723356dd5d48575d9775b05d6234df1c91bbd2": "สราวุธ แก้วสร",
+  "2297ba41a193f08ac961b6a50f2b2e700416069989da263bbef5b3f1aa9de14b": "ญาณปรีชา ภูขะมา",
+  "bc90437754c0f2a7f2b80f84790f32bfd907dc44d1dcc0bc85b829190a625322": "เอกสิทธิ์ สมันบุตร",
+  "cacfa05d8034a8a441be27a33a81686dbf3f96deef96dede0d477f388cb53598": "วณิชยา ลิ่มสกุล",
+  "e785431587599d45e961dde6014d97cdaaae34c1df5ef717c170233b72c223d0": "ศุภณัฐ กัณหกุล",
+  "b7b29bce3bb8a40303f3436d10741798f8176f0a9d135ff69a56f9882727cc29": "เกียรติชานนท์ เสียงดัง",
+  "a696f3f341f558d52958ef003e239bb2f87fdf639aca2bdda4949623d5d0d875": "ทินภัทร อนุการ",
+  "39bd02f8e266636cb2c692922c26ba8aecbbca53bbbc7a44556ee47ebd1575fa": "วิภารัตน์ ลูกอ้น"
 };
 
 function createJsonResponse(obj) {
@@ -305,6 +203,7 @@ function loadLiveEprofileMap(forceRefresh) {
     }
   }
   var hashes = {};
+  var cidToCore = {};
   var depts = {};
   try {
     var eps = SpreadsheetApp.openById(CONFIG.EPROFILE_SPREADSHEET_ID);
@@ -325,17 +224,18 @@ function loadLiveEprofileMap(forceRefresh) {
         var idDigits = String(rawId || '').replace(/[\u200B\uFEFF]/g, '').replace(/\D/g, '');
         if (idDigits.length >= 4) {
           hashes[core] = sha256Hex('name:' + core + ':' + idDigits.slice(-4));
+          cidToCore[sha256Hex('cid:' + idDigits)] = core;
         }
       }
     }
-    var payload = { hashes: hashes, depts: depts };
+    var payload = { hashes: hashes, cidToCore: cidToCore, depts: depts };
     try {
       var serialized = JSON.stringify(payload);
       if (serialized.length < 95000) cache.put(CONFIG.CACHE_EPROFILE_KEY, serialized, CONFIG.CACHE_EPROFILE_TTL);
     } catch (e) {}
     return payload;
   } catch (err) {
-    return { hashes: {}, depts: {} };
+    return { hashes: {}, cidToCore: {}, depts: {} };
   }
 }
 
@@ -679,8 +579,9 @@ function writeSettingsToSheet(ss, updates) {
 function readCustomPinsFromSheet(ss) {
   var byKey = {};
   var byCore = {};
+  var byCidHash = {};
   var sheet = ss.getSheetByName(CONFIG.TAB_PINS);
-  if (!sheet || sheet.getLastRow() <= 1) return { byKey: byKey, byCore: byCore };
+  if (!sheet || sheet.getLastRow() <= 1) return { byKey: byKey, byCore: byCore, byCidHash: byCidHash };
   var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getDisplayValues();
   for (var i = 0; i < rows.length; i++) {
     var k = String(rows[i][0] || '').trim();
@@ -688,10 +589,14 @@ function readCustomPinsFromSheet(ss) {
     var h = String(rows[i][2] || '').trim();
     if (k && h) {
       byKey[k] = h;
-      if (name) byCore[stripNamePrefix(name)] = h;
+      if (name) {
+        var c = stripNamePrefix(name);
+        byCore[c] = h;
+        byCidHash[h] = c;
+      }
     }
   }
-  return { byKey: byKey, byCore: byCore };
+  return { byKey: byKey, byCore: byCore, byCidHash: byCidHash };
 }
 
 function readCorrectionsFromSheet(ss) {
@@ -807,6 +712,10 @@ function handleGetPublicCatalog(forceRefresh) {
   var settings = readSettingsFromSheet(ss, tabsDatasets);
 
   // รวมรายชื่อบุคลากรไม่ซ้ำจากทุกภาคเรียนที่พบ (คงลำดับตามแถวในชีต)
+  var seedCidCoreSet = {};
+  Object.keys(SEED_CID_HASHES).forEach(function(h) {
+    seedCidCoreSet[SEED_CID_HASHES[h]] = true;
+  });
   var catalogMap = {};
   var catalogList = [];
   for (var ti = tabsDatasets.length - 1; ti >= 0; ti--) {
@@ -816,7 +725,7 @@ function handleGetPublicCatalog(forceRefresh) {
       var core = rec.coreName || stripNamePrefix(rec.name);
       if (!catalogMap[core]) {
         var hasCustom = Boolean(customPins.byKey[rec.key] || customPins.byCore[core]);
-        var hasSeed = Boolean(SEED_PIN_HASHES[rec.key] || SEED_NAME_PIN_HASHES[core] || (liveEprof.hashes && liveEprof.hashes[core]));
+        var hasSeed = Boolean(seedCidCoreSet[core] || (liveEprof.hashes && liveEprof.hashes[core]));
         var entry = {
           key: rec.key,
           coreName: core,
@@ -868,54 +777,51 @@ function handleGetPublicCatalog(forceRefresh) {
   };
 }
 
-function verifyTeacherPin(ss, staffKey, coreName, pin4, pinHashInput, namePinHashInput, forceRefresh) {
+function resolveCoreByCid(ss, cidInput, cidHashInput, forceRefresh) {
+  var normalizedCid = String(cidInput || '').replace(/[\s-]/g, '').toUpperCase();
+  var cidHash = normalizedCid ? sha256Hex('cid:' + normalizedCid) : String(cidHashInput || '').trim();
+  if (!cidHash) {
+    return { ok: false, error: 'กรุณากรอกเลขประจำตัวประชาชน 13 หลัก หรือรหัสเข้าใช้งาน' };
+  }
+
   var customPins = readCustomPinsFromSheet(ss);
+  if (customPins.byCidHash[cidHash]) {
+    return { ok: true, coreName: customPins.byCidHash[cidHash], cidHash: cidHash };
+  }
+
   var liveEprof = loadLiveEprofileMap(forceRefresh);
-  var keyExpected = customPins.byKey[staffKey] || SEED_PIN_HASHES[staffKey] || '';
-  var coreExpected = customPins.byCore[coreName] || (liveEprof.hashes && liveEprof.hashes[coreName]) || SEED_NAME_PIN_HASHES[coreName] || '';
-
-  if (!keyExpected && !coreExpected) {
-    return { ok: false, error: 'ยังไม่ได้กำหนดรหัสยืนยันตัวตนสำหรับรายชื่อนี้ กรุณาติดต่อแอดมิน' };
+  if (liveEprof.cidToCore && liveEprof.cidToCore[cidHash]) {
+    return { ok: true, coreName: liveEprof.cidToCore[cidHash], cidHash: cidHash };
   }
 
-  var keyAttempt = pin4 ? sha256Hex(staffKey + ':' + pin4) : String(pinHashInput || '').trim();
-  var coreAttempt = pin4 ? sha256Hex('name:' + coreName + ':' + pin4) : String(namePinHashInput || '').trim();
+  if (SEED_CID_HASHES[cidHash]) {
+    return { ok: true, coreName: SEED_CID_HASHES[cidHash], cidHash: cidHash };
+  }
 
-  if ((keyExpected && keyAttempt && keyAttempt === keyExpected) || (coreExpected && coreAttempt && coreAttempt === coreExpected)) {
-    return { ok: true };
-  }
-  if (!pin4 && !pinHashInput && !namePinHashInput) {
-    return { ok: false, error: 'กรุณากรอกรหัสยืนยันตัวตน 4 หลัก' };
-  }
-  return { ok: false, error: 'รหัสยืนยันตัวตนไม่ถูกต้อง' };
+  return {
+    ok: false,
+    error: 'ไม่พบเลขบัตรประชาชนหรือรหัสนี้ในระบบ (โปรดตรวจสอบเลข 13 หลักให้ถูกต้อง หรือติดต่อแอดมินกลุ่มบริหารงานบุคคล)'
+  };
 }
 
 function handleGetTeacherAttendance(payload, forceRefresh) {
-  var staffKey = String(payload.staffKey || '').trim();
-  var coreName = stripNamePrefix(payload.coreName || payload.staffName || '');
-  if (!staffKey && !coreName) return { success: false, error: 'กรุณาระบุรหัสบุคลากร' };
-
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var tabsInfo = discoverAttendanceTabs(ss);
   var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
 
-  // หาชื่อจริง/coreName หากส่งมาเฉพาะ staffKey
-  if (!coreName) {
-    for (var ti = 0; ti < tabsDatasets.length; ti++) {
-      for (var ri = 0; ri < tabsDatasets[ti].records.length; ri++) {
-        if (tabsDatasets[ti].records[ri].key === staffKey) {
-          coreName = tabsDatasets[ti].records[ri].coreName;
-          break;
-        }
-      }
-      if (coreName) break;
-    }
+  var coreName = '';
+  var cidHashOut = '';
+  if (payload.cid || payload.cidHash) {
+    var resolved = resolveCoreByCid(ss, payload.cid, payload.cidHash, forceRefresh);
+    if (!resolved.ok) return { success: false, error: resolved.error };
+    coreName = resolved.coreName;
+    cidHashOut = resolved.cidHash;
+  } else {
+    return { success: false, error: 'กรุณากรอกเลขประจำตัวประชาชน 13 หลัก' };
   }
 
-  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash, forceRefresh);
-  if (!auth.ok) return { success: false, error: auth.error };
-
   var settings = readSettingsFromSheet(ss, tabsDatasets);
+  var liveEprof = loadLiveEprofileMap(false);
   var visTerms = settings.visibleTerms || {};
   var visMonths = settings.visibleMonths || {};
 
@@ -924,17 +830,16 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
 
   for (var tIdx = 0; tIdx < tabsDatasets.length; tIdx++) {
     var td = tabsDatasets[tIdx];
-    if (!visTerms[td.termId]) continue; // ปิดภาคเรียน/ปีนี้ไว้ ไม่ส่งให้ครู
-
     var rec = null;
     for (var rIdx = 0; rIdx < td.records.length; rIdx++) {
-      if (td.records[rIdx].coreName === coreName || td.records[rIdx].key === staffKey) {
+      if (td.records[rIdx].coreName === coreName) {
         rec = td.records[rIdx];
         break;
       }
     }
     if (!rec) continue;
     latestFoundProfile = rec;
+    if (!visTerms[td.termId]) continue; // ปิดภาคเรียน/ปีนี้ไว้ ไม่ส่งให้ครู
 
     // กรองส่งเฉพาะเดือนที่แอดมินเปิดในภาคเรียนนี้
     var filteredMonths = {};
@@ -960,9 +865,14 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
         name: rec.name,
         position: rec.position,
         group: rec.group,
+        department: (liveEprof.depts && liveEprof.depts[coreName]) || rec.group,
         months: filteredMonths
       }
     });
+  }
+
+  if (!latestFoundProfile) {
+    return { success: false, error: 'พบเลขบัตรในฐานข้อมูลทะเบียนประวัติ แต่ยังไม่พบรายชื่อในชีตลงเวลาปฏิบัติราชการ' };
   }
 
   var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
@@ -973,6 +883,16 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
     source: 'gas_live',
     spreadsheetTitle: ss.getName(),
     syncedAt: syncedAt,
+    cidHash: cidHashOut,
+    profile: {
+      key: latestFoundProfile.key,
+      coreName: latestFoundProfile.coreName,
+      seq: latestFoundProfile.seq,
+      name: latestFoundProfile.name,
+      position: latestFoundProfile.position,
+      group: latestFoundProfile.group,
+      department: (liveEprof.depts && liveEprof.depts[coreName]) || latestFoundProfile.group
+    },
     settings: {
       visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,
@@ -981,22 +901,20 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
     },
     terms: teacherTerms,
     months: fallbackLatest ? fallbackLatest.months : [],
-    record: fallbackLatest ? fallbackLatest.record : (latestFoundProfile ? {
+    record: fallbackLatest ? fallbackLatest.record : {
       key: latestFoundProfile.key,
       name: latestFoundProfile.name,
       position: latestFoundProfile.position,
       group: latestFoundProfile.group,
       months: {}
-    } : null)
+    }
   };
 }
 
 function handleSubmitCorrection(payload) {
-  var staffKey = String(payload.staffKey || '').trim();
-  var coreName = stripNamePrefix(payload.coreName || payload.staffName || '');
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var auth = verifyTeacherPin(ss, staffKey, coreName, String(payload.pin4 || '').trim(), payload.pinHash, payload.namePinHash, forceRefresh);
-  if (!auth.ok) return { success: false, error: auth.error };
+  var resolved = resolveCoreByCid(ss, payload.cid, payload.cidHash, false);
+  if (!resolved.ok) return { success: false, error: resolved.error };
 
   var sheet = getOrCreateHelperSheet(ss, CONFIG.TAB_CORRECTIONS, [
     'RequestId', 'StaffKey', 'StaffName', 'MonthId', 'MonthLabel', 'Day', 'Reason', 'Status', 'CreatedAtTs', 'CreatedAtText'
@@ -1007,7 +925,7 @@ function handleSubmitCorrection(payload) {
   var monthLabelFull = payload.termName ? (payload.monthLabel + ' (' + payload.termName + ')') : String(payload.monthLabel || '');
   sheet.appendRow([
     reqId,
-    staffKey,
+    String(payload.staffKey || ''),
     String(payload.staffName || ''),
     String(payload.monthId || ''),
     monthLabelFull,

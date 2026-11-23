@@ -142,7 +142,8 @@
   // -------------------- 3. APPLICATION STATE --------------------
   const seedStaff = Array.isArray(window.KBS_ATTENDANCE_STAFF_SEED) ? window.KBS_ATTENDANCE_STAFF_SEED : [];
   const seedMap = new Map(seedStaff.map(s => [s.key, s]));
-  const seedNameHashes = window.KBS_ATTENDANCE_NAME_HASHES || {};
+  const seedCidHashes = window.KBS_ATTENDANCE_CID_HASHES || {};
+  const seedCidCoreSet = new Set(Object.values(seedCidHashes));
   const fallbackData = window.KBS_ATTENDANCE_FALLBACK_DATA || null;
 
   function stripNamePrefix(s) {
@@ -186,12 +187,12 @@
       adminPinHash: sha256Hex('kbs-att-admin:' + DEFAULT_ADMIN_PIN),
       updatedAt: ''
     },
-    customPinHashes: {}, // staffKey -> sha256Hex(`${staffKey}:${pin4}`)
+    customPinHashes: {}, // staffKey -> sha256Hex('cid:' + normalizedCidOrCode)
     customPinKeysFromGas: new Set(),
     customPinCoresFromGas: new Set(),
     corrections: [],
     currentTeacher: null, // { key, coreName, name, position, group, department, avatarUrl, terms: [...] }
-    teacherAuthSession: null, // { staffKey, coreName, pinHash, namePinHash }
+    teacherAuthSession: null, // { staffKey, coreName, cidHash }
     teacherSelectedTermId: null,
     teacherSelectedMonthTab: 'all', // 'all' | monthId
     teacherCalendarMonthId: null,
@@ -217,9 +218,7 @@
         group: r.group,
         department: r.department || r.group,
         avatarUrl: '',
-        hasSeedPin: false,
-        pinHash: null,
-        namePinHash: null
+        hasSeedPin: Boolean(seedCidCoreSet.has(stripNamePrefix(r.name)))
       }));
     }
     return [];
@@ -582,9 +581,7 @@
             coreName: core,
             department: item.department || (seed && seed.department) || (item.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ'),
             avatarUrl: (seed && seed.avatarUrl) || '',
-            hasSeedPin: Boolean(item.hasSeedPin || (seed && seed.hasSeedPin) || seedNameHashes[core]),
-            pinHash: seed ? seed.pinHash : null,
-            namePinHash: seedNameHashes[core] || (seed && seed.namePinHash) || null
+            hasSeedPin: Boolean(item.hasSeedPin || (seed && seed.hasSeedPin) || seedCidCoreSet.has(core))
           };
         });
         state.customPinKeysFromGas = nextCustomKeys;
@@ -699,124 +696,72 @@
     }
   }
 
-  function renderTeacherDropdown(query) {
-    const dd = $('teacher-dropdown-list');
-    const q = String(query || '').trim().toLowerCase();
-    const matches = state.staffCatalog.filter(s => {
-      if (!q) return true;
-      return (
-        s.name.toLowerCase().includes(q) ||
-        (s.position || '').toLowerCase().includes(q) ||
-        (s.department || '').toLowerCase().includes(q) ||
-        (s.group || '').toLowerCase().includes(q) ||
-        String(s.seq).includes(q)
-      );
-    });
+  function normalizeCidOrCode(raw) {
+    return String(raw || '').replace(/[\s-]/g, '').toUpperCase();
+  }
 
-    if (matches.length === 0) {
-      dd.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">ไม่พบรายชื่อที่ตรงกับ "${esc(query)}"</div>`;
-      dd.classList.remove('hidden');
-      return;
+  function formatCidInputValue(raw) {
+    const str = String(raw || '');
+    if (/[a-zA-Zก-๙]/.test(str)) {
+      return str.replace(/\s+/g, '').toUpperCase().slice(0, 17);
     }
-
-    const headerBar = `<div class="sticky top-0 z-10 px-4 py-2 bg-slate-50/95 backdrop-blur border-b border-slate-200 text-[11px] font-semibold text-slate-500 flex items-center justify-between">
-      <span>แสดง ${matches.length} รายชื่อ (จากทั้งหมด ${state.staffCatalog.length} คน)</span>
-      <span>เลื่อนดูหรือพิมพ์ค้นหา</span>
-    </div>`;
-
-    dd.innerHTML = headerBar + matches.map(s => `
-      <button type="button" data-staff-key="${esc(s.key)}" class="teacher-dd-item w-full text-left px-4 py-2.5 hover:bg-blue-50 flex items-center justify-between gap-3 transition">
-        <div class="min-w-0">
-          <p class="text-xs sm:text-sm font-semibold text-slate-800 truncate">${esc(s.name)}</p>
-          <p class="text-[11px] text-slate-500 truncate">${esc(s.position)} • ${esc(s.department || s.group)}</p>
-        </div>
-        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 flex-shrink-0">${esc(s.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา #' + s.seq : 'ลำดับ ' + s.seq)}</span>
-      </button>
-    `).join('');
-    dd.classList.remove('hidden');
-
-    dd.querySelectorAll('.teacher-dd-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.getAttribute('data-staff-key');
-        selectTeacherInLogin(key);
-      });
-    });
+    const d = str.replace(/\D/g, '').slice(0, 13);
+    const parts = [];
+    if (d.length > 0) parts.push(d.slice(0, 1));
+    if (d.length > 1) parts.push(d.slice(1, 5));
+    if (d.length > 5) parts.push(d.slice(5, 10));
+    if (d.length > 10) parts.push(d.slice(10, 12));
+    if (d.length > 12) parts.push(d.slice(12, 13));
+    return parts.join('-');
   }
 
-  function selectTeacherInLogin(staffKey) {
-    const person = state.staffCatalog.find(s => s.key === staffKey);
-    if (!person) return;
-    $('teacher-selected-key').value = person.key;
-    $('teacher-selected-name').textContent = person.name;
-    $('teacher-selected-pos').textContent = `${person.position} (${person.department || person.group})`;
-    const avEl = $('teacher-selected-avatar');
-    if (avEl) {
-      if (person.avatarUrl) {
-        avEl.innerHTML = `<img src="${esc(person.avatarUrl)}" alt="${esc(person.name)}" class="w-full h-full object-cover" onerror="this.remove()">`;
-      } else {
-        const ch = (person.name || '?').replace(/^(นาย|นางสาว|นาง|ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?)\s*/, '').charAt(0) || '?';
-        avEl.textContent = ch;
-      }
-    }
-    $('teacher-selected-card').classList.remove('hidden');
-    $('teacher-search-input').value = person.name;
-    $('teacher-dropdown-list').classList.add('hidden');
-    $('btn-clear-teacher-search').classList.remove('hidden');
-    $('teacher-login-error').classList.add('hidden');
-    $('teacher-pin-input').focus();
-    refreshIcons();
-  }
+  async function authenticateTeacher(rawInput, isRemembered = false, silent = false) {
+    let normalized = '';
+    let cidHash = '';
 
-  function clearSelectedTeacher() {
-    $('teacher-selected-key').value = '';
-    $('teacher-selected-card').classList.add('hidden');
-    $('teacher-search-input').value = '';
-    $('btn-clear-teacher-search').classList.add('hidden');
-    $('teacher-login-error').classList.add('hidden');
-    $('teacher-search-input').focus();
-  }
-
-  async function authenticateTeacher(staffKey, rawPinInput, isRemembered = false, silent = false) {
-    const person = state.staffCatalog.find(s => s.key === staffKey || (s.coreName && s.coreName === stripNamePrefix(staffKey)));
-    if (!person) throw new Error('กรุณาเลือกรายชื่อของท่านจากรายการ');
-
-    const coreName = person.coreName || stripNamePrefix(person.name);
-    const digitsOnly = String(rawPinInput || '').replace(/\D/g, '');
-    let pin4 = '';
-    let computedHash = '';
-    let computedNameHash = '';
-
-    if (digitsOnly.length === 13) {
-      pin4 = digitsOnly.slice(-4);
-      computedHash = sha256Hex(`${person.key}:${pin4}`);
-      computedNameHash = sha256Hex(`name:${coreName}:${pin4}`);
-    } else if (digitsOnly.length >= 4 && digitsOnly.length <= 6 && String(rawPinInput).trim() === digitsOnly) {
-      pin4 = digitsOnly.slice(-4);
-      computedHash = sha256Hex(`${person.key}:${pin4}`);
-      computedNameHash = sha256Hex(`name:${coreName}:${pin4}`);
-    } else if (typeof rawPinInput === 'object' && rawPinInput && rawPinInput.pinHash) {
-      computedHash = rawPinInput.pinHash;
-      computedNameHash = rawPinInput.namePinHash || '';
-    } else if (/^[a-f0-9]{64}$/i.test(String(rawPinInput || ''))) {
-      computedHash = String(rawPinInput);
+    if (typeof rawInput === 'object' && rawInput && rawInput.cidHash) {
+      cidHash = String(rawInput.cidHash).trim();
     } else {
-      throw new Error('กรุณากรอกเลข 4 หลักสุดท้ายของบัตรประชาชน หรือรหัส PIN 4 หลัก');
+      normalized = normalizeCidOrCode(rawInput);
+      if (!normalized) {
+        throw new Error('กรุณากรอกเลขประจำตัวประชาชน 13 หลัก หรือรหัสเข้าใช้งาน');
+      }
+      if (/^\d+$/.test(normalized) && normalized.length !== 13) {
+        throw new Error('กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลัก (หรือกรอกรหัสเข้าใช้งานจากแอดมิน)');
+      }
+      if (!/^\d+$/.test(normalized) && normalized.length < 4) {
+        throw new Error('รหัสเข้าใช้งานต้องมีอย่างน้อย 4 ตัวอักษร');
+      }
+      cidHash = sha256Hex('cid:' + normalized);
     }
 
     // ดึงข้อมูลสดจาก Google Sheets (รองรับทุกภาคเรียน/ปีที่แอดมินเปิดให้ดู)
     if (hasGasEndpoint()) {
       const res = await callGasApi('getTeacherAttendance', {
-        staffKey: person.key,
-        coreName,
-        staffName: person.name,
-        pin4: pin4 || undefined,
-        pinHash: computedHash,
-        namePinHash: computedNameHash || undefined
+        cid: normalized || undefined,
+        cidHash
       });
       if (res.terms || res.record) {
         state.dataSource = 'gas_live';
         state.syncedAt = res.syncedAt || state.syncedAt;
         if (res.settings) applySettingsFromServer(res.settings);
+        const staffInfo = res.staff || {};
+        const catalogHit = state.staffCatalog.find(s =>
+          (staffInfo.key && s.key === staffInfo.key) ||
+          (staffInfo.coreName && s.coreName === staffInfo.coreName)
+        );
+        const person = catalogHit
+          ? { ...catalogHit, ...staffInfo, avatarUrl: catalogHit.avatarUrl || '' }
+          : {
+              key: staffInfo.key || (res.record && res.record.key) || 'staff',
+              coreName: staffInfo.coreName || stripNamePrefix(staffInfo.name || (res.record && res.record.name)),
+              seq: staffInfo.seq || (res.record && res.record.seq) || 0,
+              name: staffInfo.name || (res.record && res.record.name) || 'บุคลากร',
+              position: staffInfo.position || (res.record && res.record.position) || '',
+              group: staffInfo.group || (res.record && res.record.group) || '',
+              department: staffInfo.department || staffInfo.group || '',
+              avatarUrl: ''
+            };
         const termsPayload = Array.isArray(res.terms) && res.terms.length
           ? res.terms
           : (res.record ? [{
@@ -825,26 +770,32 @@
               months: res.months || state.months,
               record: res.record
             }] : []);
-        setAuthenticatedTeacher(person, termsPayload, { pinHash: computedHash, namePinHash: computedNameHash }, isRemembered);
+        setAuthenticatedTeacher(person, termsPayload, { cidHash: res.cidHash || cidHash }, isRemembered);
         if (!silent) toast(`ยินดีต้อนรับ ${person.name}`);
         return;
       }
     }
 
-    // โหมด Snapshot ออฟไลน์
-    const customHash = state.customPinHashes[person.key] || state.customPinHashes[coreName];
-    const seedHash = person.pinHash || (seedMap.get(person.key) ? seedMap.get(person.key).pinHash : null);
-    const seedNameHash = person.namePinHash || seedNameHashes[coreName] || null;
-    if (!customHash && !seedHash && !seedNameHash) {
-      throw new Error('รายชื่อนี้ยังไม่ได้กำหนดรหัสยืนยันตัวตนในระบบ กรุณาติดต่อแอดมินกลุ่มบริหารงานบุคคลเพื่อตั้งรหัส PIN 4 หลัก');
+    // โหมด Snapshot ออฟไลน์ (กรณีไม่ได้เชื่อม GAS)
+    let matchedCore = seedCidHashes[cidHash] || '';
+    let matchedKey = '';
+    if (!matchedCore) {
+      for (const [k, h] of Object.entries(state.customPinHashes)) {
+        if (h === cidHash) {
+          matchedKey = k;
+          break;
+        }
+      }
     }
-    const matched = (customHash && computedHash === customHash)
-      || (seedHash && computedHash === seedHash)
-      || (seedNameHash && computedNameHash && computedNameHash === seedNameHash);
-    if (!matched) {
-      throw new Error('รหัสยืนยันตัวตนไม่ถูกต้อง กรุณาตรวจสอบเลขท้าย 4 ตัวบัตรประชาชน หรือ PIN ที่แอดมินแจ้ง');
+    const person = state.staffCatalog.find(s =>
+      (matchedCore && (s.coreName === matchedCore || stripNamePrefix(s.name) === matchedCore)) ||
+      (matchedKey && s.key === matchedKey)
+    );
+    if (!person) {
+      throw new Error('ไม่พบเลขบัตรประชาชนหรือรหัสนี้ในระบบ (โปรดตรวจสอบเลข 13 หลักให้ถูกต้อง หรือติดต่อแอดมินกลุ่มบริหารงานบุคคล)');
     }
 
+    const coreName = person.coreName || stripNamePrefix(person.name);
     const sourceRecords = state.adminRecords || (fallbackData && fallbackData.records) || [];
     const rec = sourceRecords.find(r => r.key === person.key || stripNamePrefix(r.name) === coreName);
     if (!rec) {
@@ -856,7 +807,7 @@
       months: state.terms[0] ? state.terms[0].months : state.months,
       record: rec
     }];
-    setAuthenticatedTeacher(person, fallbackTerm, { pinHash: computedHash, namePinHash: computedNameHash }, isRemembered);
+    setAuthenticatedTeacher(person, fallbackTerm, { cidHash }, isRemembered);
     if (!silent) toast(`ยินดีต้อนรับ ${person.name}`);
   }
 
@@ -875,8 +826,7 @@
     state.teacherAuthSession = {
       staffKey: person.key,
       coreName: state.currentTeacher.coreName,
-      pinHash: authHashes.pinHash,
-      namePinHash: authHashes.namePinHash || ''
+      cidHash: authHashes.cidHash
     };
 
     const openTerms = getOpenTermsList();
@@ -899,7 +849,8 @@
     state.teacherAuthSession = null;
     sessionStorage.removeItem(SS_TEACHER_AUTH_KEY);
     localStorage.removeItem(LS_TEACHER_AUTH_KEY);
-    $('teacher-pin-input').value = '';
+    const cidInp = $('teacher-cid-input');
+    if (cidInp) cidInp.value = '';
     renderActiveModeView();
   }
 
@@ -1850,13 +1801,13 @@
     refreshIcons();
   }
 
-  // ---- Admin Tab 3: Staff Verification PIN Manager ----
+  // ---- Admin Tab 3: Staff CID & Access Code Manager ----
   function renderAdminPinsTab() {
     let seedCount = 0, customCount = 0, missingCount = 0;
     const enriched = state.staffCatalog.map(s => {
       const core = s.coreName || stripNamePrefix(s.name);
       const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || state.customPinCoresFromGas.has(core) || s.hasCustomPin);
-      const hasSeed = Boolean(s.pinHash || s.namePinHash || seedNameHashes[core] || s.hasSeedPin || (seedMap.get(s.key) && seedMap.get(s.key).pinHash));
+      const hasSeed = Boolean(s.hasSeedPin || seedCidCoreSet.has(core) || (seedMap.get(s.key) && seedMap.get(s.key).hasSeedPin));
       let status = 'missing';
       if (hasCustom) { status = 'custom'; customCount++; }
       else if (hasSeed) { status = 'seed'; seedCount++; }
@@ -1865,9 +1816,9 @@
     });
 
     $('ad-pins-stats').innerHTML = `
-      <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200"><div class="text-xs text-emerald-700 font-semibold">ใช้เลขท้าย 4 ตัวบัตรฯ อัตโนมัติ</div><div class="text-xl font-bold text-emerald-900 mt-0.5">${seedCount} คน</div></div>
-      <div class="p-3.5 rounded-2xl bg-blue-50 border border-blue-200"><div class="text-xs text-blue-700 font-semibold">กำหนด PIN เองในระบบ</div><div class="text-xl font-bold text-blue-900 mt-0.5">${customCount} คน</div></div>
-      <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200"><div class="text-xs text-amber-800 font-semibold">ยังไม่มีรหัสยืนยันตัวตน</div><div class="text-xl font-bold text-amber-950 mt-0.5">${missingCount} คน</div></div>
+      <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200"><div class="text-xs text-emerald-700 font-semibold">มีเลขบัตรประชาชนใน E-Profile</div><div class="text-xl font-bold text-emerald-900 mt-0.5">${seedCount} คน</div></div>
+      <div class="p-3.5 rounded-2xl bg-blue-50 border border-blue-200"><div class="text-xs text-blue-700 font-semibold">กำหนดเลขบัตร / รหัสเองแล้ว</div><div class="text-xl font-bold text-blue-900 mt-0.5">${customCount} คน</div></div>
+      <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200"><div class="text-xs text-amber-800 font-semibold">ยังไม่มีเลขบัตร / รหัสเข้าใช้</div><div class="text-xl font-bold text-amber-950 mt-0.5">${missingCount} คน</div></div>
     `;
 
     const filter = $('ad-pin-filter-select').value;
@@ -1880,10 +1831,10 @@
 
     $('ad-pins-table-body').innerHTML = list.map(s => {
       const badge = s.status === 'custom'
-        ? '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">กำหนด PIN เองแล้ว</span>'
+        ? '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">กำหนดเลขบัตร/รหัสเองแล้ว</span>'
         : (s.status === 'seed'
-          ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">เลขท้าย 4 ตัวบัตรฯ (e-Profile)</span>'
-          : '<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">ยังไม่มีรหัส</span>');
+          ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">เลขบัตรฯ 13 หลัก (E-Profile)</span>'
+          : '<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">ยังไม่มีเลขบัตร / รหัส</span>');
 
       return `
         <tr class="hover:bg-slate-50">
@@ -1892,8 +1843,8 @@
           <td class="px-3 py-2.5 text-slate-500">${esc(s.position)} • ${esc(s.group)}</td>
           <td class="px-3 py-2.5">${badge}</td>
           <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
-            <button type="button" data-set-pin="${esc(s.key)}" class="btn-set-staff-pin px-2.5 py-1 rounded-lg bg-kbs-navy hover:bg-kbs-navyDark text-white text-[11px] font-semibold">ตั้ง PIN 4 หลัก</button>
-            ${s.status === 'custom' ? `<button type="button" data-reset-pin="${esc(s.key)}" class="btn-reset-staff-pin px-2 py-1 rounded-lg border border-slate-300 text-slate-600 text-[11px]">ล้าง PIN เอง</button>` : ''}
+            <button type="button" data-set-pin="${esc(s.key)}" class="btn-set-staff-pin px-2.5 py-1 rounded-lg bg-kbs-navy hover:bg-kbs-navyDark text-white text-[11px] font-semibold">กำหนดเลขบัตร/รหัส</button>
+            ${s.status === 'custom' ? `<button type="button" data-reset-pin="${esc(s.key)}" class="btn-reset-staff-pin px-2 py-1 rounded-lg border border-slate-300 text-slate-600 text-[11px]">ล้างรหัส</button>` : ''}
           </td>
         </tr>
       `;
@@ -1910,25 +1861,31 @@
   async function promptSetStaffPin(staffKey) {
     const person = state.staffCatalog.find(s => s.key === staffKey);
     if (!person) return;
-    const { value: pin } = await Swal.fire({
-      title: `ตั้งรหัส PIN 4 หลัก`,
+    const { value: codeInput } = await Swal.fire({
+      title: `กำหนดเลขบัตรฯ / รหัสเข้าใช้`,
       text: `สำหรับ: ${person.name}`,
       input: 'text',
-      inputPlaceholder: 'กรอกตัวเลข 4 หลัก เช่น 1234',
-      inputAttributes: { maxlength: 4, inputmode: 'numeric' },
+      inputPlaceholder: 'กรอกเลขบัตรฯ 13 หลัก หรือรหัสเฉพาะตัว เช่น KBS' + String(person.rowNumber || person.seq).padStart(3, '0'),
+      inputAttributes: { maxlength: 20 },
       showCancelButton: true,
-      confirmButtonText: 'บันทึก PIN',
+      confirmButtonText: 'บันทึก',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#1e3a8a',
       inputValidator: v => {
-        if (!/^\d{4}$/.test(String(v || '').trim())) return 'กรุณากรอกตัวเลข 4 หลักเท่านั้น';
+        const normalized = normalizeCidOrCode(v);
+        if (!normalized) return 'กรุณากรอกเลขบัตรประชาชน 13 หลัก หรือรหัสเข้าใช้งาน';
+        if (/^\d+$/.test(normalized) && normalized.length !== 13) {
+          return 'หากเป็นตัวเลขล้วน กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก';
+        }
+        if (normalized.length < 4) return 'รหัสเข้าใช้งานต้องมีอย่างน้อย 4 ตัวอักษร';
       }
     });
-    if (!pin) return;
+    if (!codeInput) return;
 
-    const hash = sha256Hex(`${staffKey}:${pin.trim()}`);
+    const normalized = normalizeCidOrCode(codeInput);
+    const hash = sha256Hex('cid:' + normalized);
     await saveCustomStaffPin(staffKey, hash);
-    toast(`บันทึกรหัส PIN สำหรับ ${person.name} เรียบร้อยแล้ว`);
+    toast(`บันทึกรหัสเข้าใช้สำหรับ ${person.name} เรียบร้อยแล้ว`);
     renderAdminPinsTab();
   }
 
@@ -1953,7 +1910,7 @@
 
   async function clearStaffCustomPin(staffKey) {
     await saveCustomStaffPin(staffKey, null);
-    toast('ล้าง PIN แบบกำหนดเองแล้ว');
+    toast('ล้างรหัสแบบกำหนดเองแล้ว');
     renderAdminPinsTab();
   }
 
@@ -1961,46 +1918,83 @@
     const missing = state.staffCatalog.filter(s => {
       const core = s.coreName || stripNamePrefix(s.name);
       const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || state.customPinCoresFromGas.has(core) || s.hasCustomPin);
-      const hasSeed = Boolean(s.pinHash || s.namePinHash || seedNameHashes[core] || s.hasSeedPin || (seedMap.get(s.key) && seedMap.get(s.key).pinHash));
+      const hasSeed = Boolean(s.hasSeedPin || seedCidCoreSet.has(core) || (seedMap.get(s.key) && seedMap.get(s.key).hasSeedPin));
       return !hasCustom && !hasSeed;
     });
     if (missing.length === 0) {
-      toast('บุคลากรทุกคนมีรหัสยืนยันตัวตนครบแล้ว');
+      toast('บุคลากรทุกคนมีเลขบัตรฯ / รหัสเข้าใช้งานครบแล้ว');
       return;
     }
 
-    const { value: defaultPin } = await Swal.fire({
-      title: `ตั้งรหัสเริ่มต้นให้ผู้ที่ยังไม่มี PIN (${missing.length} คน)`,
-      text: 'ระบุรหัส 4 หลักที่จะกำหนดให้ทั้งหมด (หรือเว้นว่างไม่ทำ)',
-      input: 'text',
-      inputValue: '0000',
-      inputAttributes: { maxlength: 4, inputmode: 'numeric' },
+    const confirmRes = await Swal.fire({
+      title: `สร้างรหัสเข้าใช้เฉพาะบุคคลให้ผู้ที่ยังไม่มี (${missing.length} คน)?`,
+      html: `<p class="text-sm text-slate-600">ระบบจะสร้างรหัสประจำตัวไม่ซ้ำกันในรูปแบบ <strong>KBS + ลำดับแถว</strong> (เช่น <code>KBS104</code>, <code>KBS121</code>) เพื่อให้แต่ละท่านใช้กรอกในช่องเข้าสู่ระบบได้ทันทีแทนเลขบัตรฯ</p>`,
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonText: `กำหนดให้ทั้ง ${missing.length} คน`,
+      confirmButtonText: `สร้างรหัสให้ทั้ง ${missing.length} คน`,
       cancelButtonText: 'ยกเลิก',
-      confirmButtonColor: '#1e3a8a',
-      inputValidator: v => {
-        if (!/^\d{4}$/.test(String(v || '').trim())) return 'กรุณากรอกตัวเลข 4 หลัก';
-      }
+      confirmButtonColor: '#1e3a8a'
     });
-    if (!defaultPin) return;
+    if (!confirmRes.isConfirmed) return;
 
     const btn = $('btn-batch-assign-missing-pins');
     setButtonLoading(btn, true, 'กำลังบันทึก...');
     try {
       const gasPins = [];
+      const assignedList = [];
       for (const s of missing) {
-        const hash = sha256Hex(`${s.key}:${defaultPin.trim()}`);
+        const code = 'KBS' + String(s.rowNumber || s.seq).padStart(3, '0');
+        const hash = sha256Hex('cid:' + code);
         state.customPinHashes[s.key] = hash;
         state.customPinKeysFromGas.add(s.key);
         gasPins.push({ key: s.key, name: s.name, pinHash: hash });
+        assignedList.push({ name: s.name, position: s.position, code });
       }
       saveSettingsLocal();
       if (hasGasEndpoint() && state.adminSessionHash) {
         await callGasApi('saveStaffPins', { adminPinHash: state.adminSessionHash, pins: gasPins });
       }
-      toast(`กำหนด PIN ${defaultPin} ให้ ${missing.length} คนเรียบร้อยแล้ว`);
       renderAdminPinsTab();
+
+      const rowsHtml = assignedList.map(x => `
+        <tr class="border-b border-slate-100">
+          <td class="py-1.5 pr-2 text-left">${esc(x.name)}</td>
+          <td class="py-1.5 px-2 text-left text-slate-500">${esc(x.position)}</td>
+          <td class="py-1.5 pl-2 text-right font-mono font-bold text-kbs-navy">${esc(x.code)}</td>
+        </tr>
+      `).join('');
+
+      const resultModal = await Swal.fire({
+        title: `สร้างรหัสสำเร็จ ${assignedList.length} คน`,
+        width: 640,
+        html: `
+          <p class="text-xs text-slate-600 mb-3">โปรดแจ้งรหัสเข้าใช้ด้านล่างให้บุคลากรนำไปกรอกในช่องเข้าสู่ระบบ (หรือกดดาวน์โหลดเป็นไฟล์ CSV เก็บไว้)</p>
+          <div class="max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50">
+            <table class="w-full text-xs">
+              <thead><tr class="border-b border-slate-300 text-slate-600"><th class="text-left pb-1">ชื่อ-สกุล</th><th class="text-left pb-1">ตำแหน่ง</th><th class="text-right pb-1">รหัสเข้าใช้</th></tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'ดาวน์โหลดไฟล์ CSV',
+        cancelButtonText: 'ปิดหน้าต่าง',
+        confirmButtonColor: '#059669'
+      });
+
+      if (resultModal.isConfirmed) {
+        const csvLines = ['ชื่อ-สกุล,ตำแหน่ง,รหัสเข้าใช้งาน'];
+        assignedList.forEach(x => {
+          csvLines.push(`"${x.name.replace(/"/g, '""')}","${(x.position || '').replace(/"/g, '""')}","${x.code}"`);
+        });
+        const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'KBS_Access_Codes_Staff.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     } finally {
       setButtonLoading(btn, false);
     }
@@ -2115,37 +2109,27 @@
     $('btn-mode-admin').addEventListener('click', () => switchMode('admin'));
     $('btn-back-to-teacher').addEventListener('click', () => switchMode('teacher'));
 
-    // Teacher search & dropdown
-    const searchInput = $('teacher-search-input');
-    searchInput.addEventListener('focus', () => renderTeacherDropdown(searchInput.value));
-    searchInput.addEventListener('input', () => {
-      $('btn-clear-teacher-search').classList.toggle('hidden', !searchInput.value);
-      renderTeacherDropdown(searchInput.value);
+    // Teacher single CID / access code login
+    const cidInput = $('teacher-cid-input');
+    cidInput.addEventListener('input', () => {
+      cidInput.value = formatCidInputValue(cidInput.value);
+      $('teacher-login-error').classList.add('hidden');
     });
-    document.addEventListener('click', e => {
-      if (!e.target.closest('#teacher-search-input') && !e.target.closest('#teacher-dropdown-list')) {
-        $('teacher-dropdown-list').classList.add('hidden');
-      }
-    });
-    $('btn-clear-teacher-search').addEventListener('click', clearSelectedTeacher);
-    $('btn-change-selected-teacher').addEventListener('click', clearSelectedTeacher);
 
-    $('btn-toggle-teacher-pin').addEventListener('click', () => {
-      const inp = $('teacher-pin-input');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
+    $('btn-toggle-teacher-cid').addEventListener('click', () => {
+      cidInput.type = cidInput.type === 'password' ? 'text' : 'password';
     });
 
     $('form-teacher-login').addEventListener('submit', async e => {
       e.preventDefault();
-      const staffKey = $('teacher-selected-key').value;
-      const pin = $('teacher-pin-input').value;
+      const cidVal = cidInput.value;
       const remember = $('teacher-remember-checkbox').checked;
       const errBox = $('teacher-login-error');
       const btn = $('btn-teacher-login');
       errBox.classList.add('hidden');
       setButtonLoading(btn, true, 'กำลังตรวจสอบ...');
       try {
-        await authenticateTeacher(staffKey, pin, remember, false);
+        await authenticateTeacher(cidVal, remember, false);
       } catch (err) {
         errBox.textContent = err.message;
         errBox.classList.remove('hidden');
@@ -2188,8 +2172,7 @@
           staffKey: state.currentTeacher.key,
           coreName: state.currentTeacher.coreName,
           staffName: state.currentTeacher.name,
-          pinHash: state.teacherAuthSession ? state.teacherAuthSession.pinHash : '',
-          namePinHash: state.teacherAuthSession ? state.teacherAuthSession.namePinHash : '',
+          cidHash: state.teacherAuthSession ? state.teacherAuthSession.cidHash : '',
           termName: activeTerm ? activeTerm.termName : '',
           monthId: mId,
           monthLabel: mObj ? mObj.label : mId,
@@ -2435,8 +2418,8 @@
     if (savedSess) {
       try {
         const parsedSess = JSON.parse(savedSess);
-        if (parsedSess && parsedSess.staffKey && parsedSess.pinHash) {
-          await authenticateTeacher(parsedSess.staffKey, { pinHash: parsedSess.pinHash, namePinHash: parsedSess.namePinHash || '' }, false, true);
+        if (parsedSess && parsedSess.cidHash) {
+          await authenticateTeacher({ cidHash: parsedSess.cidHash }, false, true);
         }
       } catch (e) {
         sessionStorage.removeItem(SS_TEACHER_AUTH_KEY);
