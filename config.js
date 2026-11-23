@@ -9,7 +9,7 @@
  * ============================================================================
  */
 window.KBS_ATTENDANCE_CONFIG = {
-  GAS_API_URL: '',
+  GAS_API_URL: 'https://script.google.com/macros/s/AKfycbztBW7aa5PlgBnX6YjGu2PVLCjtw2BGtbxHbLi3DcjtqwwXOscsWoWZqKJZeF93ZDxlaw/exec',
   SPREADSHEET_ID: '1AuOkjvEAy2JTS6DqDt1hUZMlVV6TO1EFcxclfVOfAfs',
   SCHOOL_NAME: 'โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่',
   TERM_LABEL: 'ภาคเรียนที่ 2/2569',
