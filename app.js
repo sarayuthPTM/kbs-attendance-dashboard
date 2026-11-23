@@ -745,7 +745,7 @@
         state.dataSource = 'gas_live';
         state.syncedAt = res.syncedAt || state.syncedAt;
         if (res.settings) applySettingsFromServer(res.settings);
-        const staffInfo = res.staff || {};
+        const staffInfo = res.profile || res.staff || {};
         const catalogHit = state.staffCatalog.find(s =>
           (staffInfo.key && s.key === staffInfo.key) ||
           (staffInfo.coreName && s.coreName === staffInfo.coreName)
