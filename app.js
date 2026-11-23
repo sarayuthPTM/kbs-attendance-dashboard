@@ -201,7 +201,11 @@
       tdMonthly: null,
       tdBreakdown: null,
       adMonthly: null,
-      adIssues: null
+      adIssues: null,
+      adTopAbsent: null,
+      adTopLeave: null,
+      adTopLate: null,
+      adTopNoOut: null
     }
   };
 
@@ -1386,20 +1390,61 @@
     switchMode('teacher');
   }
 
+  const ADMIN_TAB_META = {
+    months: {
+      title: '1. เปิด-ปิดปี/เทอม และเดือน',
+      desc: 'กำหนดภาคเรียน/ปีและรายเดือนที่อนุญาตให้ครูเข้าดูข้อมูล พร้อมประกาศแจ้งเตือน'
+    },
+    overview: {
+      title: '2. แดชบอร์ดภาพรวมทั้งโรงเรียน',
+      desc: 'สรุปสถิติ KPI กราฟเปรียบเทียบ และอันดับขาด/ลา/สาย/ไม่สแกนออก ของบุคลากรทุกคน'
+    },
+    pins: {
+      title: '3. จัดการรหัสยืนยันตัวตนครู',
+      desc: 'ตรวจสอบสถานะเลขบัตรประชาชนจาก E-Profile และกำหนดรหัสเข้าใช้เฉพาะบุคคล'
+    },
+    requests: {
+      title: '4. คำร้องขอแก้ไข',
+      desc: 'ตรวจสอบและอัปเดตสถานะคำร้องขอแก้ไขข้อมูลการลงเวลาที่ครูส่งเข้ามา'
+    },
+    settings: {
+      title: '5. ตั้งค่า Google Sheets & Vercel',
+      desc: 'ตั้งค่าการเชื่อมต่อ Google Apps Script API และเปลี่ยนรหัสผ่านแอดมิน'
+    }
+  };
+
+  function toggleAdminSidebarDrawer(open) {
+    const sidebar = $('ad-sidebar');
+    const backdrop = $('ad-sidebar-backdrop');
+    if (!sidebar || !backdrop) return;
+    if (open) {
+      sidebar.classList.remove('-translate-x-full');
+      backdrop.classList.remove('hidden');
+    } else {
+      sidebar.classList.add('-translate-x-full');
+      backdrop.classList.add('hidden');
+    }
+  }
+
   function switchAdminTab(tabName) {
     state.adTab = tabName;
     document.querySelectorAll('.ad-tab-btn').forEach(btn => {
       const t = btn.getAttribute('data-ad-tab');
       if (t === tabName) {
-        btn.className = 'ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-white text-kbs-navy shadow flex items-center gap-1.5';
+        btn.className = 'ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-bold text-left bg-white text-kbs-navyDark shadow-lg border-l-4 border-amber-400 flex items-center gap-2.5 transition';
       } else {
-        btn.className = 'ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-white/10 text-white hover:bg-white/20 flex items-center gap-1.5';
+        btn.className = 'ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-left text-blue-100 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition';
       }
     });
+    const meta = ADMIN_TAB_META[tabName] || ADMIN_TAB_META.months;
+    if ($('ad-active-tab-title')) $('ad-active-tab-title').textContent = meta.title;
+    if ($('ad-active-tab-desc')) $('ad-active-tab-desc').textContent = meta.desc;
+
     ['months', 'overview', 'pins', 'requests', 'settings'].forEach(p => {
       const panel = $(`ad-panel-${p}`);
       if (panel) panel.classList.toggle('hidden', p !== tabName);
     });
+    toggleAdminSidebarDrawer(false);
     renderAdminDashboard();
   }
 
@@ -1690,6 +1735,163 @@
     renderAdminOverviewCharts(filtered, computedRows, monthIds, termMonths);
   }
 
+  const barValueLabelsPlugin = {
+    id: 'barValueLabels',
+    afterDatasetsDraw(chart, _args, pluginOpts) {
+      if (!pluginOpts || !pluginOpts.enabled) return;
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta || !meta.data) return;
+      ctx.save();
+      ctx.font = '600 11px Prompt, Sarabun, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = pluginOpts.color || '#334155';
+      const labelsList = pluginOpts.labels || [];
+      meta.data.forEach((bar, i) => {
+        const text = labelsList[i];
+        if (!text) return;
+        ctx.fillText(text, bar.x + 8, bar.y);
+      });
+      ctx.restore();
+    }
+  };
+
+  function stripRankName(name) {
+    return String(name || '').replace(/^(ว่าที่\s*ร้อยตรี\s*หญิง|ว่าที่\s*ร้อยตรี|ว่าที่\s*ร\.?\s*ต\.?\s*หญิง|ว่าที่\s*ร\.?\s*ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.)\s*/i, '').trim();
+  }
+
+  function buildRankedMetricList(computedRows, limit, scoreFn, valueLabelFn) {
+    return computedRows
+      .map(x => ({
+        key: x.record.key,
+        fullName: x.record.name,
+        shortName: stripRankName(x.record.name),
+        position: x.record.position,
+        group: x.record.group,
+        value: Number(scoreFn(x.stats) || 0),
+        valueLabel: valueLabelFn(x.stats)
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, limit);
+  }
+
+  function renderRankedBarChart(chartKey, canvasId, wrapId, emptyId, summaryId, items, cfg) {
+    if (state.charts[chartKey]) {
+      state.charts[chartKey].destroy();
+      state.charts[chartKey] = null;
+    }
+    const canvas = $(canvasId);
+    const wrap = $(wrapId);
+    const emptyEl = $(emptyId);
+    const summaryEl = $(summaryId);
+
+    const totalPeople = items.length;
+    const totalSum = items.reduce((acc, x) => acc + x.value, 0);
+    if (summaryEl) {
+      summaryEl.textContent = totalPeople
+        ? `พบ ${totalPeople} คน • รวม ${cfg.isDecimal ? formatNumber(totalSum) : totalSum.toLocaleString()} ${cfg.unit}`
+        : `ไม่มีรายการ (${cfg.unit})`;
+    }
+
+    if (!totalPeople) {
+      if (wrap) wrap.classList.add('hidden');
+      if (emptyEl) emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    if (emptyEl) emptyEl.classList.add('hidden');
+    if (wrap) {
+      wrap.classList.remove('hidden');
+      wrap.style.height = Math.max(260, items.length * 32 + 44) + 'px';
+    }
+
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, canvas.parentElement ? canvas.parentElement.clientWidth || 420 : 420, 0);
+    grad.addColorStop(0, cfg.colorStart);
+    grad.addColorStop(1, cfg.colorEnd);
+
+    const labelsWithRank = items.map((x, idx) => `${idx + 1}. ${x.shortName}`);
+    const maxVal = Math.max(...items.map(x => x.value), 1);
+
+    state.charts[chartKey] = new Chart(canvas, {
+      type: 'bar',
+      plugins: [barValueLabelsPlugin],
+      data: {
+        labels: labelsWithRank,
+        datasets: [{
+          label: cfg.datasetLabel,
+          data: items.map(x => x.value),
+          backgroundColor: items.map((_x, idx) => (idx < 3 ? grad : cfg.colorMuted)),
+          hoverBackgroundColor: cfg.colorStart,
+          borderRadius: 8,
+          borderSkipped: false,
+          barThickness: 18
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 78, left: 4, top: 4, bottom: 2 } },
+        onHover: (evt, els) => {
+          if (evt && evt.native && evt.native.target) {
+            evt.native.target.style.cursor = els.length ? 'pointer' : 'default';
+          }
+        },
+        onClick: (_evt, els) => {
+          if (!els || !els.length) return;
+          const idx = els[0].index;
+          if (items[idx]) openAdminStaffDetailModal(items[idx].key);
+        },
+        plugins: {
+          legend: { display: false },
+          barValueLabels: {
+            enabled: true,
+            color: cfg.textColor,
+            labels: items.map(x => x.valueLabel)
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.94)',
+            titleFont: { family: 'Prompt', size: 12, weight: 'bold' },
+            bodyFont: { family: 'Sarabun', size: 12 },
+            padding: 10,
+            cornerRadius: 10,
+            callbacks: {
+              title: ctxItems => {
+                const it = items[ctxItems[0].dataIndex];
+                return it ? it.fullName : '';
+              },
+              label: ctxItem => {
+                const it = items[ctxItem.dataIndex];
+                return it ? `${cfg.datasetLabel}: ${it.valueLabel}` : '';
+              },
+              afterLabel: ctxItem => {
+                const it = items[ctxItem.dataIndex];
+                return it ? `${it.position} • ${it.group} (คลิกเพื่อดูปฏิทิน)` : '';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            suggestedMax: maxVal * 1.18,
+            grid: { color: 'rgba(148, 163, 184, 0.2)', borderDash: [4, 4] },
+            border: { display: false },
+            ticks: { font: { family: 'Prompt', size: 10 }, color: '#64748b' }
+          },
+          y: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { family: 'Prompt', size: 11, weight: '600' }, color: '#1e293b' }
+          }
+        }
+      }
+    });
+  }
+
   function renderAdminOverviewCharts(filteredRecords, computedRows, selectedMonthIds, termMonths) {
     const monthlyCanvas = $('ad-chart-monthly');
     const issuesCanvas = $('ad-chart-issues');
@@ -1710,40 +1912,87 @@
       data: {
         labels,
         datasets: [
-          { label: 'มาสาย (ครั้ง)', data: lateData, backgroundColor: '#f59e0b', borderRadius: 5 },
-          { label: 'ไม่สแกนเข้า/ออก (ครั้ง)', data: noScanData, backgroundColor: '#6366f1', borderRadius: 5 },
-          { label: 'วันลาสะสม (วัน)', data: leaveData, backgroundColor: '#f43f5e', borderRadius: 5 }
+          { label: 'มาสาย (ครั้ง)', data: lateData, backgroundColor: '#f59e0b', borderRadius: 6 },
+          { label: 'ไม่สแกนเข้า/ออก (ครั้ง)', data: noScanData, backgroundColor: '#6366f1', borderRadius: 6 },
+          { label: 'วันลาสะสม (วัน)', data: leaveData, backgroundColor: '#f43f5e', borderRadius: 6 }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { font: { family: 'Prompt', size: 11 } } } },
-        scales: { y: { beginAtZero: true } }
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Prompt', size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.92)', cornerRadius: 10, padding: 10 }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: 'Prompt', size: 11 } } },
+          y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.2)', borderDash: [4, 4] } }
+        }
       }
     });
 
-    const top10 = [...computedRows]
-      .map(x => ({
-        name: x.record.name.replace(/^(นาย|นางสาว|นาง|ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?)\s*/, ''),
-        score: x.stats.late + x.stats.noIn + x.stats.noOut + x.stats.absent + x.stats.totalLeaveDays
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
+    const rankLimit = Number($('ad-rank-limit-select') ? $('ad-rank-limit-select').value : 10) || 10;
 
-    state.charts.adIssues = new Chart(issuesCanvas, {
-      type: 'bar',
-      data: {
-        labels: top10.map(x => x.name),
-        datasets: [{ label: 'รวมรายการ (วันลา+สาย+ไม่สแกน+ขาด)', data: top10.map(x => x.score), backgroundColor: '#1e3a8a', borderRadius: 5 }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } }
-      }
+    const topIssues = buildRankedMetricList(
+      computedRows,
+      10,
+      s => s.late + s.noIn + s.noOut + s.absent + s.totalLeaveDays,
+      s => `${formatNumber(s.late + s.noIn + s.noOut + s.absent + s.totalLeaveDays)} รายการ`
+    );
+
+    renderRankedBarChart('adIssues', 'ad-chart-issues', null, null, null, topIssues, {
+      datasetLabel: 'รวมทุกรายการ',
+      unit: 'รายการ',
+      colorStart: '#1e3a8a',
+      colorEnd: '#3b82f6',
+      colorMuted: '#93c5fd',
+      textColor: '#1e3a8a'
+    });
+
+    const topAbsent = buildRankedMetricList(computedRows, rankLimit, s => s.absent, s => `${s.absent} ครั้ง`);
+    renderRankedBarChart('adTopAbsent', 'ad-chart-top-absent', 'ad-rank-wrap-absent', 'ad-top-absent-empty', 'ad-top-absent-summary', topAbsent, {
+      datasetLabel: 'ขาดราชการ',
+      unit: 'ครั้ง',
+      colorStart: '#dc2626',
+      colorEnd: '#fb7185',
+      colorMuted: '#fda4af',
+      textColor: '#b91c1c'
+    });
+
+    const topLeave = buildRankedMetricList(
+      computedRows,
+      rankLimit,
+      s => s.totalLeaveDays,
+      s => `${formatNumber(s.totalLeaveDays)} วัน (${s.totalLeaveCount} ครั้ง)`
+    );
+    renderRankedBarChart('adTopLeave', 'ad-chart-top-leave', 'ad-rank-wrap-leave', 'ad-top-leave-empty', 'ad-top-leave-summary', topLeave, {
+      datasetLabel: 'วันลารวม',
+      unit: 'วัน',
+      isDecimal: true,
+      colorStart: '#db2777',
+      colorEnd: '#f472b6',
+      colorMuted: '#f9a8d4',
+      textColor: '#be185d'
+    });
+
+    const topLate = buildRankedMetricList(computedRows, rankLimit, s => s.late, s => `${s.late} ครั้ง`);
+    renderRankedBarChart('adTopLate', 'ad-chart-top-late', 'ad-rank-wrap-late', 'ad-top-late-empty', 'ad-top-late-summary', topLate, {
+      datasetLabel: 'มาสาย',
+      unit: 'ครั้ง',
+      colorStart: '#d97706',
+      colorEnd: '#fbbf24',
+      colorMuted: '#fcd34d',
+      textColor: '#b45309'
+    });
+
+    const topNoOut = buildRankedMetricList(computedRows, rankLimit, s => s.noOut, s => `${s.noOut} ครั้ง`);
+    renderRankedBarChart('adTopNoOut', 'ad-chart-top-noout', 'ad-rank-wrap-noout', 'ad-top-noout-empty', 'ad-top-noout-summary', topNoOut, {
+      datasetLabel: 'ไม่สแกนออก (มอ)',
+      unit: 'ครั้ง',
+      colorStart: '#4f46e5',
+      colorEnd: '#818cf8',
+      colorMuted: '#c7d2fe',
+      textColor: '#4338ca'
     });
   }
 
@@ -2247,6 +2496,11 @@
       btn.addEventListener('click', () => switchAdminTab(btn.getAttribute('data-ad-tab')));
     });
 
+    // Admin mobile sidebar drawer
+    $('btn-ad-sidebar-toggle').addEventListener('click', () => toggleAdminSidebarDrawer(true));
+    $('btn-ad-sidebar-close').addEventListener('click', () => toggleAdminSidebarDrawer(false));
+    $('ad-sidebar-backdrop').addEventListener('click', () => toggleAdminSidebarDrawer(false));
+
     // Admin Tab 1 quick month toggles (scoped to selected term)
     $('btn-open-months-with-data').addEventListener('click', async () => {
       const btn = $('btn-open-months-with-data');
@@ -2312,7 +2566,7 @@
       }
       renderAdminOverviewTab();
     });
-    ['ad-scope-select', 'ad-group-filter', 'ad-dept-filter'].forEach(id => {
+    ['ad-scope-select', 'ad-group-filter', 'ad-dept-filter', 'ad-rank-limit-select'].forEach(id => {
       $(id).addEventListener('change', renderAdminOverviewTab);
     });
     $('ad-search-staff-input').addEventListener('input', renderAdminOverviewTab);
