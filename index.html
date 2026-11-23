@@ -46,12 +46,31 @@
   <style>
     body {
       font-family: 'Prompt', sans-serif;
-      background-color: #f8fafc;
+      background-color: #f1f5f9;
+      background-image:
+        radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.09) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(30, 64, 175, 0.05) 0px, transparent 55%);
+      background-attachment: fixed;
       color: #0f172a;
       -webkit-tap-highlight-color: transparent;
     }
+    .bg-grid-pattern {
+      background-image: radial-gradient(rgba(30, 58, 138, 0.08) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
     .font-doc {
       font-family: 'Sarabun', sans-serif;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .animate-fade-up {
+      animation: fadeSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .no-scrollbar::-webkit-scrollbar {
       display: none;
@@ -102,17 +121,19 @@
 <body class="min-h-screen flex flex-col">
 
   <!-- ==================== TOP NAVIGATION BAR ==================== -->
-  <header class="no-print sticky top-0 z-40 bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white shadow-lg border-b-4 border-kbs-goldLight">
+  <header class="no-print sticky top-0 z-40 bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white shadow-xl shadow-blue-950/15 border-b-[3px] border-kbs-goldLight/90 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
       <!-- Brand -->
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/95 p-1 shadow flex-shrink-0 flex items-center justify-center">
+        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 shadow-lg ring-2 ring-amber-300/60 flex-shrink-0 flex items-center justify-center">
           <img id="header-logo-img" alt="ตราโรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่" class="w-full h-full object-contain">
         </div>
         <div class="min-w-0">
-          <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-tight truncate leading-tight">
-            ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ
-          </h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-tight truncate leading-tight">
+              ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ
+            </h1>
+          </div>
           <p id="header-term-subtitle" class="text-[11px] sm:text-xs text-amber-200/95 truncate">
             โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เชื่อมต่อ Google Sheets อัตโนมัติ
           </p>
@@ -121,20 +142,20 @@
 
       <!-- Right Controls -->
       <div class="flex items-center gap-2 flex-wrap">
-        <span id="header-sync-badge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/10 border border-white/20 text-slate-100">
+        <span id="header-sync-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-white/10 border border-white/20 text-slate-100 backdrop-blur-sm shadow-inner">
           <span class="w-2 h-2 rounded-full bg-amber-400"></span>
           <span>กำลังโหลด...</span>
         </span>
-        <span id="header-visible-months-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-400/20 border border-amber-300/40 text-amber-200">
-          <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+        <span id="header-visible-months-badge" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-amber-400/20 border border-amber-300/40 text-amber-100 backdrop-blur-sm">
+          <i data-lucide="calendar-check" class="w-3.5 h-3.5 text-amber-300"></i>
           <span>เปิดให้ดู 0 เดือน</span>
         </span>
 
-        <div class="inline-flex rounded-xl bg-slate-900/50 p-1 border border-white/15">
-          <button id="btn-mode-teacher" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-amber-400 text-slate-950 shadow">
+        <div class="inline-flex rounded-xl bg-slate-950/45 p-1 border border-white/15 backdrop-blur-sm">
+          <button id="btn-mode-teacher" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow">
             สำหรับครู/บุคลากร
           </button>
-          <button id="btn-mode-admin" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white">
+          <button id="btn-mode-admin" type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white">
             สำหรับแอดมิน
           </button>
         </div>
@@ -143,138 +164,192 @@
   </header>
 
   <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 sm:py-7">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6 sm:py-8">
 
     <!-- ========================================================= -->
     <!-- VIEW 1: TEACHER LOGIN                                     -->
     <!-- ========================================================= -->
-    <section id="view-teacher-login" class="max-w-xl mx-auto space-y-5">
-      <!-- Announcement Banner -->
-      <div id="teacher-announcement-banner" class="hidden rounded-2xl bg-amber-50 border border-amber-300 p-4 shadow-sm">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
-            <i data-lucide="megaphone" class="w-5 h-5"></i>
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">ประกาศจากกลุ่มบริหารงานบุคคล</p>
-            <p id="teacher-announcement-text" class="text-sm text-amber-950 mt-0.5 leading-relaxed"></p>
-          </div>
-        </div>
-      </div>
+    <section id="view-teacher-login" class="animate-fade-up max-w-5xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-      <!-- Open Months Status Card -->
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
-        <div class="flex items-center justify-between gap-2 mb-2.5">
-          <div class="flex items-center gap-2 text-xs font-semibold text-kbs-navy">
-            <i data-lucide="eye" class="w-4 h-4 text-kbs-gold"></i>
-            <span>เดือนที่เปิดให้ครูเข้าตรวจสอบข้อมูลในขณะนี้</span>
-          </div>
-        </div>
-        <div id="teacher-open-months-pills" class="flex flex-wrap gap-2"></div>
-      </div>
+        <!-- Left Showcase Column (5 cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <!-- Hero School Info Card -->
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-kbs-navyDark via-kbs-navy to-blue-800 text-white p-6 shadow-xl shadow-blue-950/15 border border-blue-900/60">
+            <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-amber-400/15 blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-8 -bottom-10 w-36 h-36 rounded-full bg-sky-400/15 blur-2xl pointer-events-none"></div>
+            <div class="relative z-10 space-y-4">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[11px] font-semibold">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                <span>กลุ่มบริหารงานบุคคล • KBS Smart HR</span>
+              </div>
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold leading-snug">
+                  ตรวจสอบสถิติวันลา<br>
+                  <span class="text-amber-300">&amp; การสแกนนิ้วปฏิบัติราชการ</span>
+                </h2>
+                <p class="text-xs sm:text-sm text-blue-100/85 mt-2 leading-relaxed">
+                  ข้อมูลเชื่อมตรงจากทะเบียนลงเวลาปฏิบัติราชการ โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ โปร่งใส ตรวจสอบได้ทุกที่ทุกเวลา
+                </p>
+              </div>
 
-      <!-- Login Card -->
-      <div class="rounded-3xl bg-white border border-slate-200 shadow-xl overflow-hidden">
-        <div class="bg-gradient-to-r from-kbs-navy to-kbs-navyMid px-6 py-5 text-white">
-          <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-300">
-              <i data-lucide="shield-check" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h2 class="text-lg font-bold">เข้าสู่ระบบตรวจสอบวันลาและลงเวลาส่วนตัว</h2>
-              <p class="text-xs text-blue-100">เลือกชื่อ-สกุล และยืนยันด้วยรหัส 4 หลัก (ข้อมูลเป็นความลับเฉพาะบุคคล)</p>
-            </div>
-          </div>
-        </div>
-
-        <form id="form-teacher-login" class="p-5 sm:p-6 space-y-5" autocomplete="off">
-          <!-- Step 1: Search & Select Teacher -->
-          <div>
-            <label for="teacher-search-input" class="block text-sm font-semibold text-slate-700 mb-1.5">
-              1. ค้นหาและเลือกรายชื่อของท่าน
-            </label>
-            <div class="relative">
-              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
-              <input
-                id="teacher-search-input"
-                type="text"
-                placeholder="พิมพ์ชื่อ นามสกุล ตำแหน่ง หรือกลุ่มสาระฯ..."
-                class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none text-sm transition"
-              >
-              <button id="btn-clear-teacher-search" type="button" class="hidden absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5" title="ล้างคำค้นหา">
-                <i data-lucide="x" class="w-4 h-4"></i>
-              </button>
-
-              <!-- Dropdown suggestions -->
-              <div id="teacher-dropdown-list" class="hidden absolute z-30 left-0 right-0 mt-1.5 max-h-64 overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-2xl divide-y divide-slate-100"></div>
-            </div>
-
-            <!-- Selected Teacher Preview -->
-            <div id="teacher-selected-card" class="hidden mt-3 rounded-2xl bg-blue-50/80 border border-blue-200 p-3.5 flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-kbs-navy text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
-                  <i data-lucide="user-check" class="w-5 h-5"></i>
+              <div class="pt-2 space-y-2.5 text-xs">
+                <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm">
+                  <div class="w-8 h-8 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">ปฏิทินลงเวลารายวันแบบละเอียด</p>
+                    <p class="text-[11px] text-blue-100/75">แยกสีชัดเจน มาปกติ ไปราชการ สาย ไม่สแกน ลา</p>
+                  </div>
                 </div>
-                <div class="min-w-0">
-                  <p id="teacher-selected-name" class="text-sm font-bold text-kbs-navyDark truncate"></p>
-                  <p id="teacher-selected-pos" class="text-xs text-slate-600 truncate"></p>
+                <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm">
+                  <div class="w-8 h-8 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-white">พิมพ์รายงานสรุป A4 &amp; แจ้งขอตรวจสอบ</p>
+                    <p class="text-[11px] text-blue-100/75">ส่งคำร้องแจ้งแอดมินได้ทันทีหากพบข้อมูลคลาดเคลื่อน</p>
+                  </div>
                 </div>
               </div>
-              <input id="teacher-selected-key" type="hidden">
-              <button id="btn-change-selected-teacher" type="button" class="text-xs font-medium text-blue-700 hover:underline flex-shrink-0">เปลี่ยนรายชื่อ</button>
             </div>
           </div>
 
-          <!-- Step 2: 4-Digit Verification -->
-          <div>
-            <label for="teacher-pin-input" class="block text-sm font-semibold text-slate-700 mb-1.5">
-              2. รหัสยืนยันตัวตน (เลขท้าย 4 ตัวบัตรประชาชน หรือ PIN ที่แอดมินกำหนด)
-            </label>
-            <div class="relative">
-              <i data-lucide="key-round" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
-              <input
-                id="teacher-pin-input"
-                type="password"
-                inputmode="numeric"
-                maxlength="13"
-                placeholder="กรอกเลข 4 หลักสุดท้ายของบัตรประชาชน"
-                class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none text-sm tracking-widest transition"
-              >
-              <button id="btn-toggle-teacher-pin" type="button" class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 p-0.5" title="แสดง/ซ่อนรหัส">
-                <i data-lucide="eye" class="w-4 h-4"></i>
+          <!-- Open Months Status Card -->
+          <div class="rounded-3xl bg-white/90 backdrop-blur-md border border-slate-200/80 p-4 sm:p-5 shadow-md">
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2 text-xs font-bold text-kbs-navyDark">
+                <span class="w-7 h-7 rounded-lg bg-amber-100 text-kbs-gold flex items-center justify-center">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </span>
+                <span>เดือนที่เปิดให้ครูเข้าตรวจสอบข้อมูลในขณะนี้</span>
+              </div>
+            </div>
+            <div id="teacher-open-months-pills" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Announcement Banner -->
+          <div id="teacher-announcement-banner" class="hidden rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/80 p-4 shadow-md">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-400/25 text-amber-700 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="megaphone" class="w-5 h-5"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">ประกาศจากกลุ่มบริหารงานบุคคล</p>
+                <p id="teacher-announcement-text" class="text-sm text-amber-950 mt-0.5 leading-relaxed"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Login Form Column (7 cols) -->
+        <div class="lg:col-span-7">
+          <div class="rounded-3xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-2xl shadow-blue-950/10 overflow-hidden">
+            <div class="relative overflow-hidden bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid px-6 py-5 text-white border-b-2 border-amber-400/70">
+              <div class="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-amber-400/10 to-transparent pointer-events-none"></div>
+              <div class="relative flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/25 to-amber-300/10 border border-amber-300/40 flex items-center justify-center text-amber-300 shadow-inner">
+                  <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <h2 class="text-lg sm:text-xl font-bold">เข้าสู่ระบบตรวจสอบวันลาและลงเวลาส่วนตัว</h2>
+                  <p class="text-xs text-blue-100/90 mt-0.5">เลือกชื่อ-สกุล และยืนยันด้วยรหัส 4 หลัก (ข้อมูลเป็นความลับเฉพาะบุคคล)</p>
+                </div>
+              </div>
+            </div>
+
+            <form id="form-teacher-login" class="p-5 sm:p-7 space-y-5" autocomplete="off">
+              <!-- Step 1: Search & Select Teacher -->
+              <div>
+                <label for="teacher-search-input" class="block text-sm font-semibold text-slate-700 mb-2">
+                  1. ค้นหาและเลือกรายชื่อของท่าน
+                </label>
+                <div class="relative">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none"></i>
+                  <input
+                    id="teacher-search-input"
+                    type="text"
+                    placeholder="พิมพ์ชื่อ นามสกุล ตำแหน่ง หรือกลุ่มสาระฯ..."
+                    class="w-full pl-11 pr-10 py-3.5 rounded-2xl border border-slate-300 bg-slate-50/80 focus:bg-white focus:border-kbs-navy focus:ring-4 focus:ring-blue-500/10 outline-none text-sm transition-all"
+                  >
+                  <button id="btn-clear-teacher-search" type="button" class="hidden absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-lg hover:bg-slate-100 transition" title="ล้างคำค้นหา">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                  </button>
+
+                  <!-- Dropdown suggestions -->
+                  <div id="teacher-dropdown-list" class="hidden absolute z-30 left-0 right-0 mt-2 max-h-64 overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/15 divide-y divide-slate-100"></div>
+                </div>
+
+                <!-- Selected Teacher Preview -->
+                <div id="teacher-selected-card" class="hidden mt-3 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/60 to-amber-50/40 border border-blue-200/80 p-3.5 flex items-center justify-between gap-3 shadow-sm">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div id="teacher-selected-avatar" class="w-11 h-11 rounded-2xl bg-gradient-to-br from-kbs-navy to-blue-700 text-white font-bold flex items-center justify-center text-sm flex-shrink-0 shadow overflow-hidden ring-2 ring-white">
+                      <i data-lucide="user-check" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <p id="teacher-selected-name" class="text-sm font-bold text-kbs-navyDark truncate"></p>
+                      <p id="teacher-selected-pos" class="text-xs text-slate-600 truncate"></p>
+                    </div>
+                  </div>
+                  <input id="teacher-selected-key" type="hidden">
+                  <button id="btn-change-selected-teacher" type="button" class="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition flex-shrink-0">เปลี่ยนรายชื่อ</button>
+                </div>
+              </div>
+
+              <!-- Step 2: 4-Digit Verification -->
+              <div>
+                <label for="teacher-pin-input" class="block text-sm font-semibold text-slate-700 mb-2">
+                  2. รหัสยืนยันตัวตน (เลขท้าย 4 ตัวบัตรประชาชน หรือ PIN ที่แอดมินกำหนด)
+                </label>
+                <div class="relative">
+                  <i data-lucide="key-round" class="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none"></i>
+                  <input
+                    id="teacher-pin-input"
+                    type="password"
+                    inputmode="numeric"
+                    maxlength="13"
+                    placeholder="กรอกเลข 4 หลักสุดท้ายของบัตรประชาชน"
+                    class="w-full pl-11 pr-11 py-3.5 rounded-2xl border border-slate-300 bg-slate-50/80 focus:bg-white focus:border-kbs-navy focus:ring-4 focus:ring-blue-500/10 outline-none text-sm tracking-widest transition-all"
+                  >
+                  <button id="btn-toggle-teacher-pin" type="button" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-700 p-0.5 rounded-lg hover:bg-slate-100 transition" title="แสดง/ซ่อนรหัส">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                  * สามารถกรอกเลขท้าย 4 ตัว หรือเลขบัตรประชาชน 13 หลัก ระบบจะตรวจสอบเฉพาะ 4 หลักสุดท้ายโดยอัตโนมัติ (กรณีบุคลากรที่ยังไม่มีเลขบัตรฯ ในระบบ โปรดใช้รหัส PIN 4 หลักที่แอดมินแจ้ง)
+                </p>
+              </div>
+
+              <div class="flex items-center justify-between pt-0.5">
+                <label class="inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                  <input id="teacher-remember-checkbox" type="checkbox" class="rounded border-slate-300 text-kbs-navy focus:ring-kbs-navy w-4 h-4">
+                  <span>จดจำการเข้าสู่ระบบบนอุปกรณ์นี้</span>
+                </label>
+              </div>
+
+              <div id="teacher-login-error" class="hidden rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700 font-medium"></div>
+
+              <button id="btn-teacher-login" type="submit" class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-blue-700 hover:from-kbs-navy hover:to-blue-800 text-white font-bold text-sm shadow-xl shadow-blue-900/25 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
+                <i data-lucide="log-in" class="w-4 h-4 text-amber-300"></i>
+                <span>ยืนยันตัวตนและเปิดดูข้อมูลของฉัน</span>
               </button>
-            </div>
-            <p class="text-[11px] text-slate-500 mt-1.5">
-              * สามารถกรอกเลขท้าย 4 ตัว หรือเลขบัตรประชาชน 13 หลัก ระบบจะตรวจสอบเฉพาะ 4 หลักสุดท้ายโดยอัตโนมัติ (กรณีบุคลากรที่ยังไม่มีเลขบัตรฯ ในระบบ โปรดใช้รหัส PIN 4 หลักที่แอดมินแจ้ง)
-            </p>
+            </form>
           </div>
-
-          <div class="flex items-center justify-between">
-            <label class="inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
-              <input id="teacher-remember-checkbox" type="checkbox" class="rounded border-slate-300 text-kbs-navy focus:ring-kbs-navy">
-              <span>จดจำการเข้าสู่ระบบบนอุปกรณ์นี้</span>
-            </label>
-          </div>
-
-          <div id="teacher-login-error" class="hidden rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-xs text-red-700 font-medium"></div>
-
-          <button id="btn-teacher-login" type="submit" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-kbs-navy to-kbs-navyMid hover:from-kbs-navyDark hover:to-kbs-navy text-white font-bold text-sm shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed">
-            <i data-lucide="log-in" class="w-4 h-4"></i>
-            <span>ยืนยันตัวตนและเปิดดูข้อมูลของฉัน</span>
-          </button>
-        </form>
+        </div>
       </div>
     </section>
 
     <!-- ========================================================= -->
     <!-- VIEW 2: TEACHER DASHBOARD                                 -->
     <!-- ========================================================= -->
-    <section id="view-teacher-dashboard" class="hidden space-y-5">
+    <section id="view-teacher-dashboard" class="hidden animate-fade-up space-y-5">
       <!-- Profile Banner -->
-      <div class="no-print rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-5 sm:p-6 shadow-xl">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="no-print relative overflow-hidden rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-blue-800 text-white p-5 sm:p-6 shadow-2xl shadow-blue-950/15 border border-blue-900/60">
+        <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-amber-400/10 blur-2xl pointer-events-none"></div>
+        <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="flex items-center gap-4 min-w-0">
-            <div id="td-avatar" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-400 text-slate-950 font-bold text-xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"></div>
+            <div id="td-avatar" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 text-slate-950 font-bold text-xl flex items-center justify-center shadow-lg ring-2 ring-amber-200/60 flex-shrink-0 overflow-hidden"></div>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span id="td-group-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-400/20 text-amber-200 border border-amber-300/40"></span>
@@ -433,9 +508,9 @@
     <!-- ========================================================= -->
     <!-- VIEW 3: ADMIN LOGIN                                       -->
     <!-- ========================================================= -->
-    <section id="view-admin-login" class="hidden max-w-md mx-auto">
-      <div class="rounded-3xl bg-white border border-slate-200 shadow-xl overflow-hidden">
-        <div class="bg-gradient-to-r from-kbs-navyDark to-kbs-navy px-6 py-5 text-white">
+    <section id="view-admin-login" class="hidden animate-fade-up max-w-md mx-auto pt-4">
+      <div class="rounded-3xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-2xl shadow-blue-950/15 overflow-hidden">
+        <div class="bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid px-6 py-5 text-white border-b-2 border-amber-400/70">
           <div class="flex items-center gap-3">
             <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-300">
               <i data-lucide="lock-keyhole" class="w-6 h-6"></i>
@@ -484,9 +559,9 @@
     <!-- ========================================================= -->
     <!-- VIEW 4: ADMIN DASHBOARD                                   -->
     <!-- ========================================================= -->
-    <section id="view-admin-dashboard" class="hidden space-y-5">
+    <section id="view-admin-dashboard" class="hidden animate-fade-up space-y-5">
       <!-- Admin Header Card -->
-      <div class="no-print rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-5 shadow-xl">
+      <div class="no-print relative overflow-hidden rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-blue-800 text-white p-5 sm:p-6 shadow-2xl shadow-blue-950/15 border border-blue-900/60">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[11px] font-semibold mb-1.5">

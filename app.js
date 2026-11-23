@@ -612,7 +612,7 @@
       visBadge.innerHTML = `<i data-lucide="calendar-check" class="w-3.5 h-3.5"></i><span>เปิด ${openTerms.length} เทอม (${visibleCount} เดือน)</span>`;
     }
     if (badge) {
-      const dotCls = state.dataSource === 'gas_live' ? 'bg-emerald-400' : 'bg-amber-400';
+      const dotCls = state.dataSource === 'gas_live' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400';
       const label = state.dataSource === 'gas_live'
         ? (state.vercelProxyAvailable ? 'Vercel + Google Sheets สด' : 'Google Sheets สด')
         : 'Snapshot (ยังไม่เชื่อม GAS)';
@@ -626,11 +626,11 @@
     const btnTeacher = $('btn-mode-teacher');
     const btnAdmin = $('btn-mode-admin');
     if (mode === 'teacher') {
-      btnTeacher.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-amber-400 text-slate-950 shadow';
-      btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
+      btnTeacher.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow';
+      btnAdmin.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
     } else {
-      btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-amber-400 text-slate-950 shadow';
-      btnTeacher.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
+      btnAdmin.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 shadow';
+      btnTeacher.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white';
     }
     renderActiveModeView();
   }
@@ -742,6 +742,15 @@
     $('teacher-selected-key').value = person.key;
     $('teacher-selected-name').textContent = person.name;
     $('teacher-selected-pos').textContent = `${person.position} (${person.department || person.group})`;
+    const avEl = $('teacher-selected-avatar');
+    if (avEl) {
+      if (person.avatarUrl) {
+        avEl.innerHTML = `<img src="${esc(person.avatarUrl)}" alt="${esc(person.name)}" class="w-full h-full object-cover" onerror="this.remove()">`;
+      } else {
+        const ch = (person.name || '?').replace(/^(นาย|นางสาว|นาง|ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?)\s*/, '').charAt(0) || '?';
+        avEl.textContent = ch;
+      }
+    }
     $('teacher-selected-card').classList.remove('hidden');
     $('teacher-search-input').value = person.name;
     $('teacher-dropdown-list').classList.add('hidden');
@@ -996,37 +1005,37 @@
     const scanIssues = stats.noIn + stats.noOut + stats.late + stats.earlyOut;
 
     $('td-kpi-grid').innerHTML = `
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 backdrop-blur border border-slate-200/90 border-l-4 border-l-emerald-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-slate-500">มาปฏิบัติงาน &amp; ไปราชการ</span>
-          <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="check-circle-2" class="w-4 h-4"></i></span>
+          <span class="w-9 h-9 rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center"><i data-lucide="check-circle-2" class="w-4 h-4"></i></span>
         </div>
-        <p class="text-2xl font-bold text-slate-900 mt-2">${totalWorkDays} <span class="text-xs font-medium text-slate-500">วัน</span></p>
-        <p class="text-[11px] text-emerald-700 mt-1">มาปกติ ${stats.present} วัน • ไปราชการ ${stats.duty} วัน (${attRate}%)</p>
+        <p class="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tabular-nums">${totalWorkDays} <span class="text-xs font-medium text-slate-500">วัน</span></p>
+        <p class="text-[11px] text-emerald-700 font-medium mt-1.5">มาปกติ ${stats.present} วัน • ไปราชการ ${stats.duty} วัน (${attRate}%)</p>
       </div>
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 backdrop-blur border border-slate-200/90 border-l-4 border-l-rose-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-slate-500">วันลาสะสม (เฉพาะเดือนที่เปิด)</span>
-          <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i data-lucide="calendar-heart" class="w-4 h-4"></i></span>
+          <span class="w-9 h-9 rounded-2xl bg-rose-100/80 text-rose-700 flex items-center justify-center"><i data-lucide="calendar-heart" class="w-4 h-4"></i></span>
         </div>
-        <p class="text-2xl font-bold text-slate-900 mt-2">${formatNumber(stats.totalLeaveDays)} <span class="text-xs font-medium text-slate-500">วัน (${stats.totalLeaveCount} ครั้ง)</span></p>
-        <p class="text-[11px] text-slate-600 mt-1">ลากิจ ${formatNumber(stats.personalDays)} วัน • ลาป่วย ${formatNumber(stats.sickDays)} วัน • อื่นๆ ${formatNumber(stats.otherLeaveDays)} วัน</p>
+        <p class="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tabular-nums">${formatNumber(stats.totalLeaveDays)} <span class="text-xs font-medium text-slate-500">วัน (${stats.totalLeaveCount} ครั้ง)</span></p>
+        <p class="text-[11px] text-slate-600 mt-1.5">ลากิจ ${formatNumber(stats.personalDays)} วัน • ลาป่วย ${formatNumber(stats.sickDays)} วัน • อื่นๆ ${formatNumber(stats.otherLeaveDays)} วัน</p>
       </div>
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 backdrop-blur border border-slate-200/90 border-l-4 border-l-amber-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-slate-500">การสแกนนิ้ว / สาย / ขอออก</span>
-          <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><i data-lucide="fingerprint" class="w-4 h-4"></i></span>
+          <span class="w-9 h-9 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center"><i data-lucide="fingerprint" class="w-4 h-4"></i></span>
         </div>
-        <p class="text-2xl font-bold text-slate-900 mt-2">${scanIssues} <span class="text-xs font-medium text-slate-500">รายการ</span></p>
-        <p class="text-[11px] text-amber-800 mt-1">สาย ${stats.late} • ไม่สแกนเข้า ${stats.noIn} • ออก ${stats.noOut} • ขอออก ${stats.earlyOut}</p>
+        <p class="text-2xl sm:text-3xl font-bold text-slate-900 mt-2 tabular-nums">${scanIssues} <span class="text-xs font-medium text-slate-500">รายการ</span></p>
+        <p class="text-[11px] text-amber-800 font-medium mt-1.5">สาย ${stats.late} • ไม่สแกนเข้า ${stats.noIn} • ออก ${stats.noOut} • ขอออก ${stats.earlyOut}</p>
       </div>
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 backdrop-blur border border-slate-200/90 border-l-4 ${stats.absent > 0 ? 'border-l-red-600' : 'border-l-slate-300'} p-4 sm:p-5 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-slate-500">ขาดราชการ (-)</span>
-          <span class="w-8 h-8 rounded-xl ${stats.absent > 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center"><i data-lucide="alert-triangle" class="w-4 h-4"></i></span>
+          <span class="w-9 h-9 rounded-2xl ${stats.absent > 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center"><i data-lucide="alert-triangle" class="w-4 h-4"></i></span>
         </div>
-        <p class="text-2xl font-bold ${stats.absent > 0 ? 'text-red-600' : 'text-slate-900'} mt-2">${stats.absent} <span class="text-xs font-medium text-slate-500">ครั้ง</span></p>
-        <p class="text-[11px] text-slate-500 mt-1">${stats.absent > 0 ? 'พบรายการขาดราชการ โปรดตรวจสอบ' : 'ไม่พบรายการขาดราชการ'}</p>
+        <p class="text-2xl sm:text-3xl font-bold ${stats.absent > 0 ? 'text-red-600' : 'text-slate-900'} mt-2 tabular-nums">${stats.absent} <span class="text-xs font-medium text-slate-500">ครั้ง</span></p>
+        <p class="text-[11px] text-slate-500 mt-1.5">${stats.absent > 0 ? 'พบรายการขาดราชการ โปรดตรวจสอบ' : 'ไม่พบรายการขาดราชการ'}</p>
       </div>
     `;
 
@@ -1667,25 +1676,25 @@
     });
 
     $('ad-kpi-grid').innerHTML = `
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 border border-slate-200 border-l-4 border-l-kbs-navy p-4 sm:p-5 shadow-md hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-slate-500">บุคลากรในตัวกรอง</span>
-        <p class="text-2xl font-bold text-kbs-navy mt-1">${filtered.length} <span class="text-xs font-medium text-slate-500">คน</span></p>
-        <p class="text-[11px] text-slate-500 mt-1">มาปกติ ${totalPresent.toLocaleString()} • ราชการ ${totalDuty.toLocaleString()} วัน</p>
+        <p class="text-2xl sm:text-3xl font-bold text-kbs-navy mt-1 tabular-nums">${filtered.length} <span class="text-xs font-medium text-slate-500">คน</span></p>
+        <p class="text-[11px] text-slate-500 mt-1.5">มาปกติ ${totalPresent.toLocaleString()} • ราชการ ${totalDuty.toLocaleString()} วัน</p>
       </div>
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 border border-slate-200 border-l-4 border-l-rose-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-slate-500">วันลารวม</span>
-        <p class="text-2xl font-bold text-rose-600 mt-1">${formatNumber(totalLeaveDays)} <span class="text-xs font-medium text-slate-500">วัน (${totalLeaveCount} ครั้ง)</span></p>
-        <p class="text-[11px] text-slate-500 mt-1">ขอบเขต ${monthIds.length} เดือน</p>
+        <p class="text-2xl sm:text-3xl font-bold text-rose-600 mt-1 tabular-nums">${formatNumber(totalLeaveDays)} <span class="text-xs font-medium text-slate-500">วัน (${totalLeaveCount} ครั้ง)</span></p>
+        <p class="text-[11px] text-slate-500 mt-1.5">ขอบเขต ${monthIds.length} เดือน</p>
       </div>
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 border border-slate-200 border-l-4 border-l-amber-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-slate-500">มาสาย &amp; ไม่สแกนนิ้ว</span>
-        <p class="text-2xl font-bold text-amber-600 mt-1">${(totalLate + totalNoIn + totalNoOut).toLocaleString()} <span class="text-xs font-medium text-slate-500">ครั้ง</span></p>
-        <p class="text-[11px] text-slate-500 mt-1">สาย ${totalLate} • มข ${totalNoIn} • มอ ${totalNoOut} • ขอออก ${totalEarlyOut}</p>
+        <p class="text-2xl sm:text-3xl font-bold text-amber-600 mt-1 tabular-nums">${(totalLate + totalNoIn + totalNoOut).toLocaleString()} <span class="text-xs font-medium text-slate-500">ครั้ง</span></p>
+        <p class="text-[11px] text-slate-500 mt-1.5">สาย ${totalLate} • มข ${totalNoIn} • มอ ${totalNoOut} • ขอออก ${totalEarlyOut}</p>
       </div>
-      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <div class="rounded-3xl bg-white/95 border border-slate-200 border-l-4 border-l-red-600 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-slate-500">ขาดราชการรวม (-)</span>
-        <p class="text-2xl font-bold text-red-600 mt-1">${totalAbsent.toLocaleString()} <span class="text-xs font-medium text-slate-500">ครั้ง</span></p>
-        <p class="text-[11px] text-slate-500 mt-1">คลิกรายชื่อในตารางเพื่อดูรายวัน</p>
+        <p class="text-2xl sm:text-3xl font-bold text-red-600 mt-1 tabular-nums">${totalAbsent.toLocaleString()} <span class="text-xs font-medium text-slate-500">ครั้ง</span></p>
+        <p class="text-[11px] text-slate-500 mt-1.5">คลิกรายชื่อในตารางเพื่อดูรายวัน</p>
       </div>
     `;
 
