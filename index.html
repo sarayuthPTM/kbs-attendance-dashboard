@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ระบบแดชบอร์ดสรุปวันลาและการลงเวลาปฏิบัติราชการ | โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</title>
+
+  <!-- Google Fonts: Prompt & Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+            doc: ['Sarabun', 'sans-serif']
+          },
+          colors: {
+            kbs: {
+              navy: '#1e3a8a',
+              navyDark: '#0f172a',
+              navyMid: '#1e40af',
+              gold: '#d97706',
+              goldLight: '#fbbf24',
+              goldSoft: '#fef3c7'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Icons, Charts, Alerts -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-doc {
+      font-family: 'Sarabun', sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .spinner-inline {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 9999px;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Official A4 Print Formatting */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Sarabun', sans-serif !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-break-inside-avoid {
+        break-inside: avoid;
+      }
+    }
+    .print-only {
+      display: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ==================== TOP NAVIGATION BAR ==================== -->
+  <header class="no-print sticky top-0 z-40 bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white shadow-lg border-b-4 border-kbs-goldLight">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/95 p-1 shadow flex-shrink-0 flex items-center justify-center">
+          <img id="header-logo-img" alt="ตราโรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่" class="w-full h-full object-contain">
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-tight truncate leading-tight">
+            ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ
+          </h1>
+          <p class="text-[11px] sm:text-xs text-amber-200/95 truncate">
+            โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • ภาคเรียนที่ 2/2569
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Controls -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="header-sync-badge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/10 border border-white/20 text-slate-100">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span>กำลังโหลด...</span>
+        </span>
+        <span id="header-visible-months-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-400/20 border border-amber-300/40 text-amber-200">
+          <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+          <span>เปิดให้ดู 0 เดือน</span>
+        </span>
+
+        <div class="inline-flex rounded-xl bg-slate-900/50 p-1 border border-white/15">
+          <button id="btn-mode-teacher" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-amber-400 text-slate-950 shadow">
+            สำหรับครู/บุคลากร
+          </button>
+          <button id="btn-mode-admin" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-200 hover:text-white">
+            สำหรับแอดมิน
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 sm:py-7">
+
+    <!-- ========================================================= -->
+    <!-- VIEW 1: TEACHER LOGIN                                     -->
+    <!-- ========================================================= -->
+    <section id="view-teacher-login" class="max-w-xl mx-auto space-y-5">
+      <!-- Announcement Banner -->
+      <div id="teacher-announcement-banner" class="hidden rounded-2xl bg-amber-50 border border-amber-300 p-4 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="megaphone" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-bold text-amber-800 uppercase tracking-wide">ประกาศจากกลุ่มบริหารงานบุคคล</p>
+            <p id="teacher-announcement-text" class="text-sm text-amber-950 mt-0.5 leading-relaxed"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Open Months Status Card -->
+      <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
+          <div class="flex items-center gap-2 text-xs font-semibold text-kbs-navy">
+            <i data-lucide="eye" class="w-4 h-4 text-kbs-gold"></i>
+            <span>เดือนที่เปิดให้ครูเข้าตรวจสอบข้อมูลในขณะนี้</span>
+          </div>
+        </div>
+        <div id="teacher-open-months-pills" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Login Card -->
+      <div class="rounded-3xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-kbs-navy to-kbs-navyMid px-6 py-5 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-300">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold">เข้าสู่ระบบตรวจสอบวันลาและลงเวลาส่วนตัว</h2>
+              <p class="text-xs text-blue-100">เลือกชื่อ-สกุล และยืนยันด้วยรหัส 4 หลัก (ข้อมูลเป็นความลับเฉพาะบุคคล)</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="form-teacher-login" class="p-5 sm:p-6 space-y-5" autocomplete="off">
+          <!-- Step 1: Search & Select Teacher -->
+          <div>
+            <label for="teacher-search-input" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              1. ค้นหาและเลือกรายชื่อของท่าน
+            </label>
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
+              <input
+                id="teacher-search-input"
+                type="text"
+                placeholder="พิมพ์ชื่อ นามสกุล ตำแหน่ง หรือกลุ่มสาระฯ..."
+                class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none text-sm transition"
+              >
+              <button id="btn-clear-teacher-search" type="button" class="hidden absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5" title="ล้างคำค้นหา">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Dropdown suggestions -->
+              <div id="teacher-dropdown-list" class="hidden absolute z-30 left-0 right-0 mt-1.5 max-h-64 overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-2xl divide-y divide-slate-100"></div>
+            </div>
+
+            <!-- Selected Teacher Preview -->
+            <div id="teacher-selected-card" class="hidden mt-3 rounded-2xl bg-blue-50/80 border border-blue-200 p-3.5 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-kbs-navy text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
+                  <i data-lucide="user-check" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                  <p id="teacher-selected-name" class="text-sm font-bold text-kbs-navyDark truncate"></p>
+                  <p id="teacher-selected-pos" class="text-xs text-slate-600 truncate"></p>
+                </div>
+              </div>
+              <input id="teacher-selected-key" type="hidden">
+              <button id="btn-change-selected-teacher" type="button" class="text-xs font-medium text-blue-700 hover:underline flex-shrink-0">เปลี่ยนรายชื่อ</button>
+            </div>
+          </div>
+
+          <!-- Step 2: 4-Digit Verification -->
+          <div>
+            <label for="teacher-pin-input" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              2. รหัสยืนยันตัวตน (เลขท้าย 4 ตัวบัตรประชาชน หรือ PIN ที่แอดมินกำหนด)
+            </label>
+            <div class="relative">
+              <i data-lucide="key-round" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
+              <input
+                id="teacher-pin-input"
+                type="password"
+                inputmode="numeric"
+                maxlength="13"
+                placeholder="กรอกเลข 4 หลักสุดท้ายของบัตรประชาชน"
+                class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none text-sm tracking-widest transition"
+              >
+              <button id="btn-toggle-teacher-pin" type="button" class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 p-0.5" title="แสดง/ซ่อนรหัส">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1.5">
+              * สามารถกรอกเลขท้าย 4 ตัว หรือเลขบัตรประชาชน 13 หลัก ระบบจะตรวจสอบเฉพาะ 4 หลักสุดท้ายโดยอัตโนมัติ (กรณีบุคลากรที่ยังไม่มีเลขบัตรฯ ในระบบ โปรดใช้รหัส PIN 4 หลักที่แอดมินแจ้ง)
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+              <input id="teacher-remember-checkbox" type="checkbox" class="rounded border-slate-300 text-kbs-navy focus:ring-kbs-navy">
+              <span>จดจำการเข้าสู่ระบบบนอุปกรณ์นี้</span>
+            </label>
+          </div>
+
+          <div id="teacher-login-error" class="hidden rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-xs text-red-700 font-medium"></div>
+
+          <button id="btn-teacher-login" type="submit" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-kbs-navy to-kbs-navyMid hover:from-kbs-navyDark hover:to-kbs-navy text-white font-bold text-sm shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>ยืนยันตัวตนและเปิดดูข้อมูลของฉัน</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 2: TEACHER DASHBOARD                                 -->
+    <!-- ========================================================= -->
+    <section id="view-teacher-dashboard" class="hidden space-y-5">
+      <!-- Profile Banner -->
+      <div class="no-print rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-5 sm:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            <div id="td-avatar" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-400 text-slate-950 font-bold text-xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"></div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="td-group-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-400/20 text-amber-200 border border-amber-300/40"></span>
+                <span id="td-dept-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white/10 text-blue-100"></span>
+              </div>
+              <h2 id="td-name" class="text-lg sm:text-xl font-bold mt-1 truncate"></h2>
+              <p id="td-position" class="text-xs sm:text-sm text-blue-100/90 truncate"></p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="td-btn-request-correction" type="button" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="message-square-warning" class="w-4 h-4 text-amber-300"></i>
+              <span>แจ้งขอตรวจสอบข้อมูล</span>
+            </button>
+            <button id="td-btn-print" type="button" class="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow transition">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>พิมพ์สรุป (A4)</span>
+            </button>
+            <button id="td-btn-logout" type="button" class="px-3.5 py-2 rounded-xl bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+              <span>ออกจากระบบ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Announcement inside dashboard -->
+      <div id="td-announcement-box" class="no-print hidden rounded-2xl bg-amber-50 border border-amber-300 px-4 py-3 flex items-center gap-3 text-sm text-amber-950">
+        <i data-lucide="megaphone" class="w-5 h-5 text-amber-600 flex-shrink-0"></i>
+        <p id="td-announcement-msg" class="font-medium"></p>
+      </div>
+
+      <!-- Empty State when Admin disabled all months -->
+      <div id="td-empty-months-state" class="no-print hidden rounded-3xl bg-white border border-slate-200 p-10 text-center shadow-sm">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-4">
+          <i data-lucide="calendar-off" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">ผู้ดูแลระบบยังไม่เปิดให้เข้าดูข้อมูลรายเดือนในขณะนี้</h3>
+        <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+          แอดมินกลุ่มบริหารงานบุคคลสามารถเปิดให้ครูเข้าดูข้อมูลเป็นรายเดือนได้จากหน้าควบคุมแอดมิน เมื่อเปิดแล้วข้อมูลของท่านจะปรากฏขึ้นที่นี่โดยอัตโนมัติ
+        </p>
+      </div>
+
+      <!-- Active Teacher Content -->
+      <div id="td-dashboard-content" class="space-y-5">
+        <!-- Visible Months Scope Note & Tabs -->
+        <div class="no-print rounded-2xl bg-white border border-slate-200 p-4 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+              <i data-lucide="filter" class="w-4 h-4 text-kbs-navy"></i>
+              <span id="td-open-months-banner">กำลังแสดงข้อมูลเฉพาะเดือนที่ผู้ดูแลระบบเปิดให้เห็น</span>
+            </div>
+            <span class="text-[11px] text-slate-400">คลิกเลือกเดือนเพื่อดูปฏิทินลงเวลาและสถิติรายเดือน</span>
+          </div>
+          <div id="td-month-tabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+        </div>
+
+        <!-- 4 Summary KPI Cards -->
+        <div id="td-kpi-grid" class="no-print grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+        <!-- Calendar + Charts -->
+        <div class="no-print grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- Calendar Card (7 cols) -->
+          <div id="td-calendar-section" class="lg:col-span-7 rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 id="td-calendar-month-title" class="text-base font-bold text-kbs-navyDark">ปฏิทินการลงเวลาปฏิบัติราชการ</h3>
+                <p class="text-xs text-slate-500">คลิกที่วันที่ในปฏิทินเพื่อดูคำอธิบายรหัสสถานะ</p>
+              </div>
+              <div id="td-calendar-month-switcher" class="flex items-center gap-1.5 flex-wrap"></div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-500 mb-2">
+              <div class="py-1 text-rose-600">อา.</div>
+              <div class="py-1">จ.</div>
+              <div class="py-1">อ.</div>
+              <div class="py-1">พ.</div>
+              <div class="py-1">พฤ.</div>
+              <div class="py-1">ศ.</div>
+              <div class="py-1 text-slate-400">ส.</div>
+            </div>
+            <div id="td-calendar-grid" class="grid grid-cols-7 gap-1.5"></div>
+
+            <!-- Code Legend -->
+            <div id="td-code-legend" class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-2 text-[11px]"></div>
+          </div>
+
+          <!-- Charts (5 cols) -->
+          <div id="td-charts-section" class="lg:col-span-5 space-y-5">
+            <div class="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
+              <h3 class="text-sm font-bold text-kbs-navyDark mb-3 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-kbs-gold"></i>
+                <span>เปรียบเทียบสถิติรายเดือน (เฉพาะเดือนที่เปิด)</span>
+              </h3>
+              <div class="h-56 relative">
+                <canvas id="td-chart-monthly"></canvas>
+              </div>
+            </div>
+
+            <div class="rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
+              <h3 class="text-sm font-bold text-kbs-navyDark mb-3 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-kbs-navy"></i>
+                <span>สัดส่วนวันลาและสถานะการสแกนนิ้ว</span>
+              </h3>
+              <div class="h-52 relative">
+                <canvas id="td-chart-breakdown"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Summary Table (Exact Sheet Categories) -->
+        <div class="no-print rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-kbs-navyDark">ตารางสรุปข้อมูลวันลาและการสแกนนิ้ว (ตามหมวดหมู่ในทะเบียน)</h3>
+              <p class="text-xs text-slate-500">คำนวณเฉพาะจากเดือนที่ผู้ดูแลระบบเปิดให้แสดงผลเท่านั้น</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs sm:text-sm text-left">
+              <thead class="bg-kbs-navy text-white">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">เดือน</th>
+                  <th class="px-3 py-3 text-center">มาปกติ (/)</th>
+                  <th class="px-3 py-3 text-center">ไปราชการ (ร)</th>
+                  <th class="px-3 py-3 text-center">ลากิจ (ครั้ง/วัน)</th>
+                  <th class="px-3 py-3 text-center">ลาป่วย (ครั้ง/วัน)</th>
+                  <th class="px-3 py-3 text-center">ลาอื่นๆ (ครั้ง/วัน)</th>
+                  <th class="px-3 py-3 text-center font-bold bg-blue-900/60">รวมวันลา</th>
+                  <th class="px-3 py-3 text-center">ไม่สแกนเข้า</th>
+                  <th class="px-3 py-3 text-center">ไม่สแกนออก</th>
+                  <th class="px-3 py-3 text-center">มาสาย</th>
+                  <th class="px-3 py-3 text-center">ขาดราชการ</th>
+                  <th class="px-3 py-3 text-center">ขอออก</th>
+                </tr>
+              </thead>
+              <tbody id="td-summary-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Print-Only Official A4 Layout -->
+        <div id="td-print-area" class="print-only font-doc text-black"></div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 3: ADMIN LOGIN                                       -->
+    <!-- ========================================================= -->
+    <section id="view-admin-login" class="hidden max-w-md mx-auto">
+      <div class="rounded-3xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-kbs-navyDark to-kbs-navy px-6 py-5 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center text-amber-300">
+              <i data-lucide="lock-keyhole" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold">เข้าสู่ระบบผู้ดูแล (Admin Control)</h2>
+              <p class="text-xs text-blue-100">จัดการเปิด-ปิดเดือนที่ครูมองเห็น และดูภาพรวมทั้งโรงเรียน</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="form-admin-login" class="p-6 space-y-4" autocomplete="off">
+          <div>
+            <label for="admin-pin-input" class="block text-sm font-semibold text-slate-700 mb-1.5">
+              รหัส PIN ผู้ดูแลระบบ
+            </label>
+            <div class="relative">
+              <i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
+              <input
+                id="admin-pin-input"
+                type="password"
+                inputmode="numeric"
+                placeholder="กรอกรหัส PIN แอดมิน (ค่าเริ่มต้น: 123456)"
+                class="w-full pl-10 pr-11 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none text-sm tracking-widest transition"
+              >
+              <button id="btn-toggle-admin-pin" type="button" class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 p-0.5">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="admin-login-error" class="hidden rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-xs text-red-700 font-medium"></div>
+
+          <button id="btn-admin-login" type="submit" class="w-full py-3 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition disabled:opacity-60">
+            <i data-lucide="unlock" class="w-4 h-4"></i>
+            <span>เข้าสู่หน้าจัดการแอดมิน</span>
+          </button>
+
+          <button id="btn-back-to-teacher" type="button" class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold transition">
+            กลับไปหน้าสำหรับครู/บุคลากร
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 4: ADMIN DASHBOARD                                   -->
+    <!-- ========================================================= -->
+    <section id="view-admin-dashboard" class="hidden space-y-5">
+      <!-- Admin Header Card -->
+      <div class="no-print rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-200 text-[11px] font-semibold mb-1.5">
+              <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+              <span>ศูนย์ควบคุมแอดมินกลุ่มบริหารงานบุคคล</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-bold">จัดการการเปิด-ปิดเดือนและสรุปข้อมูลทั้งโรงเรียน</h2>
+            <p id="ad-sync-status" class="text-xs text-blue-100/90 mt-0.5"></p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-ad-refresh-gas" type="button" class="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow transition disabled:opacity-60">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              <span>ซิงค์ข้อมูลจาก Google Sheets</span>
+            </button>
+            <button id="btn-ad-logout" type="button" class="px-3.5 py-2 rounded-xl bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold flex items-center gap-1.5 transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+              <span>ออกจากโหมดแอดมิน</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin Navigation Sub-Tabs -->
+        <div class="mt-4 pt-3 border-t border-white/15 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <button id="ad-tab-months" type="button" data-ad-tab="months" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-white text-kbs-navy shadow flex items-center gap-1.5">
+            <i data-lucide="calendar-cog" class="w-4 h-4"></i>
+            <span>1. เลือกเปิด-ปิดเดือนให้ครูเห็น</span>
+          </button>
+          <button id="ad-tab-overview" type="button" data-ad-tab="overview" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-white/10 text-white hover:bg-white/20 flex items-center gap-1.5">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>2. แดชบอร์ดภาพรวมทั้งโรงเรียน</span>
+          </button>
+          <button id="ad-tab-pins" type="button" data-ad-tab="pins" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-white/10 text-white hover:bg-white/20 flex items-center gap-1.5">
+            <i data-lucide="users-round" class="w-4 h-4"></i>
+            <span>3. จัดการรหัสยืนยันตัวตนครู</span>
+          </button>
+          <button id="ad-tab-requests" type="button" data-ad-tab="requests" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-white/10 text-white hover:bg-white/20 flex items-center gap-1.5">
+            <i data-lucide="inbox" class="w-4 h-4"></i>
+            <span>4. คำร้องขอแก้ไข</span>
+            <span id="ad-requests-badge" class="hidden px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">0</span>
+          </button>
+          <button id="ad-tab-settings" type="button" data-ad-tab="settings" class="ad-tab-btn px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-white/10 text-white hover:bg-white/20 flex items-center gap-1.5">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            <span>5. ตั้งค่า Google Sheets &amp; Vercel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ADMIN TAB 1: MONTH VISIBILITY CONTROLLER -->
+      <div id="ad-panel-months" class="no-print space-y-5">
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-kbs-navyDark flex items-center gap-2">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5 text-kbs-gold"></i>
+                <span>กำหนดเดือนที่อนุญาตให้ครูเข้าดูบนแดชบอร์ด</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                เมื่อกดเปิดหรือปิดสวิตช์ ระบบจะบันทึกลงแท็บ <code class="bg-slate-100 px-1 rounded">_Dashboard_Settings</code> ใน Google Sheets ทันที และฝั่งครูจะแสดงผลเฉพาะเดือนที่เปิดไว้เท่านั้น
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="btn-open-months-with-data" type="button" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold transition disabled:opacity-60">
+                เปิดเฉพาะเดือนที่มีข้อมูล
+              </button>
+              <button id="btn-open-all-months" type="button" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-kbs-navy border border-blue-200 text-xs font-bold transition disabled:opacity-60">
+                เปิดทั้งหมด 6 เดือน
+              </button>
+              <button id="btn-close-all-months" type="button" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition disabled:opacity-60">
+                ปิดทั้งหมด
+              </button>
+            </div>
+          </div>
+
+          <div id="ad-months-toggle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+          <div id="ad-live-preview-note" class="mt-5 rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs text-slate-600 flex items-center gap-2.5">
+            <i data-lucide="info" class="w-4 h-4 text-kbs-navy flex-shrink-0"></i>
+            <span>สรุปสถานะปัจจุบัน: กำลังเปิดให้ครูเข้าดู...</span>
+          </div>
+        </div>
+
+        <!-- Announcement Editor -->
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
+          <h3 class="text-sm sm:text-base font-bold text-kbs-navyDark mb-2 flex items-center gap-2">
+            <i data-lucide="megaphone" class="w-4 h-4 text-kbs-gold"></i>
+            <span>ข้อความประกาศแจ้งครู (แสดงบนหน้าแรกและแดชบอร์ดครู)</span>
+          </h3>
+          <textarea
+            id="ad-announcement-input"
+            rows="3"
+            placeholder="เช่น เปิดให้ตรวจสอบข้อมูลการลงเวลาเดือนตุลาคม - พฤศจิกายน 2569 แล้ว หากพบข้อมูลคลาดเคลื่อนกรุณากดแจ้งขอตรวจสอบภายในวันศุกร์นี้"
+            class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-kbs-navy focus:ring-2 focus:ring-blue-200 outline-none"
+          ></textarea>
+          <div class="mt-3 flex justify-end">
+            <button id="btn-save-announcement" type="button" class="px-4 py-2.5 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white text-xs font-bold flex items-center gap-2 shadow transition disabled:opacity-60">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>บันทึกข้อความประกาศ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN TAB 2: SCHOOL-WIDE OVERVIEW -->
+      <div id="ad-panel-overview" class="hidden space-y-5">
+        <div class="no-print rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">ขอบเขตเดือนที่แสดง</label>
+              <select id="ad-scope-select" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 focus:border-kbs-navy outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">กลุ่มบุคลากร</label>
+              <select id="ad-group-filter" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 focus:border-kbs-navy outline-none">
+                <option value="all">ทั้งหมด (133 คน)</option>
+                <option value="ข้าราชการครูและบุคลากร">ข้าราชการครูและบุคลากร</option>
+                <option value="ลูกจ้างห้องเรียนกีฬา">ลูกจ้างห้องเรียนกีฬา</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">กลุ่มสาระฯ / ฝ่าย</label>
+              <select id="ad-dept-filter" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 focus:border-kbs-navy outline-none">
+                <option value="all">ทุกกลุ่มสาระฯ / ฝ่าย</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">ค้นหารายชื่อ / ตำแหน่ง</label>
+              <input id="ad-search-staff-input" type="text" placeholder="พิมพ์ชื่อ หรือตำแหน่ง..." class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-slate-50 focus:bg-white focus:border-kbs-navy outline-none">
+            </div>
+            <div class="flex items-end gap-2">
+              <button id="btn-ad-export-csv" type="button" class="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>CSV</span>
+              </button>
+              <button id="btn-ad-print-all" type="button" class="flex-1 py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>พิมพ์</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="ad-kpi-grid" class="no-print grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+        <div class="no-print grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+            <h3 class="text-sm font-bold text-kbs-navyDark mb-3">สถิติภาพรวมรายเดือนทั้งโรงเรียน</h3>
+            <div class="h-60 relative">
+              <canvas id="ad-chart-monthly"></canvas>
+            </div>
+          </div>
+          <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+            <h3 class="text-sm font-bold text-kbs-navyDark mb-3">บุคลากรที่มีรายการวันลา/มาสาย/ไม่สแกนสูงสุด (10 อันดับ)</h3>
+            <div class="h-60 relative">
+              <canvas id="ad-chart-issues"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- All Staff Table -->
+        <div class="rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-kbs-navyDark">ตารางสรุปข้อมูลบุคลากรทั้งหมด</h3>
+              <p class="text-xs text-slate-500">คลิกที่ชื่อบุคลากรเพื่อเปิดดูปฏิทินรายวันแบบละเอียด (หมายเหตุ: ระบบนับรายการควบ เช่น ส/มอ เข้าทั้งช่องสายและไม่สแกนออก)</p>
+            </div>
+            <span id="ad-table-count-badge" class="px-3 py-1 rounded-full bg-blue-50 text-kbs-navy text-xs font-bold"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-kbs-navy text-white">
+                <tr>
+                  <th class="px-3 py-3 text-center">#</th>
+                  <th class="px-3 py-3">ชื่อ-สกุล / ตำแหน่ง</th>
+                  <th class="px-2 py-3 text-center">มาปกติ</th>
+                  <th class="px-2 py-3 text-center">ราชการ</th>
+                  <th class="px-2 py-3 text-center">ลากิจ<br><span class="text-[10px] font-normal">(ครั้ง/วัน)</span></th>
+                  <th class="px-2 py-3 text-center">ลาป่วย<br><span class="text-[10px] font-normal">(ครั้ง/วัน)</span></th>
+                  <th class="px-2 py-3 text-center">ลาอื่น<br><span class="text-[10px] font-normal">(ครั้ง/วัน)</span></th>
+                  <th class="px-2 py-3 text-center bg-blue-900/60">รวมลา<br><span class="text-[10px] font-normal">(ครั้ง/วัน)</span></th>
+                  <th class="px-2 py-3 text-center">ไม่สแกนเข้า</th>
+                  <th class="px-2 py-3 text-center">ไม่สแกนออก</th>
+                  <th class="px-2 py-3 text-center">สาย</th>
+                  <th class="px-2 py-3 text-center">ขาด</th>
+                  <th class="px-2 py-3 text-center">ขอออก</th>
+                </tr>
+              </thead>
+              <tbody id="ad-staff-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN TAB 3: STAFF VERIFICATION PIN MANAGER -->
+      <div id="ad-panel-pins" class="hidden no-print space-y-5">
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-base font-bold text-kbs-navyDark">จัดการรหัสยืนยันตัวตน 4 หลักของครูและบุคลากร</h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                บุคลากรที่มีเลขบัตรประชาชนในฐานข้อมูล e-Profile ใช้เลขท้าย 4 ตัวโดยอัตโนมัติ ส่วนผู้ที่ยังไม่มีข้อมูลเลขบัตรฯ หรือต้องการเปลี่ยนรหัส แอดมินสามารถกำหนด PIN 4 หลักบันทึกลง Google Sheets ได้ที่นี่
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="btn-batch-assign-missing-pins" type="button" class="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow transition disabled:opacity-60">
+                <i data-lucide="wand-sparkles" class="w-4 h-4"></i>
+                <span>ตั้งรหัสเริ่มต้นให้ผู้ที่ยังไม่มี PIN</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="ad-pins-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <select id="ad-pin-filter-select" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold bg-slate-50 outline-none">
+              <option value="all">ทั้งหมด</option>
+              <option value="missing">ยังไม่มีรหัสยืนยัน (ต้องตั้งค่า)</option>
+              <option value="custom">กำหนด PIN เองในระบบ</option>
+              <option value="seed">ใช้เลขท้าย 4 ตัวบัตรฯ อัตโนมัติ</option>
+            </select>
+            <input id="ad-pin-search-input" type="text" placeholder="ค้นหาชื่อ หรือตำแหน่ง..." class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs bg-slate-50 focus:bg-white outline-none">
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-2xl">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700">
+                <tr>
+                  <th class="px-3 py-2.5">#</th>
+                  <th class="px-3 py-2.5">ชื่อ-สกุล</th>
+                  <th class="px-3 py-2.5">ตำแหน่ง / กลุ่ม</th>
+                  <th class="px-3 py-2.5">สถานะรหัสยืนยันตัวตน</th>
+                  <th class="px-3 py-2.5 text-right">จัดการ PIN 4 หลัก</th>
+                </tr>
+              </thead>
+              <tbody id="ad-pins-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN TAB 4: CORRECTION REQUESTS -->
+      <div id="ad-panel-requests" class="hidden no-print space-y-4">
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
+          <div class="flex items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="text-base font-bold text-kbs-navyDark">กล่องรับแจ้งขอตรวจสอบ/แก้ไขข้อมูลลงเวลา</h3>
+              <p class="text-xs text-slate-500">รายการที่ครูส่งเข้ามาเมื่อพบข้อมูลไม่ตรงกับข้อเท็จจริง (เช่น ไปราชการแต่ในชีตขึ้น มอ/ขาด)</p>
+            </div>
+          </div>
+          <div id="ad-requests-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- ADMIN TAB 5: SYSTEM SETTINGS -->
+      <div id="ad-panel-settings" class="hidden no-print grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- GAS Web App Connection -->
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+          <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+            <i data-lucide="sheet" class="w-5 h-5 text-emerald-600"></i>
+            <span>เชื่อมต่อ Google Apps Script API (ดึงข้อมูลสดจาก Google Sheet)</span>
+          </h3>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            นำไฟล์ <code class="bg-slate-100 px-1.5 py-0.5 rounded">gas/Code.gs</code> ไป Deploy เป็น Web App (Access: Anyone) แล้วนำ URL ที่ได้มาวางที่นี่เพื่อให้เว็บดึงข้อมูลล่าสุดจากชีต <code class="bg-slate-100 px-1.5 py-0.5 rounded">ข้อมูลลงเวลา 2/69</code> ได้แบบเรียลไทม์
+          </p>
+          <div>
+            <label for="ad-gas-url-input" class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
+            <input id="ad-gas-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs focus:border-kbs-navy outline-none">
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-test-gas" type="button" class="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition disabled:opacity-60">
+              ทดสอบเชื่อมต่อ (Ping)
+            </button>
+            <button id="btn-save-gas-url" type="button" class="px-3.5 py-2 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white text-xs font-bold transition disabled:opacity-60">
+              บันทึก URL และซิงค์ทันที
+            </button>
+          </div>
+          <div id="ad-gas-test-result" class="hidden rounded-xl p-3 text-xs"></div>
+        </div>
+
+        <!-- Change Admin PIN & Vercel/GitHub Guide -->
+        <div class="space-y-5">
+          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-3">
+            <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+              <i data-lucide="key-round" class="w-5 h-5 text-kbs-gold"></i>
+              <span>เปลี่ยนรหัส PIN ผู้ดูแลระบบ</span>
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input id="ad-new-pin-input" type="password" inputmode="numeric" placeholder="รหัส PIN ใหม่ (อย่างน้อย 4 ตัว)" class="rounded-xl border border-slate-300 px-3 py-2.5 text-xs outline-none focus:border-kbs-navy">
+              <input id="ad-confirm-pin-input" type="password" inputmode="numeric" placeholder="ยืนยันรหัส PIN ใหม่อีกครั้ง" class="rounded-xl border border-slate-300 px-3 py-2.5 text-xs outline-none focus:border-kbs-navy">
+            </div>
+            <button id="btn-change-admin-pin" type="button" class="px-4 py-2.5 rounded-xl bg-kbs-gold hover:bg-amber-600 text-white text-xs font-bold transition disabled:opacity-60">
+              อัปเดตรหัส PIN แอดมิน
+            </button>
+          </div>
+
+          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-2.5">
+            <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+              <i data-lucide="cloud" class="w-5 h-5 text-kbs-navy"></i>
+              <span>การเชื่อมต่อผ่าน Vercel + GitHub</span>
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              เมื่อ Deploy โปรเจกต์นี้ผ่าน GitHub ขึ้น <strong>Vercel</strong> แนะนำให้เพิ่ม Environment Variable ชื่อ
+              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-semibold">GAS_API_URL</code>
+              (ใส่ URL ของ Apps Script Web App) ในหน้า Vercel Project Settings &gt; Environment Variables เพื่อให้ครูทุกคนเชื่อมต่อ Google Sheets อัตโนมัติผ่าน
+              <code class="bg-slate-100 px-1.5 py-0.5 rounded">/api/gas</code> โดยไม่ต้องกรอก URL บนเครื่องใหม่
+            </p>
+            <p class="text-[11px] text-slate-500">
+              สถานะ Proxy <code class="bg-slate-100 px-1 rounded">/api/gas</code>: <strong id="ad-vercel-proxy-status" class="text-kbs-navy">กำลังตรวจสอบ...</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL: ADMIN STAFF DETAIL ==================== -->
+  <div id="modal-staff-detail" class="no-print hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="bg-gradient-to-r from-kbs-navy to-kbs-navyMid px-5 py-4 text-white flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h3 id="modal-staff-name" class="text-base sm:text-lg font-bold truncate"></h3>
+          <p id="modal-staff-pos" class="text-xs text-blue-100 truncate"></p>
+        </div>
+        <button id="btn-close-staff-modal" type="button" class="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modal-staff-body" class="p-5 overflow-y-auto space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: TEACHER CORRECTION REQUEST ==================== -->
+  <div id="modal-correction-request" class="no-print hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden">
+      <div class="bg-gradient-to-r from-kbs-navy to-kbs-navyMid px-5 py-4 text-white flex items-center justify-between">
+        <h3 class="text-base font-bold">แจ้งขอตรวจสอบ / แก้ไขข้อมูลลงเวลา</h3>
+        <button id="btn-close-correction-modal" type="button" class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="form-correction-request" class="p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">เดือน</label>
+            <select id="corr-month-select" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-slate-50 outline-none"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">วันที่</label>
+            <input id="corr-day-input" type="number" min="1" max="31" required placeholder="1-31" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-slate-50 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียด / เหตุผลที่ขอแก้ไข</label>
+          <textarea id="corr-reason-input" rows="3" required placeholder="เช่น วันที่ 12 พ.ย. 69 ไปราชการตามคำสั่งโรงเรียน แต่ในระบบขึ้นไม่สแกนนิ้วออก (มอ)" class="w-full rounded-xl border border-slate-300 p-3 text-xs outline-none focus:border-kbs-navy"></textarea>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button id="btn-cancel-correction" type="button" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600">ยกเลิก</button>
+          <button id="btn-submit-correction" type="submit" class="px-4 py-2 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-60">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>ส่งคำร้องถึงแอดมิน</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="no-print py-4 px-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+    กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เชื่อมโยงข้อมูลจาก Google Sheets (Vercel + GitHub)
+  </footer>
+
+  <!-- ==================== SCRIPTS ==================== -->
+  <script src="config.js"></script>
+  <script src="teacher-auth-seed.js"></script>
+  <script src="sheet-fallback.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
