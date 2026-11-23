@@ -455,40 +455,51 @@
     const gasUrl = (state.settings.gasUrl || '').trim();
     const body = JSON.stringify({ action, ...payload });
 
-    // บน Vercel (หรือเซิร์ฟเวอร์ที่มี /api/gas): ใช้ Proxy ก่อน เพื่อหลีกเลี่ยง CORS และรองรับ Vercel Env Var
-    if (isHttpOrigin()) {
+    // ยิงตรงเข้า Google Apps Script ก่อนเมื่อมี URL (ลดการวิ่งอ้อมเซิร์ฟเวอร์ Vercel ต่างประเทศ ทำให้เร็วขึ้น 2-3 เท่า)
+    if (gasUrl && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(gasUrl)) {
       try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (gasUrl) headers['x-gas-url'] = gasUrl;
-        const proxyRes = await fetch('/api/gas', { method: 'POST', headers, body });
-        if (proxyRes.status !== 404) {
-          const proxyData = await proxyRes.json();
-          if (proxyData && proxyData.notConfigured && !gasUrl) {
-            throw new Error(proxyData.error || 'ยังไม่ได้ตั้งค่า GAS_API_URL');
-          }
-          if (proxyData && proxyData.success !== undefined) {
-            state.vercelProxyAvailable = true;
-            if (!proxyData.success) throw new Error(proxyData.error || 'GAS ตอบกลับไม่สำเร็จ');
-            return proxyData;
+        const directRes = await fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body,
+          redirect: 'follow'
+        });
+        if (directRes.ok) {
+          const directData = await directRes.json();
+          if (directData && directData.success !== undefined) {
+            if (!directData.success) throw new Error(directData.error || 'GAS ตอบกลับไม่สำเร็จ');
+            return directData;
           }
         }
-      } catch (proxyErr) {
-        if (!gasUrl) throw proxyErr;
+      } catch (directErr) {
+        if (!isHttpOrigin() || directErr.message === 'GAS ตอบกลับไม่สำเร็จ' || (directErr.message && !/fetch|network|cors/i.test(directErr.message))) {
+          if (!isHttpOrigin()) throw directErr;
+          if (!/Failed to fetch|NetworkError|Load failed|CORS/i.test(directErr.message || '')) {
+            throw directErr;
+          }
+        }
       }
     }
 
-    if (!gasUrl) throw new Error('ยังไม่ได้ตั้งค่า Google Apps Script URL');
-    const res = await fetch(gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body
-    });
-    if (!res.ok) throw new Error(`GAS HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data || data.success === false) {
-      throw new Error((data && data.error) || 'GAS ตอบกลับไม่สำเร็จ');
+    // Fallback ผ่าน Vercel Proxy /api/gas (กรณีไม่ได้ใส่ URL ใน config.js หรือเครือข่ายบล็อก)
+    if (isHttpOrigin()) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (gasUrl) headers['x-gas-url'] = gasUrl;
+      const proxyRes = await fetch('/api/gas', { method: 'POST', headers, body });
+      if (proxyRes.status !== 404) {
+        const proxyData = await proxyRes.json();
+        if (proxyData && proxyData.notConfigured && !gasUrl) {
+          throw new Error(proxyData.error || 'ยังไม่ได้ตั้งค่า GAS_API_URL');
+        }
+        if (proxyData && proxyData.success !== undefined) {
+          state.vercelProxyAvailable = true;
+          if (!proxyData.success) throw new Error(proxyData.error || 'GAS ตอบกลับไม่สำเร็จ');
+          return proxyData;
+        }
+      }
     }
-    return data;
+
+    throw new Error('ไม่สามารถเชื่อมต่อ Google Apps Script API ได้');
   }
 
   function saveSettingsLocal() {
@@ -739,10 +750,9 @@
       cidHash = sha256Hex('cid:' + normalized);
     }
 
-    // ดึงข้อมูลสดจาก Google Sheets (รองรับทุกภาคเรียน/ปีที่แอดมินเปิดให้ดู)
+    // ดึงข้อมูลสดจาก Google Sheets (ส่งเฉพาะ cidHash ที่เข้ารหัส SHA-256 แล้ว)
     if (hasGasEndpoint()) {
       const res = await callGasApi('getTeacherAttendance', {
-        cid: normalized || undefined,
         cidHash
       });
       if (res.terms || res.record) {

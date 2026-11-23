@@ -29,9 +29,11 @@ var CONFIG = {
   TAB_PINS: '_Staff_Pins',
   TAB_CORRECTIONS: '_Correction_Requests',
   TIMEZONE: 'Asia/Bangkok',
-  CACHE_PREFIX: 'kbs_att_tab_v3_',
+  CACHE_PREFIX: 'kbs_att_tab_v4_',
+  CACHE_BUNDLE_KEY: 'kbs_bundle_meta_v4',
+  CACHE_CATALOG_KEY: 'kbs_public_catalog_v4',
   CACHE_EPROFILE_KEY: 'kbs_eprofile_live_map_v1',
-  CACHE_TTL_SECONDS: 300,
+  CACHE_TTL_SECONDS: 180,
   CACHE_EPROFILE_TTL: 600,
   DEFAULT_ADMIN_PIN: '123456'
 };
@@ -171,6 +173,62 @@ function createJsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function cachePutChunked(cache, key, str, ttl) {
+  try {
+    var chunkSize = 85000;
+    if (str.length <= chunkSize) {
+      cache.put(key, str, ttl);
+      cache.remove(key + '_n');
+      return;
+    }
+    var count = Math.ceil(str.length / chunkSize);
+    var entries = {};
+    entries[key + '_n'] = String(count);
+    for (var i = 0; i < count; i++) {
+      entries[key + '_c' + i] = str.slice(i * chunkSize, (i + 1) * chunkSize);
+    }
+    cache.putAll(entries, ttl);
+  } catch (e) {}
+}
+
+function cacheGetChunked(cache, key) {
+  try {
+    var nStr = cache.get(key + '_n');
+    if (!nStr) {
+      return cache.get(key);
+    }
+    var count = Number(nStr);
+    if (!count || count < 1 || count > 25) return null;
+    var keys = [];
+    for (var i = 0; i < count; i++) keys.push(key + '_c' + i);
+    var map = cache.getAll(keys);
+    var out = '';
+    for (var j = 0; j < keys.length; j++) {
+      if (!map[keys[j]]) return null;
+      out += map[keys[j]];
+    }
+    return out;
+  } catch (e) {
+    return null;
+  }
+}
+
+function cacheRemoveChunked(cache, key) {
+  try {
+    var keys = [key, key + '_n'];
+    for (var i = 0; i < 10; i++) keys.push(key + '_c' + i);
+    cache.removeAll(keys);
+  } catch (e) {}
+}
+
+function invalidateFastBundleCaches() {
+  var cache = CacheService.getScriptCache();
+  try {
+    cache.remove(CONFIG.CACHE_BUNDLE_KEY);
+    cacheRemoveChunked(cache, CONFIG.CACHE_CATALOG_KEY);
+  } catch (e) {}
 }
 
 function sha256Hex(str) {
@@ -351,7 +409,7 @@ function parseTabDataset(tabInfo, forceRefresh) {
   var cache = CacheService.getScriptCache();
   var cacheKey = CONFIG.CACHE_PREFIX + tabInfo.id;
   if (!forceRefresh) {
-    var cached = cache.get(cacheKey);
+    var cached = cacheGetChunked(cache, cacheKey);
     if (cached) {
       try { return JSON.parse(cached); } catch (e) {}
     }
@@ -484,12 +542,73 @@ function parseTabDataset(tabInfo, forceRefresh) {
 
   try {
     var serialized = JSON.stringify(tabDataset);
-    if (serialized.length < 95000) {
-      cache.put(cacheKey, serialized, CONFIG.CACHE_TTL_SECONDS);
-    }
+    cachePutChunked(cache, cacheKey, serialized, CONFIG.CACHE_TTL_SECONDS);
   } catch (e) {}
 
   return tabDataset;
+}
+
+function loadCachedFastBundle(forceRefresh) {
+  var cache = CacheService.getScriptCache();
+  if (!forceRefresh) {
+    var bundleStr = cache.get(CONFIG.CACHE_BUNDLE_KEY);
+    if (bundleStr) {
+      try {
+        var meta = JSON.parse(bundleStr);
+        var tabKeys = [];
+        var tabsOk = Array.isArray(meta.tabIds) && meta.tabIds.length > 0;
+        var tabsDatasets = [];
+        if (tabsOk) {
+          for (var i = 0; i < meta.tabIds.length; i++) {
+            var tdStr = cacheGetChunked(cache, CONFIG.CACHE_PREFIX + meta.tabIds[i]);
+            if (!tdStr) {
+              tabsOk = false;
+              break;
+            }
+            tabsDatasets.push(JSON.parse(tdStr));
+          }
+        }
+        if (tabsOk && meta.settings && meta.customPins) {
+          return {
+            ss: null,
+            ssTitle: meta.ssTitle || '',
+            tabsDatasets: tabsDatasets,
+            settings: meta.settings,
+            customPins: meta.customPins,
+            fromCache: true
+          };
+        }
+      } catch (e) {}
+    }
+  }
+
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var tabsInfo = discoverAttendanceTabs(ss);
+  var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
+  var customPins = readCustomPinsFromSheet(ss);
+  var settings = readSettingsFromSheet(ss, tabsDatasets);
+  var ssTitle = ss.getName();
+
+  try {
+    var metaPayload = JSON.stringify({
+      ssTitle: ssTitle,
+      tabIds: tabsInfo.map(function(ti) { return ti.id; }),
+      settings: settings,
+      customPins: customPins
+    });
+    if (metaPayload.length < 90000) {
+      cache.put(CONFIG.CACHE_BUNDLE_KEY, metaPayload, CONFIG.CACHE_TTL_SECONDS);
+    }
+  } catch (e) {}
+
+  return {
+    ss: ss,
+    ssTitle: ssTitle,
+    tabsDatasets: tabsDatasets,
+    settings: settings,
+    customPins: customPins,
+    fromCache: false
+  };
 }
 
 function readSettingsFromSheet(ss, tabsDatasets) {
@@ -638,25 +757,31 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  var lock = LockService.getScriptLock();
-  var locked = lock.tryLock(25000);
-  try {
-    var payload = {};
-    if (e && e.postData && e.postData.contents) {
-      try {
-        payload = JSON.parse(e.postData.contents);
-      } catch (err) {
-        return createJsonResponse({ success: false, error: 'รูปแบบ JSON ไม่ถูกต้อง' });
-      }
-    } else if (e && e.parameter) {
-      payload = e.parameter;
+  var payload = {};
+  if (e && e.postData && e.postData.contents) {
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return createJsonResponse({ success: false, error: 'รูปแบบ JSON ไม่ถูกต้อง' });
     }
-    var action = String(payload.action || '').trim();
+  } else if (e && e.parameter) {
+    payload = e.parameter;
+  }
+  var action = String(payload.action || '').trim();
+  var needsLock = (
+    action === 'submitCorrection' ||
+    action === 'saveAdminSettings' ||
+    action === 'saveStaffPins' ||
+    action === 'updateCorrectionStatus'
+  );
+  var lock = needsLock ? LockService.getScriptLock() : null;
+  var locked = lock ? lock.tryLock(25000) : false;
+  try {
     return handleAction(action, payload);
   } catch (err) {
     return createJsonResponse({ success: false, error: err.message || String(err) });
   } finally {
-    if (locked) lock.releaseLock();
+    if (locked && lock) lock.releaseLock();
   }
 }
 
@@ -704,12 +829,19 @@ function handlePing() {
 }
 
 function handleGetPublicCatalog(forceRefresh) {
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var tabsInfo = discoverAttendanceTabs(ss);
-  var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
-  var customPins = readCustomPinsFromSheet(ss);
+  var cache = CacheService.getScriptCache();
+  if (!forceRefresh) {
+    var cachedCatalogStr = cacheGetChunked(cache, CONFIG.CACHE_CATALOG_KEY);
+    if (cachedCatalogStr) {
+      try { return JSON.parse(cachedCatalogStr); } catch (e) {}
+    }
+  }
+
+  var bundle = loadCachedFastBundle(forceRefresh);
+  var tabsDatasets = bundle.tabsDatasets;
+  var customPins = bundle.customPins;
   var liveEprof = loadLiveEprofileMap(forceRefresh);
-  var settings = readSettingsFromSheet(ss, tabsDatasets);
+  var settings = bundle.settings;
 
   // รวมรายชื่อบุคลากรไม่ซ้ำจากทุกภาคเรียนที่พบ (คงลำดับตามแถวในชีต)
   var seedCidCoreSet = {};
@@ -758,11 +890,11 @@ function handleGetPublicCatalog(forceRefresh) {
   var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
   var latestTerm = termsMeta.length ? termsMeta[termsMeta.length - 1] : null;
 
-  return {
+  var result = {
     success: true,
     source: 'gas_live',
     spreadsheetId: CONFIG.SPREADSHEET_ID,
-    spreadsheetTitle: ss.getName(),
+    spreadsheetTitle: bundle.ssTitle,
     sheetTitle: latestTerm ? latestTerm.termName : '',
     syncedAt: syncedAt,
     terms: termsMeta,
@@ -775,27 +907,42 @@ function handleGetPublicCatalog(forceRefresh) {
       updatedAt: settings.updatedAt
     }
   };
+
+  try {
+    cachePutChunked(cache, CONFIG.CACHE_CATALOG_KEY, JSON.stringify(result), CONFIG.CACHE_TTL_SECONDS);
+  } catch (e) {}
+
+  return result;
 }
 
-function resolveCoreByCid(ss, cidInput, cidHashInput, forceRefresh) {
+function getCachedEprofilePassive() {
+  try {
+    var cached = CacheService.getScriptCache().get(CONFIG.CACHE_EPROFILE_KEY);
+    if (cached) return JSON.parse(cached);
+  } catch (e) {}
+  return { hashes: {}, cidToCore: {}, depts: {} };
+}
+
+function resolveCoreByCid(ss, cidInput, cidHashInput, forceRefresh, preloadedCustomPins) {
   var normalizedCid = String(cidInput || '').replace(/[\s-]/g, '').toUpperCase();
   var cidHash = normalizedCid ? sha256Hex('cid:' + normalizedCid) : String(cidHashInput || '').trim();
   if (!cidHash) {
     return { ok: false, error: 'กรุณากรอกเลขประจำตัวประชาชน 13 หลัก หรือรหัสเข้าใช้งาน' };
   }
 
-  var customPins = readCustomPinsFromSheet(ss);
-  if (customPins.byCidHash[cidHash]) {
+  var customPins = preloadedCustomPins || readCustomPinsFromSheet(ss || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID));
+  if (customPins.byCidHash && customPins.byCidHash[cidHash]) {
     return { ok: true, coreName: customPins.byCidHash[cidHash], cidHash: cidHash };
+  }
+
+  // ตรวจสอบจากตาราง Hash ในหน่วยความจำก่อน (0ms ไม่ต้องเปิดไฟล์ E-Profile)
+  if (SEED_CID_HASHES[cidHash]) {
+    return { ok: true, coreName: SEED_CID_HASHES[cidHash], cidHash: cidHash };
   }
 
   var liveEprof = loadLiveEprofileMap(forceRefresh);
   if (liveEprof.cidToCore && liveEprof.cidToCore[cidHash]) {
     return { ok: true, coreName: liveEprof.cidToCore[cidHash], cidHash: cidHash };
-  }
-
-  if (SEED_CID_HASHES[cidHash]) {
-    return { ok: true, coreName: SEED_CID_HASHES[cidHash], cidHash: cidHash };
   }
 
   return {
@@ -805,14 +952,13 @@ function resolveCoreByCid(ss, cidInput, cidHashInput, forceRefresh) {
 }
 
 function handleGetTeacherAttendance(payload, forceRefresh) {
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var tabsInfo = discoverAttendanceTabs(ss);
-  var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
+  var bundle = loadCachedFastBundle(forceRefresh);
+  var tabsDatasets = bundle.tabsDatasets;
 
   var coreName = '';
   var cidHashOut = '';
   if (payload.cid || payload.cidHash) {
-    var resolved = resolveCoreByCid(ss, payload.cid, payload.cidHash, forceRefresh);
+    var resolved = resolveCoreByCid(bundle.ss, payload.cid, payload.cidHash, forceRefresh, bundle.customPins);
     if (!resolved.ok) return { success: false, error: resolved.error };
     coreName = resolved.coreName;
     cidHashOut = resolved.cidHash;
@@ -820,8 +966,8 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
     return { success: false, error: 'กรุณากรอกเลขประจำตัวประชาชน 13 หลัก' };
   }
 
-  var settings = readSettingsFromSheet(ss, tabsDatasets);
-  var liveEprof = loadLiveEprofileMap(false);
+  var settings = bundle.settings;
+  var liveEprof = getCachedEprofilePassive();
   var visTerms = settings.visibleTerms || {};
   var visMonths = settings.visibleMonths || {};
 
@@ -881,7 +1027,7 @@ function handleGetTeacherAttendance(payload, forceRefresh) {
   return {
     success: true,
     source: 'gas_live',
-    spreadsheetTitle: ss.getName(),
+    spreadsheetTitle: bundle.ssTitle,
     syncedAt: syncedAt,
     cidHash: cidHashOut,
     profile: {
@@ -1015,6 +1161,7 @@ function handleSaveAdminSettings(payload) {
     if (payload.settings.announcement !== undefined) updates.announcement = payload.settings.announcement;
   }
   writeSettingsToSheet(ss, updates);
+  invalidateFastBundleCaches();
   return { success: true, message: 'บันทึกการตั้งค่าลง Google Sheets เรียบร้อยแล้ว' };
 }
 
@@ -1062,6 +1209,7 @@ function handleSaveStaffPins(payload) {
     }
   });
 
+  invalidateFastBundleCaches();
   return { success: true, message: 'บันทึก PIN ครูลง Google Sheets เรียบร้อยแล้ว' };
 }
 
