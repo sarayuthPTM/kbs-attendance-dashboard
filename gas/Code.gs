@@ -161,6 +161,7 @@ function getOrCreateHelperSheet(ss, tabName, headers) {
     hr.setFontColor('#ffffff');
     hr.setFontWeight('bold');
     sheet.setFrozenRows(1);
+    try { sheet.hideSheet(); } catch (e) {}
   }
   return sheet;
 }
