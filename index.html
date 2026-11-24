@@ -115,6 +115,8 @@
       .print-only,
       .print-only * {
         font-family: 'THSarabunNew', 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .no-print {
         display: none !important;
@@ -761,7 +763,8 @@
             <div class="flex items-center gap-2">
               <label for="ad-rank-limit-select" class="text-xs font-semibold text-slate-600">จำนวนอันดับ:</label>
               <select id="ad-rank-limit-select" class="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-kbs-navyDark outline-none focus:border-kbs-navy">
-                <option value="10">Top 10 อันดับ</option>
+                <option value="3">Top 3 อันดับ</option>
+                <option value="10" selected>Top 10 อันดับ</option>
                 <option value="15">Top 15 อันดับ</option>
                 <option value="30">Top 30 อันดับ</option>
               </select>

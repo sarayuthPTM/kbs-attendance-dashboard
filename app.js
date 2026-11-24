@@ -1227,12 +1227,63 @@
     refreshIcons();
   }
 
+  const THAI_WEEKDAYS_FULL = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+  const THAI_WEEKDAYS_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  const THAI_DAY_DOT_CLASSES = [
+    'bg-rose-500',
+    'bg-amber-400',
+    'bg-pink-500',
+    'bg-emerald-500',
+    'bg-orange-500',
+    'bg-sky-500',
+    'bg-purple-500'
+  ];
+  const THAI_MONTHS_FULL = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  ];
+
+  function getTodayThaiInfo() {
+    const now = new Date();
+    const yearCE = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const weekdayIdx = now.getDay();
+    const yearBE = yearCE + 543;
+    const monthName = THAI_MONTHS_FULL[month - 1] || '';
+    const weekdayFull = THAI_WEEKDAYS_FULL[weekdayIdx] || '';
+    const weekdayShort = THAI_WEEKDAYS_SHORT[weekdayIdx] || '';
+    return {
+      yearCE,
+      yearBE,
+      month,
+      day,
+      weekdayIdx,
+      weekdayFull,
+      weekdayShort,
+      dotCls: THAI_DAY_DOT_CLASSES[weekdayIdx] || 'bg-kbs-navy',
+      fullDateLabel: `${weekdayFull}ที่ ${day} ${monthName} ${yearBE}`,
+      shortDateLabel: `${weekdayFull} ${day} ${monthName.slice(0, 3)}. ${String(yearBE).slice(-2)}`
+    };
+  }
+
   function renderCalendarForContainer(record, activeMonthId, availableMonths, titleEl, switcherEl, gridEl, legendEl, onSwitchMonth, allTermMonths = null) {
     const searchPool = allTermMonths || state.months;
     const mMeta = searchPool.find(m => m.id === activeMonthId) || availableMonths[0];
     if (!mMeta) return;
 
-    titleEl.textContent = `ปฏิทินการลงเวลา: เดือน${mMeta.label}`;
+    const today = getTodayThaiInfo();
+    const isCurrentMonth = (mMeta.yearCE === today.yearCE && mMeta.month === today.month);
+
+    titleEl.innerHTML = `
+      <span class="inline-flex flex-wrap items-center gap-2">
+        <span>ปฏิทินการลงเวลา: เดือน${esc(mMeta.label)}</span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-kbs-navy text-[11px] font-bold">
+          <span class="w-2 h-2 rounded-full ${today.dotCls} animate-pulse"></span>
+          <span>วันนี้: ${esc(today.fullDateLabel)}</span>
+        </span>
+      </span>
+    `;
     if (switcherEl) {
       switcherEl.innerHTML = availableMonths.map(m => `
         <button type="button" data-cal-m="${esc(m.id)}" class="cal-sw-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${m.id === mMeta.id ? 'bg-kbs-gold text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -1269,26 +1320,37 @@
 
       const weekday = (firstWeekday + (day - 1)) % 7;
       const isWeekend = weekday === 0 || weekday === 6;
+      const isTodayCell = isCurrentMonth && day === today.day;
       const meta = getCodeMeta(displayCode);
 
       const cellBg = displayCode
         ? meta.badgeCls
-        : (isWeekend ? 'bg-slate-100/80 text-slate-400 border-slate-200/70' : 'bg-white text-slate-400 border-slate-200');
+        : (isTodayCell
+            ? 'bg-gradient-to-br from-blue-50 via-white to-amber-50 text-kbs-navyDark border-kbs-navy'
+            : (isWeekend ? 'bg-slate-100/80 text-slate-400 border-slate-200/70' : 'bg-white text-slate-400 border-slate-200'));
+
+      const todayRingCls = isTodayCell
+        ? 'ring-2 ring-kbs-navy ring-offset-1 shadow-md border-kbs-navy'
+        : '';
 
       const badgeLabel = isMergeCont ? `↳ ${meta.short}` : (meta.short || (isWeekend ? 'หยุด' : '-'));
+      const dayPrefix = isTodayCell ? `★ วันนี้ (${today.fullDateLabel}) — ` : '';
       const tooltipText = isMergeCont
-        ? `วันที่ ${day} ${mMeta.label}: ต่อเนื่องจากการลา (${mergeSourceCode}) — ${meta.label}`
-        : `วันที่ ${day} ${mMeta.label}: ${meta.label}`;
+        ? `${dayPrefix}วันที่ ${day} ${mMeta.label}: ต่อเนื่องจากการลา (${mergeSourceCode}) — ${meta.label}`
+        : `${dayPrefix}วันที่ ${day} ${mMeta.label}: ${meta.label}`;
 
       html += `
         <button
           type="button"
           data-day="${day}"
           data-tip="${esc(tooltipText)}"
-          class="cal-day-btn h-14 sm:h-16 rounded-xl border p-1.5 flex flex-col justify-between items-start text-left transition hover:scale-[1.03] hover:shadow-md ${cellBg} ${isMergeCont ? 'opacity-80 border-dashed' : ''}"
+          class="cal-day-btn h-14 sm:h-16 rounded-xl border p-1.5 flex flex-col justify-between items-start text-left transition hover:scale-[1.03] hover:shadow-md ${cellBg} ${todayRingCls} ${isMergeCont ? 'opacity-80 border-dashed' : ''}"
         >
-          <span class="text-[11px] font-bold leading-none ${isWeekend && !displayCode ? 'text-rose-400' : ''}">${day}</span>
-          <span class="w-full text-center text-[11px] sm:text-xs font-extrabold truncate">${displayCode ? esc(badgeLabel) : (isWeekend ? '<span class="text-[9px] font-normal">หยุด</span>' : '')}</span>
+          <div class="w-full flex items-center justify-between gap-1">
+            <span class="text-[11px] font-bold leading-none ${isTodayCell ? 'text-kbs-navyDark underline decoration-amber-500 decoration-2' : (isWeekend && !displayCode ? 'text-rose-400' : '')}">${day}</span>
+            ${isTodayCell ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-kbs-navy text-white text-[8px] sm:text-[9px] font-bold leading-none shadow-sm"><span class="w-1.5 h-1.5 rounded-full ${today.dotCls}"></span><span>วันนี้</span></span>` : ''}
+          </div>
+          <span class="w-full text-center text-[11px] sm:text-xs font-extrabold truncate">${displayCode ? esc(badgeLabel) : (isTodayCell ? `<span class="text-[10px] font-bold text-kbs-navy">${esc(today.weekdayFull)}</span>` : (isWeekend ? '<span class="text-[9px] font-normal">หยุด</span>' : ''))}</span>
         </button>
       `;
     }
@@ -1310,7 +1372,13 @@
     });
 
     if (legendEl) {
-      legendEl.innerHTML = CODE_LEGEND.map(item => `
+      const todayLegendChip = `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border-2 border-kbs-navy bg-blue-50 text-kbs-navy font-bold shadow-xs">
+          <span class="w-2 h-2 rounded-full ${today.dotCls}"></span>
+          <span>★ วันนี้ (${esc(today.weekdayFull)}ที่ ${today.day})</span>
+        </span>
+      `;
+      legendEl.innerHTML = todayLegendChip + CODE_LEGEND.map(item => `
         <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border ${item.badgeCls}">
           <strong>${esc(item.code)}</strong>
           <span>${esc(item.label)}</span>
@@ -1424,79 +1492,88 @@
   function renderTeacherPrintArea(record, openMonths, termName = '') {
     const tot = sumStats(record, openMonths.map(m => m.id));
     const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const logoUri = createDefaultKvkEmblemDataUri();
     $('td-print-area').innerHTML = `
-      <div class="font-doc border-b-2 border-black pb-3 mb-4 flex items-start justify-between gap-4">
-        <div class="min-w-0">
-          <h1 class="text-[20pt] font-bold leading-tight">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (${esc(termName || 'ภาคเรียน')})</h1>
-          <p class="text-[15pt] leading-snug mt-0.5">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
-        </div>
-        <div class="text-right text-[14pt] whitespace-nowrap flex-shrink-0 leading-snug">
-          <p>พิมพ์เมื่อ: ${esc(nowStr)}</p>
-          <p>เดือนที่เปิดแสดงผล: ${openMonths.length} เดือน</p>
+      <div class="font-doc rounded-lg overflow-hidden border border-[#1e3a8a] mb-3" style="background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%); color: #ffffff; border-bottom: 4px solid #f59e0b;">
+        <div class="px-4 py-3 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-12 h-12 rounded-xl bg-white p-1 flex-shrink-0 flex items-center justify-center shadow">
+              <img src="${logoUri}" alt="ตราโรงเรียน" class="w-full h-full object-contain">
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-[19pt] font-bold leading-tight text-white">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (${esc(termName || 'ภาคเรียน')})</h1>
+              <p class="text-[14pt] leading-snug mt-0.5 text-[#fde68a]">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
+            </div>
+          </div>
+          <div class="text-right text-[13pt] whitespace-nowrap flex-shrink-0 leading-snug bg-white/10 rounded px-3 py-1.5 border border-white/25">
+            <p><span class="text-[#fde68a]">พิมพ์เมื่อ:</span> ${esc(nowStr)}</p>
+            <p><span class="text-[#fde68a]">เดือนที่เปิดแสดงผล:</span> ${openMonths.length} เดือน</p>
+          </div>
         </div>
       </div>
 
-      <div class="font-doc mb-4 px-4 py-3 border border-slate-500 rounded text-[15.5pt] leading-snug grid grid-cols-2 gap-x-6 gap-y-1">
-        <div><strong>ชื่อ-สกุล:</strong> ${esc(record.name)}</div>
-        <div><strong>ตำแหน่ง:</strong> ${esc(record.position)}</div>
-        <div><strong>กลุ่มบุคลากร:</strong> ${esc(record.group)}</div>
-        <div><strong>กลุ่มสาระฯ / ฝ่าย:</strong> ${esc(record.department || '-')}</div>
+      <div class="font-doc mb-4 px-4 py-2.5 rounded border border-[#93c5fd] text-[15pt] leading-snug grid grid-cols-2 gap-x-6 gap-y-1" style="background-color: #eff6ff; border-left: 5px solid #1e3a8a;">
+        <div><strong class="text-[#1e3a8a]">ชื่อ-สกุล:</strong> <span class="text-slate-900 font-bold">${esc(record.name)}</span></div>
+        <div><strong class="text-[#1e3a8a]">ตำแหน่ง:</strong> <span class="text-slate-900">${esc(record.position)}</span></div>
+        <div><strong class="text-[#1e3a8a]">กลุ่มบุคลากร:</strong> <span class="text-slate-900">${esc(record.group)}</span></div>
+        <div><strong class="text-[#1e3a8a]">กลุ่มสาระฯ / ฝ่าย:</strong> <span class="text-slate-900">${esc(record.department || '-')}</span></div>
       </div>
 
-      <table class="font-doc w-full border-collapse border border-slate-600 text-[13.5pt] leading-tight mb-5">
+      <table class="font-doc w-full border-collapse border border-[#94a3b8] text-[13.5pt] leading-tight mb-4">
         <thead>
-          <tr class="bg-slate-200">
-            <th class="border border-slate-600 px-2 py-2 text-left whitespace-nowrap">เดือน</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">มาปกติ</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">ราชการ</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center">ลากิจ<br>(ครั้ง/วัน)</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center">ลาป่วย<br>(ครั้ง/วัน)</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center">ลาคลอด/<br>บวช/ภริยา</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">รวมวันลา</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center">ไม่สแกน<br>เข้า</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center">ไม่สแกน<br>ออก</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">สาย</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">ขาด</th>
-            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">ขอออก</th>
+          <tr style="background-color: #1e3a8a; color: #ffffff;">
+            <th class="border border-[#475569] px-2 py-2 text-left whitespace-nowrap">เดือน</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center whitespace-nowrap">มาปกติ</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center whitespace-nowrap">ราชการ</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center">ลากิจ<br>(ครั้ง/วัน)</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center">ลาป่วย<br>(ครั้ง/วัน)</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center">ลาคลอด/<br>บวช/ภริยา</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center whitespace-nowrap">รวมวันลา</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center">ไม่สแกน<br>เข้า</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center">ไม่สแกน<br>ออก</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center whitespace-nowrap">สาย</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center whitespace-nowrap">ขาด</th>
+            <th class="border border-[#475569] px-1.5 py-2 text-center whitespace-nowrap">ขอออก</th>
           </tr>
         </thead>
         <tbody>
-          ${openMonths.map(m => {
+          ${openMonths.map((m, idx) => {
             const s = calcMonthStats(record.months[m.id]);
+            const rowBg = idx % 2 === 1 ? '#f8fafc' : '#ffffff';
             return `
-              <tr>
-                <td class="border border-slate-600 px-2 py-1.5 font-bold whitespace-nowrap">${esc(m.label)}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.present}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.duty}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${s.personalCount} / ${formatNumber(s.personalDays)}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${s.sickCount} / ${formatNumber(s.sickDays)}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${s.otherLeaveCount} / ${formatNumber(s.otherLeaveDays)}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center font-bold whitespace-nowrap">${s.totalLeaveCount} / ${formatNumber(s.totalLeaveDays)}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.noIn}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.noOut}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.late}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.absent}</td>
-                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.earlyOut}</td>
+              <tr style="background-color: ${rowBg};">
+                <td class="border border-[#94a3b8] px-2 py-1.5 font-bold whitespace-nowrap text-[#1e3a8a]">${esc(m.label)}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center font-bold text-[#047857]">${s.present}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center font-bold text-[#0369a1]">${s.duty}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap">${s.personalCount} / ${formatNumber(s.personalDays)}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap">${s.sickCount} / ${formatNumber(s.sickDays)}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap">${s.otherLeaveCount} / ${formatNumber(s.otherLeaveDays)}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center font-bold whitespace-nowrap text-[#be123c]" style="background-color: #fff1f2;">${s.totalLeaveCount} / ${formatNumber(s.totalLeaveDays)}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#6d28d9]">${s.noIn}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#4338ca]">${s.noOut}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center font-bold text-[#b45309]">${s.late}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center font-bold text-[#dc2626]">${s.absent}</td>
+                <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#0f766e]">${s.earlyOut}</td>
               </tr>
             `;
           }).join('')}
-          <tr class="bg-slate-100 font-bold">
-            <td class="border border-slate-600 px-2 py-1.5 whitespace-nowrap">รวมสุทธิ (${openMonths.length} เดือนที่เปิด)</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.present}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.duty}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.personalCount} / ${formatNumber(tot.personalDays)}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.sickCount} / ${formatNumber(tot.sickDays)}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.otherLeaveCount} / ${formatNumber(tot.otherLeaveDays)}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.totalLeaveCount} / ${formatNumber(tot.totalLeaveDays)}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.noIn}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.noOut}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.late}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.absent}</td>
-            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.earlyOut}</td>
+          <tr class="font-bold" style="background-color: #fef3c7; color: #1e3a8a;">
+            <td class="border border-[#94a3b8] px-2 py-1.5 whitespace-nowrap">รวมสุทธิ (${openMonths.length} เดือนที่เปิด)</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#047857]">${tot.present}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#0369a1]">${tot.duty}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap">${tot.personalCount} / ${formatNumber(tot.personalDays)}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap">${tot.sickCount} / ${formatNumber(tot.sickDays)}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap">${tot.otherLeaveCount} / ${formatNumber(tot.otherLeaveDays)}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center whitespace-nowrap text-[#be123c]">${tot.totalLeaveCount} / ${formatNumber(tot.totalLeaveDays)}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#6d28d9]">${tot.noIn}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#4338ca]">${tot.noOut}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#b45309]">${tot.late}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#dc2626]">${tot.absent}</td>
+            <td class="border border-[#94a3b8] px-1.5 py-1.5 text-center text-[#0f766e]">${tot.earlyOut}</td>
           </tr>
         </tbody>
       </table>
-      <p class="font-doc text-[14pt] text-slate-700">* เอกสารนี้สร้างจากระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</p>
+      <p class="font-doc text-[13.5pt] text-[#475569]">* เอกสารนี้สร้างจากระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</p>
     `;
   }
 
@@ -1959,7 +2036,7 @@
     });
 
     // Charts
-    renderAdminOverviewCharts(filtered, computedRows, monthSpecs, termMonths, scopeInfo.isDateRange);
+    const printChartStats = renderAdminOverviewCharts(filtered, computedRows, monthSpecs, termMonths, scopeInfo.isDateRange);
 
     state.lastAdminOverviewSnapshot = {
       termName: selectedTerm ? selectedTerm.termName : '',
@@ -1979,184 +2056,322 @@
         totalEarlyOut
       },
       deptSummaryRows,
-      computedRows
+      computedRows,
+      monthlySummary: printChartStats.monthlySummary,
+      rankedTop3: printChartStats.rankedTop3
     };
     renderAdminPrintArea(false);
   }
 
-  function getChartSnapshotDataUri(chartKey, settleAnimation) {
-    const ch = state.charts && state.charts[chartKey];
-    if (!ch) return '';
-    try {
-      if (settleAnimation) {
-        ch.stop();
-        ch.update('none');
-      }
-      return ch.toBase64Image('image/png', 1);
-    } catch (e) {
-      return '';
-    }
+  function renderAdminPrintTop3Card(cardCfg) {
+    const rows = cardCfg.items || [];
+    const maxVal = Math.max(...rows.map(x => x.value), 1);
+    const medalColors = [
+      { bg: cardCfg.accent, text: '#ffffff' },
+      { bg: cardCfg.accentMid, text: '#ffffff' },
+      { bg: cardCfg.accentSoft, text: cardCfg.accentText }
+    ];
+    return `
+      <div class="rounded-lg overflow-hidden border print-break-inside-avoid" style="border-color: ${cardCfg.borderColor}; background-color: #ffffff;">
+        <div class="px-2.5 py-1.5 flex items-center justify-between gap-2" style="background-color: ${cardCfg.headerBg}; border-bottom: 2px solid ${cardCfg.accent};">
+          <span class="text-[12.5pt] font-bold" style="color: ${cardCfg.accentText};">${esc(cardCfg.title)}</span>
+          <span class="text-[10.5pt] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style="background-color: #ffffff; color: ${cardCfg.accentText}; border: 1px solid ${cardCfg.borderColor};">${esc(cardCfg.badge)}</span>
+        </div>
+        <div class="p-2 space-y-1.5">
+          ${rows.length ? rows.map((item, idx) => {
+            const pct = Math.max(8, Math.round((item.value / maxVal) * 100));
+            const medal = medalColors[idx] || medalColors[2];
+            const deptName = item.department ? `${item.department}` : (item.group || '');
+            return `
+              <div class="rounded px-2 py-1" style="background-color: ${idx === 0 ? cardCfg.rowHighlight : '#f8fafc'}; border: 1px solid #e2e8f0;">
+                <div class="flex items-center justify-between gap-2 leading-tight">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11pt] font-bold flex-shrink-0" style="background-color: ${medal.bg}; color: ${medal.text};">${idx + 1}</span>
+                    <div class="min-w-0 truncate">
+                      <span class="text-[12pt] font-bold text-slate-900">${esc(item.fullName)}</span>
+                      ${deptName ? `<span class="text-[10pt] text-slate-500"> (${esc(deptName)})</span>` : ''}
+                    </div>
+                  </div>
+                  <span class="text-[11.5pt] font-bold whitespace-nowrap flex-shrink-0" style="color: ${cardCfg.accentText};">${esc(item.valueLabel)}</span>
+                </div>
+                <div class="mt-1 h-1.5 w-full rounded-full overflow-hidden" style="background-color: #e2e8f0;">
+                  <div class="h-full rounded-full" style="width: ${pct}%; background-color: ${idx === 0 ? cardCfg.accent : (idx === 1 ? cardCfg.accentMid : cardCfg.accentLight)};"></div>
+                </div>
+              </div>
+            `;
+          }).join('') : `<div class="py-3 text-center text-[11.5pt] text-slate-500">${esc(cardCfg.emptyText)}</div>`}
+        </div>
+      </div>
+    `;
   }
 
-  function renderAdminPrintArea(settleAnimations = false) {
+  function renderAdminPrintMonthlyCard(monthlyRows) {
+    const rows = monthlyRows || [];
+    const maxTotal = Math.max(...rows.map(m => m.late + m.noScan + m.leaveDays + m.absent), 1);
+    return `
+      <div class="rounded-lg overflow-hidden border border-[#93c5fd] print-break-inside-avoid" style="background-color: #ffffff;">
+        <div class="px-2.5 py-1.5 flex items-center justify-between gap-2" style="background-color: #eff6ff; border-bottom: 2px solid #1e3a8a;">
+          <span class="text-[12.5pt] font-bold text-[#1e3a8a]">สถิติภาพรวมรายเดือนทั้งโรงเรียน</span>
+          <span class="text-[10pt] font-bold px-2 py-0.5 rounded-full bg-white text-[#1e3a8a] border border-[#bfdbfe]">${rows.length} เดือน</span>
+        </div>
+        <div class="p-2 space-y-1.5">
+          ${rows.length ? rows.map(m => {
+            const pLate = Math.round((m.late / maxTotal) * 100);
+            const pNoScan = Math.round((m.noScan / maxTotal) * 100);
+            const pLeave = Math.round((m.leaveDays / maxTotal) * 100);
+            const pAbsent = Math.round((m.absent / maxTotal) * 100);
+            return `
+              <div class="rounded px-2 py-1 bg-[#f8fafc] border border-[#e2e8f0]">
+                <div class="flex items-center justify-between gap-2 leading-tight text-[11.5pt]">
+                  <strong class="text-[#1e3a8a] whitespace-nowrap">${esc(m.label)}</strong>
+                  <span class="text-[10.5pt] whitespace-nowrap">
+                    <span class="text-[#b45309] font-bold">สาย ${m.late}</span> •
+                    <span class="text-[#4338ca] font-bold">ไม่สแกน ${m.noScan}</span> •
+                    <span class="text-[#be123c] font-bold">ลา ${formatNumber(m.leaveDays)}ว</span> •
+                    <span class="text-[#dc2626] font-bold">ขาด ${m.absent}</span>
+                  </span>
+                </div>
+                <div class="mt-1 h-2 w-full rounded-full overflow-hidden flex bg-[#e2e8f0]">
+                  ${pLate > 0 ? `<div style="width: ${pLate}%; background-color: #f59e0b;"></div>` : ''}
+                  ${pNoScan > 0 ? `<div style="width: ${pNoScan}%; background-color: #6366f1;"></div>` : ''}
+                  ${pLeave > 0 ? `<div style="width: ${pLeave}%; background-color: #f43f5e;"></div>` : ''}
+                  ${pAbsent > 0 ? `<div style="width: ${pAbsent}%; background-color: #dc2626;"></div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('') : `<div class="py-3 text-center text-[11.5pt] text-slate-500">ไม่มีข้อมูลรายเดือนในช่วงที่เลือก</div>`}
+          <div class="flex flex-wrap items-center gap-3 pt-0.5 text-[10pt] text-slate-700">
+            <span class="inline-flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background-color:#f59e0b;"></span>มาสาย</span>
+            <span class="inline-flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background-color:#6366f1;"></span>ไม่สแกน</span>
+            <span class="inline-flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background-color:#f43f5e;"></span>วันลาสะสม</span>
+            <span class="inline-flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background-color:#dc2626;"></span>ขาดราชการ</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAdminPrintArea(_settleAnimations = false) {
     const el = $('ad-print-area');
     const snap = state.lastAdminOverviewSnapshot;
     if (!el || !snap) return;
 
     const k = snap.kpi;
     const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-    const monthlyImg = getChartSnapshotDataUri('adMonthly', settleAnimations);
-    const issuesImg = getChartSnapshotDataUri('adIssues', settleAnimations);
+    const logoUri = createDefaultKvkEmblemDataUri();
+    const r3 = snap.rankedTop3 || {};
+
+    const totalIssuesCard = {
+      title: 'บุคลากรที่มีรายการรวมสูงสุด (3 อันดับแรก)',
+      badge: r3.allIssues ? `พบ ${r3.allIssues.totalPeople} คน • รวม ${formatNumber(r3.allIssues.totalSum)} รายการ` : 'ไม่มีรายการ',
+      items: r3.allIssues ? r3.allIssues.top3 : [],
+      emptyText: 'ไม่พบรายการในช่วงที่เลือก',
+      accent: '#1e3a8a',
+      accentMid: '#2563eb',
+      accentLight: '#60a5fa',
+      accentSoft: '#dbeafe',
+      accentText: '#1e3a8a',
+      headerBg: '#eff6ff',
+      borderColor: '#93c5fd',
+      rowHighlight: '#eff6ff'
+    };
 
     const rankedCards = [
-      { key: 'adTopAbsent', title: 'ขาดราชการมากสุด (ขาด / -)', summaryElId: 'ad-top-absent-summary', emptyText: 'ไม่พบรายการขาดราชการในช่วงที่เลือก' },
-      { key: 'adTopLeave', title: 'ลามากสุด (ลากิจ + ลาป่วย + ลาอื่น)', summaryElId: 'ad-top-leave-summary', emptyText: 'ไม่พบรายการวันลาในช่วงที่เลือก' },
-      { key: 'adTopLate', title: 'มาสายมากสุด (ส)', summaryElId: 'ad-top-late-summary', emptyText: 'ไม่พบรายการมาสายในช่วงที่เลือก' },
-      { key: 'adTopNoOut', title: 'ไม่สแกนออกมากสุด (มอ)', summaryElId: 'ad-top-noout-summary', emptyText: 'ไม่พบรายการไม่สแกนออกในช่วงที่เลือก' }
-    ].map(c => {
-      const img = getChartSnapshotDataUri(c.key, settleAnimations);
-      const badge = $(c.summaryElId) ? $(c.summaryElId).textContent : '';
-      return { ...c, img, badge };
-    });
+      {
+        title: 'ขาดราชการมากสุด (ขาด / -) • 3 อันดับแรก',
+        badge: r3.absent ? `พบ ${r3.absent.totalPeople} คน • รวม ${r3.absent.totalSum.toLocaleString()} ครั้ง` : 'ไม่มีรายการ (ครั้ง)',
+        items: r3.absent ? r3.absent.top3 : [],
+        emptyText: 'ไม่พบรายการขาดราชการในช่วงที่เลือก',
+        accent: '#dc2626',
+        accentMid: '#ef4444',
+        accentLight: '#f87171',
+        accentSoft: '#fee2e2',
+        accentText: '#b91c1c',
+        headerBg: '#fef2f2',
+        borderColor: '#fca5a5',
+        rowHighlight: '#fef2f2'
+      },
+      {
+        title: 'ลามากสุด (ลากิจ + ป่วย + อื่น) • 3 อันดับแรก',
+        badge: r3.leave ? `พบ ${r3.leave.totalPeople} คน • รวม ${formatNumber(r3.leave.totalSum)} วัน` : 'ไม่มีรายการ (วัน)',
+        items: r3.leave ? r3.leave.top3 : [],
+        emptyText: 'ไม่พบรายการวันลาในช่วงที่เลือก',
+        accent: '#db2777',
+        accentMid: '#ec4899',
+        accentLight: '#f472b6',
+        accentSoft: '#fce7f3',
+        accentText: '#be185d',
+        headerBg: '#fdf2f8',
+        borderColor: '#f9a8d4',
+        rowHighlight: '#fdf2f8'
+      },
+      {
+        title: 'มาสายมากสุด (ส) • 3 อันดับแรก',
+        badge: r3.late ? `พบ ${r3.late.totalPeople} คน • รวม ${r3.late.totalSum.toLocaleString()} ครั้ง` : 'ไม่มีรายการ (ครั้ง)',
+        items: r3.late ? r3.late.top3 : [],
+        emptyText: 'ไม่พบรายการมาสายในช่วงที่เลือก',
+        accent: '#d97706',
+        accentMid: '#f59e0b',
+        accentLight: '#fbbf24',
+        accentSoft: '#fef3c7',
+        accentText: '#b45309',
+        headerBg: '#fffbeb',
+        borderColor: '#fcd34d',
+        rowHighlight: '#fffbeb'
+      },
+      {
+        title: 'ไม่สแกนออกมากสุด (มอ) • 3 อันดับแรก',
+        badge: r3.noOut ? `พบ ${r3.noOut.totalPeople} คน • รวม ${r3.noOut.totalSum.toLocaleString()} ครั้ง` : 'ไม่มีรายการ (ครั้ง)',
+        items: r3.noOut ? r3.noOut.top3 : [],
+        emptyText: 'ไม่พบรายการไม่สแกนออกในช่วงที่เลือก',
+        accent: '#4f46e5',
+        accentMid: '#6366f1',
+        accentLight: '#818cf8',
+        accentSoft: '#e0e7ff',
+        accentText: '#4338ca',
+        headerBg: '#eef2ff',
+        borderColor: '#a5b4fc',
+        rowHighlight: '#eef2ff'
+      }
+    ];
 
     el.innerHTML = `
-      <div class="font-doc border-b-2 border-black pb-3 mb-3 flex items-start justify-between gap-4">
-        <div class="min-w-0">
-          <h1 class="text-[19pt] font-bold leading-tight">รายงานสรุปสถิติวันลาและการลงเวลาปฏิบัติราชการภาพรวมทั้งโรงเรียน</h1>
-          <p class="text-[14pt] leading-snug mt-0.5">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
-        </div>
-        <div class="text-right text-[12.5pt] whitespace-nowrap flex-shrink-0 leading-snug">
-          <p><strong>ภาคเรียน:</strong> ${esc(snap.termName || '-')}</p>
-          <p><strong>ช่วงข้อมูล:</strong> ${esc(snap.scopeLabel)}</p>
-          <p><strong>พิมพ์เมื่อ:</strong> ${esc(nowStr)}</p>
+      <div class="font-doc rounded-lg overflow-hidden border border-[#1e3a8a] mb-3" style="background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%); color: #ffffff; border-bottom: 4px solid #f59e0b;">
+        <div class="px-4 py-2.5 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-12 h-12 rounded-xl bg-white p-1 flex-shrink-0 flex items-center justify-center shadow">
+              <img src="${logoUri}" alt="ตราโรงเรียน" class="w-full h-full object-contain">
+            </div>
+            <div class="min-w-0">
+              <h1 class="text-[18.5pt] font-bold leading-tight text-white">รายงานสรุปสถิติวันลาและการลงเวลาปฏิบัติราชการภาพรวมทั้งโรงเรียน</h1>
+              <p class="text-[13.5pt] leading-snug mt-0.5 text-[#fde68a]">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
+            </div>
+          </div>
+          <div class="text-right text-[12pt] whitespace-nowrap flex-shrink-0 leading-snug bg-white/10 rounded px-2.5 py-1 border border-white/25">
+            <p><strong class="text-[#fde68a]">ภาคเรียน:</strong> ${esc(snap.termName || '-')}</p>
+            <p><strong class="text-[#fde68a]">ช่วงข้อมูล:</strong> ${esc(snap.scopeLabel)}</p>
+            <p><strong class="text-[#fde68a]">พิมพ์เมื่อ:</strong> ${esc(nowStr)}</p>
+          </div>
         </div>
       </div>
 
       <!-- ส่วนที่ 1: ข้อมูลสถิติด้านบน -->
-      <div class="font-doc mb-3 px-3 py-1.5 bg-slate-100 border border-slate-400 rounded text-[13pt] flex flex-wrap items-center justify-between gap-2">
-        <span><strong>ตัวกรองกลุ่ม:</strong> ${esc(snap.groupVal === 'all' ? 'ทั้งหมด' : snap.groupVal)}</span>
-        <span><strong>กลุ่มสาระฯ / ฝ่าย:</strong> ${esc(snap.deptVal === 'all' ? 'ทุกกลุ่มสาระฯ / ผู้บริหาร' : snap.deptVal)}</span>
+      <div class="font-doc mb-2.5 px-3 py-1.5 rounded border border-[#93c5fd] text-[13pt] flex flex-wrap items-center justify-between gap-2" style="background-color: #eff6ff; border-left: 5px solid #1e3a8a;">
+        <span><strong class="text-[#1e3a8a]">ตัวกรองกลุ่ม:</strong> ${esc(snap.groupVal === 'all' ? 'ทั้งหมด' : snap.groupVal)}</span>
+        <span><strong class="text-[#1e3a8a]">กลุ่มสาระฯ / ฝ่าย:</strong> ${esc(snap.deptVal === 'all' ? 'ทุกกลุ่มสาระฯ / ผู้บริหาร' : snap.deptVal)}</span>
       </div>
 
       <div class="font-doc grid grid-cols-4 gap-2 mb-3 print-break-inside-avoid">
-        <div class="border border-slate-500 rounded p-2">
-          <div class="text-[12pt] text-slate-700 font-bold">บุคลากรในตัวกรอง</div>
-          <div class="text-[18pt] font-bold leading-tight">${k.staffCount} คน</div>
-          <div class="text-[11.5pt] text-slate-600">มาปกติ ${k.totalPresent.toLocaleString()} • ราชการ ${k.totalDuty.toLocaleString()}</div>
+        <div class="rounded-lg p-2 border border-[#93c5fd]" style="background-color: #eff6ff; border-left: 4px solid #1e3a8a;">
+          <div class="text-[11.5pt] text-[#1e3a8a] font-bold">บุคลากรในตัวกรอง</div>
+          <div class="text-[18pt] font-bold leading-tight text-[#1e3a8a]">${k.staffCount} คน</div>
+          <div class="text-[11pt] text-[#334155]">มาปกติ ${k.totalPresent.toLocaleString()} • ราชการ ${k.totalDuty.toLocaleString()}</div>
         </div>
-        <div class="border border-slate-500 rounded p-2">
-          <div class="text-[12pt] text-slate-700 font-bold">วันลารวม</div>
-          <div class="text-[18pt] font-bold leading-tight">${formatNumber(k.totalLeaveDays)} วัน</div>
-          <div class="text-[11.5pt] text-slate-600">รวม ${k.totalLeaveCount.toLocaleString()} ครั้ง</div>
+        <div class="rounded-lg p-2 border border-[#fda4af]" style="background-color: #fff1f2; border-left: 4px solid #e11d48;">
+          <div class="text-[11.5pt] text-[#be123c] font-bold">วันลารวม</div>
+          <div class="text-[18pt] font-bold leading-tight text-[#be123c]">${formatNumber(k.totalLeaveDays)} วัน</div>
+          <div class="text-[11pt] text-[#334155]">รวม ${k.totalLeaveCount.toLocaleString()} ครั้ง</div>
         </div>
-        <div class="border border-slate-500 rounded p-2">
-          <div class="text-[12pt] text-slate-700 font-bold">มาสาย &amp; ไม่สแกนนิ้ว</div>
-          <div class="text-[18pt] font-bold leading-tight">${(k.totalLate + k.totalNoIn + k.totalNoOut).toLocaleString()} ครั้ง</div>
-          <div class="text-[11.5pt] text-slate-600">สาย ${k.totalLate} • มข ${k.totalNoIn} • มอ ${k.totalNoOut} • ขอออก ${k.totalEarlyOut}</div>
+        <div class="rounded-lg p-2 border border-[#fcd34d]" style="background-color: #fffbeb; border-left: 4px solid #d97706;">
+          <div class="text-[11.5pt] text-[#b45309] font-bold">มาสาย &amp; ไม่สแกนนิ้ว</div>
+          <div class="text-[18pt] font-bold leading-tight text-[#b45309]">${(k.totalLate + k.totalNoIn + k.totalNoOut).toLocaleString()} ครั้ง</div>
+          <div class="text-[11pt] text-[#334155]">สาย ${k.totalLate} • มข ${k.totalNoIn} • มอ ${k.totalNoOut} • ขอออก ${k.totalEarlyOut}</div>
         </div>
-        <div class="border border-slate-500 rounded p-2">
-          <div class="text-[12pt] text-slate-700 font-bold">ขาดราชการรวม (-)</div>
-          <div class="text-[18pt] font-bold leading-tight">${k.totalAbsent.toLocaleString()} ครั้ง</div>
-          <div class="text-[11.5pt] text-slate-600">สรุปภาพรวมทั้งโรงเรียน</div>
+        <div class="rounded-lg p-2 border border-[#fca5a5]" style="background-color: #fef2f2; border-left: 4px solid #dc2626;">
+          <div class="text-[11.5pt] text-[#b91c1c] font-bold">ขาดราชการรวม (-)</div>
+          <div class="text-[18pt] font-bold leading-tight text-[#dc2626]">${k.totalAbsent.toLocaleString()} ครั้ง</div>
+          <div class="text-[11pt] text-[#334155]">สรุปภาพรวมทั้งโรงเรียน</div>
         </div>
       </div>
 
       <!-- สรุปแยกตามกลุ่มสาระฯ / ผู้บริหาร (E-Profile) -->
       <div class="font-doc mb-3 print-break-inside-avoid">
-        <h2 class="text-[15pt] font-bold mb-1">สรุปสถิติแยกตามกลุ่มสาระฯ / ผู้บริหาร (KBS E-Profile)</h2>
-        <table class="w-full border-collapse border border-slate-500 text-[12pt] leading-tight">
+        <h2 class="text-[14.5pt] font-bold mb-1 text-[#1e3a8a] flex items-center gap-1.5">
+          <span class="inline-block w-1.5 h-4 rounded-full" style="background-color: #f59e0b;"></span>
+          <span>สรุปสถิติแยกตามกลุ่มสาระฯ / ผู้บริหาร (KBS E-Profile)</span>
+        </h2>
+        <table class="w-full border-collapse border border-[#94a3b8] text-[12pt] leading-tight">
           <thead>
-            <tr class="bg-slate-200">
-              <th class="border border-slate-500 px-2 py-1 text-left">กลุ่มสาระฯ / ฝ่าย</th>
-              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">จำนวน (คน)</th>
-              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">วันลารวม (วัน)</th>
-              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">มาสาย (ครั้ง)</th>
-              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">ขาดราชการ (ครั้ง)</th>
+            <tr style="background-color: #1e3a8a; color: #ffffff;">
+              <th class="border border-[#475569] px-2 py-1 text-left">กลุ่มสาระฯ / ฝ่าย</th>
+              <th class="border border-[#475569] px-2 py-1 text-center whitespace-nowrap">จำนวน (คน)</th>
+              <th class="border border-[#475569] px-2 py-1 text-center whitespace-nowrap">วันลารวม (วัน)</th>
+              <th class="border border-[#475569] px-2 py-1 text-center whitespace-nowrap">มาสาย (ครั้ง)</th>
+              <th class="border border-[#475569] px-2 py-1 text-center whitespace-nowrap">ขาดราชการ (ครั้ง)</th>
             </tr>
           </thead>
           <tbody>
-            ${snap.deptSummaryRows.map(b => `
-              <tr>
-                <td class="border border-slate-500 px-2 py-1 font-bold">${esc(b.dept)}</td>
-                <td class="border border-slate-500 px-2 py-1 text-center">${b.count}</td>
-                <td class="border border-slate-500 px-2 py-1 text-center">${formatNumber(b.leaveDays)}</td>
-                <td class="border border-slate-500 px-2 py-1 text-center">${b.late}</td>
-                <td class="border border-slate-500 px-2 py-1 text-center">${b.absent}</td>
+            ${snap.deptSummaryRows.map((b, idx) => `
+              <tr style="background-color: ${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+                <td class="border border-[#94a3b8] px-2 py-1 font-bold text-[#0f172a]">${esc(b.dept)}</td>
+                <td class="border border-[#94a3b8] px-2 py-1 text-center font-bold text-[#1e3a8a]">${b.count}</td>
+                <td class="border border-[#94a3b8] px-2 py-1 text-center font-bold ${b.leaveDays > 0 ? 'text-[#be123c]' : 'text-slate-500'}">${formatNumber(b.leaveDays)}</td>
+                <td class="border border-[#94a3b8] px-2 py-1 text-center font-bold ${b.late > 0 ? 'text-[#b45309]' : 'text-slate-500'}">${b.late}</td>
+                <td class="border border-[#94a3b8] px-2 py-1 text-center font-bold ${b.absent > 0 ? 'text-[#dc2626]' : 'text-slate-500'}">${b.absent}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
       </div>
 
-      ${(monthlyImg || issuesImg) ? `
-      <div class="font-doc grid grid-cols-2 gap-3 mb-3 print-break-inside-avoid">
-        ${monthlyImg ? `<div class="border border-slate-400 rounded p-2"><div class="text-[13pt] font-bold mb-1">สถิติภาพรวมรายเดือนทั้งโรงเรียน</div><img src="${monthlyImg}" alt="กราฟรายเดือน" class="w-full h-auto max-h-48 object-contain"></div>` : ''}
-        ${issuesImg ? `<div class="border border-slate-400 rounded p-2"><div class="text-[13pt] font-bold mb-1">บุคลากรที่มีรายการรวมสูงสุด</div><img src="${issuesImg}" alt="กราฟรวมสูงสุด" class="w-full h-auto max-h-48 object-contain"></div>` : ''}
+      <!-- สถิติภาพรวมรายเดือน + 3 อันดับแรกสูงสุด -->
+      <div class="font-doc grid grid-cols-2 gap-2.5 mb-2.5 print-break-inside-avoid">
+        ${renderAdminPrintMonthlyCard(snap.monthlySummary)}
+        ${renderAdminPrintTop3Card(totalIssuesCard)}
       </div>
-      ` : ''}
 
-      <div class="font-doc grid grid-cols-2 gap-3 mb-4 print-break-inside-avoid">
-        ${rankedCards.map(c => `
-          <div class="border border-slate-400 rounded p-2 print-break-inside-avoid">
-            <div class="flex items-center justify-between gap-2 mb-1">
-              <span class="text-[13pt] font-bold">${esc(c.title)}</span>
-              <span class="text-[11pt] font-bold text-slate-700">${esc(c.badge)}</span>
-            </div>
-            ${c.img
-              ? `<img src="${c.img}" alt="${esc(c.title)}" class="w-full h-auto max-h-52 object-contain">`
-              : `<div class="py-5 text-center text-[12pt] text-slate-600 border border-dashed border-slate-300 rounded">${esc(c.emptyText)}</div>`}
-          </div>
-        `).join('')}
+      <div class="font-doc grid grid-cols-2 gap-2.5 mb-4 print-break-inside-avoid">
+        ${rankedCards.map(renderAdminPrintTop3Card).join('')}
       </div>
 
       <!-- ส่วนที่ 2: ตารางข้อมูลบุคลากรทั้งหมด -->
       <div class="font-doc print-break-before">
-        <div class="border-b border-black pb-1.5 mb-2 flex items-baseline justify-between gap-2">
-          <h2 class="text-[16pt] font-bold">ตารางสรุปข้อมูลบุคลากรทั้งหมด (${snap.computedRows.length} คน)</h2>
-          <span class="text-[12pt] whitespace-nowrap">${esc(snap.termName)} • ${esc(snap.scopeLabel)}</span>
+        <div class="px-3 py-1.5 rounded-lg mb-2 flex items-baseline justify-between gap-2" style="background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; border-bottom: 3px solid #f59e0b;">
+          <h2 class="text-[15.5pt] font-bold text-white">ตารางสรุปข้อมูลบุคลากรทั้งหมด (${snap.computedRows.length} คน)</h2>
+          <span class="text-[12pt] whitespace-nowrap text-[#fde68a]">${esc(snap.termName)} • ${esc(snap.scopeLabel)}</span>
         </div>
-        <table class="w-full border-collapse border border-slate-600 text-[11.5pt] leading-tight mb-3">
+        <table class="w-full border-collapse border border-[#94a3b8] text-[11.5pt] leading-tight mb-3">
           <thead>
-            <tr class="bg-slate-200">
-              <th class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">#</th>
-              <th class="border border-slate-600 px-2 py-1.5 text-left">ชื่อ-สกุล / ตำแหน่ง / กลุ่มสาระฯ</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">มาปกติ</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ราชการ</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ลากิจ</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ลาป่วย</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ลาอื่น</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">รวมลา</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">มข</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">มอ</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">สาย</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ขาด</th>
-              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ขอออก</th>
+            <tr style="background-color: #1e3a8a; color: #ffffff;">
+              <th class="border border-[#475569] px-1.5 py-1.5 text-center whitespace-nowrap">#</th>
+              <th class="border border-[#475569] px-2 py-1.5 text-left">ชื่อ-สกุล / ตำแหน่ง / กลุ่มสาระฯ</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">มาปกติ</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">ราชการ</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">ลากิจ</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">ลาป่วย</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">ลาอื่น</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">รวมลา</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">มข</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">มอ</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">สาย</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">ขาด</th>
+              <th class="border border-[#475569] px-1 py-1.5 text-center whitespace-nowrap">ขอออก</th>
             </tr>
           </thead>
           <tbody>
-            ${snap.computedRows.map(({ record, stats }) => `
-              <tr>
-                <td class="border border-slate-600 px-1.5 py-1 text-center">${record.seq}</td>
-                <td class="border border-slate-600 px-2 py-1">
-                  <div class="font-bold leading-tight">${esc(record.name)}</div>
-                  <div class="text-[10.5pt] text-slate-700 leading-tight">${esc(record.position)} • ${esc(resolveStaffDepartment(record))}</div>
+            ${snap.computedRows.map(({ record, stats }, idx) => `
+              <tr style="background-color: ${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+                <td class="border border-[#94a3b8] px-1.5 py-1 text-center text-slate-600">${record.seq}</td>
+                <td class="border border-[#94a3b8] px-2 py-1">
+                  <div class="font-bold leading-tight text-[#0f172a]">${esc(record.name)}</div>
+                  <div class="text-[10.5pt] text-[#475569] leading-tight">${esc(record.position)} • <span class="text-[#1e3a8a]">${esc(resolveStaffDepartment(record))}</span></div>
                 </td>
-                <td class="border border-slate-600 px-1 py-1 text-center">${stats.present}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center">${stats.duty}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center whitespace-nowrap">${stats.personalCount}/${formatNumber(stats.personalDays)}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center whitespace-nowrap">${stats.sickCount}/${formatNumber(stats.sickDays)}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center whitespace-nowrap">${stats.otherLeaveCount}/${formatNumber(stats.otherLeaveDays)}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center font-bold whitespace-nowrap">${stats.totalLeaveCount}/${formatNumber(stats.totalLeaveDays)}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center">${stats.noIn}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center">${stats.noOut}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center">${stats.late}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center font-bold">${stats.absent}</td>
-                <td class="border border-slate-600 px-1 py-1 text-center">${stats.earlyOut}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center font-bold text-[#047857]">${stats.present}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center font-bold text-[#0369a1]">${stats.duty}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center whitespace-nowrap">${stats.personalCount}/${formatNumber(stats.personalDays)}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center whitespace-nowrap">${stats.sickCount}/${formatNumber(stats.sickDays)}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center whitespace-nowrap">${stats.otherLeaveCount}/${formatNumber(stats.otherLeaveDays)}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center font-bold whitespace-nowrap text-[#be123c]" style="background-color: #fff1f2;">${stats.totalLeaveCount}/${formatNumber(stats.totalLeaveDays)}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center ${stats.noIn ? 'font-bold text-[#6d28d9]' : 'text-slate-400'}">${stats.noIn}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center ${stats.noOut ? 'font-bold text-[#4338ca]' : 'text-slate-400'}">${stats.noOut}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center ${stats.late ? 'font-bold text-[#b45309]' : 'text-slate-400'}">${stats.late}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center font-bold ${stats.absent ? 'text-[#dc2626]' : 'text-slate-400'}">${stats.absent}</td>
+                <td class="border border-[#94a3b8] px-1 py-1 text-center ${stats.earlyOut ? 'font-bold text-[#0f766e]' : 'text-slate-400'}">${stats.earlyOut}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
-        <p class="text-[12pt] text-slate-700">* หมายเหตุ: มข = ไม่สแกนเข้า, มอ = ไม่สแกนออก (รายการควบ เช่น ส/มอ นับเข้าทั้งช่องสายและไม่สแกนออก) • ค่าลากิจ/ป่วย/อื่น แสดงเป็น ครั้ง/วัน</p>
+        <p class="text-[12pt] text-[#475569]">* หมายเหตุ: มข = ไม่สแกนเข้า, มอ = ไม่สแกนออก (รายการควบ เช่น ส/มอ นับเข้าทั้งช่องสายและไม่สแกนออก) • ค่าลากิจ/ป่วย/อื่น แสดงเป็น ครั้ง/วัน</p>
       </div>
     `;
   }
@@ -2195,6 +2410,7 @@
         shortName: stripRankName(x.record.name),
         position: x.record.position,
         group: x.record.group,
+        department: resolveStaffDepartment(x.record),
         value: Number(scoreFn(x.stats) || 0),
         valueLabel: valueLabelFn(x.stats)
       }))
@@ -2383,12 +2599,13 @@
 
     const rankLimit = Number($('ad-rank-limit-select') ? $('ad-rank-limit-select').value : 10) || 10;
 
-    const topIssues = buildRankedMetricList(
-      computedRows,
-      10,
+    const makeAllRanked = (scoreFn, valueLabelFn) => buildRankedMetricList(computedRows, computedRows.length, scoreFn, valueLabelFn);
+
+    const allIssuesList = makeAllRanked(
       s => s.late + s.noIn + s.noOut + s.absent + s.totalLeaveDays,
       s => `${formatNumber(s.late + s.noIn + s.noOut + s.absent + s.totalLeaveDays)} รายการ`
     );
+    const topIssues = allIssuesList.slice(0, Math.max(rankLimit, 10));
 
     renderRankedBarChart('adIssues', 'ad-chart-issues', null, null, null, topIssues, {
       datasetLabel: 'รวมทุกรายการ',
@@ -2399,7 +2616,8 @@
       textColor: '#1e3a8a'
     });
 
-    const topAbsent = buildRankedMetricList(computedRows, rankLimit, s => s.absent, s => `${s.absent} ครั้ง`);
+    const allAbsentList = makeAllRanked(s => s.absent, s => `${s.absent} ครั้ง`);
+    const topAbsent = allAbsentList.slice(0, rankLimit);
     renderRankedBarChart('adTopAbsent', 'ad-chart-top-absent', 'ad-rank-wrap-absent', 'ad-top-absent-empty', 'ad-top-absent-summary', topAbsent, {
       datasetLabel: 'ขาดราชการ',
       unit: 'ครั้ง',
@@ -2409,12 +2627,11 @@
       textColor: '#b91c1c'
     });
 
-    const topLeave = buildRankedMetricList(
-      computedRows,
-      rankLimit,
+    const allLeaveList = makeAllRanked(
       s => s.totalLeaveDays,
       s => `${formatNumber(s.totalLeaveDays)} วัน (${s.totalLeaveCount} ครั้ง)`
     );
+    const topLeave = allLeaveList.slice(0, rankLimit);
     renderRankedBarChart('adTopLeave', 'ad-chart-top-leave', 'ad-rank-wrap-leave', 'ad-top-leave-empty', 'ad-top-leave-summary', topLeave, {
       datasetLabel: 'วันลารวม',
       unit: 'วัน',
@@ -2425,7 +2642,8 @@
       textColor: '#be185d'
     });
 
-    const topLate = buildRankedMetricList(computedRows, rankLimit, s => s.late, s => `${s.late} ครั้ง`);
+    const allLateList = makeAllRanked(s => s.late, s => `${s.late} ครั้ง`);
+    const topLate = allLateList.slice(0, rankLimit);
     renderRankedBarChart('adTopLate', 'ad-chart-top-late', 'ad-rank-wrap-late', 'ad-top-late-empty', 'ad-top-late-summary', topLate, {
       datasetLabel: 'มาสาย',
       unit: 'ครั้ง',
@@ -2435,7 +2653,8 @@
       textColor: '#b45309'
     });
 
-    const topNoOut = buildRankedMetricList(computedRows, rankLimit, s => s.noOut, s => `${s.noOut} ครั้ง`);
+    const allNoOutList = makeAllRanked(s => s.noOut, s => `${s.noOut} ครั้ง`);
+    const topNoOut = allNoOutList.slice(0, rankLimit);
     renderRankedBarChart('adTopNoOut', 'ad-chart-top-noout', 'ad-rank-wrap-noout', 'ad-top-noout-empty', 'ad-top-noout-summary', topNoOut, {
       datasetLabel: 'ไม่สแกนออก (มอ)',
       unit: 'ครั้ง',
@@ -2444,6 +2663,34 @@
       colorMuted: '#c7d2fe',
       textColor: '#4338ca'
     });
+
+    const summarizeRank = arr => ({
+      totalPeople: arr.length,
+      totalSum: arr.reduce((acc, x) => acc + x.value, 0),
+      top3: arr.slice(0, 3)
+    });
+
+    const absentData = activeMonths.map(m => {
+      const sp = getSpecForMonth(m);
+      return filteredRecords.reduce((acc, r) => acc + calcMonthStats(r.months[m.id], sp.startDay, sp.endDay).absent, 0);
+    });
+
+    return {
+      monthlySummary: activeMonths.map((m, idx) => ({
+        label: labels[idx] || m.shortLabel,
+        late: lateData[idx] || 0,
+        noScan: noScanData[idx] || 0,
+        leaveDays: leaveData[idx] || 0,
+        absent: absentData[idx] || 0
+      })),
+      rankedTop3: {
+        allIssues: summarizeRank(allIssuesList),
+        absent: summarizeRank(allAbsentList),
+        leave: summarizeRank(allLeaveList),
+        late: summarizeRank(allLateList),
+        noOut: summarizeRank(allNoOutList)
+      }
+    };
   }
 
   function openAdminStaffDetailModal(staffKey) {
@@ -2477,16 +2724,17 @@
             <div class="text-rose-600">อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div class="text-slate-400">ส.</div>
           </div>
           <div id="modal-cal-grid" class="grid grid-cols-7 gap-1.5"></div>
+          <div id="modal-cal-legend" class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap gap-1.5 text-[11px]"></div>
         </div>
       `;
       renderCalendarForContainer(
         rec,
         currentModalMonth,
         termMonths,
-        $('modal-cal-title'),
-        $('modal-cal-switcher'),
-        $('modal-cal-grid'),
-        null,
+        body.querySelector('#modal-cal-title'),
+        body.querySelector('#modal-cal-switcher'),
+        body.querySelector('#modal-cal-grid'),
+        body.querySelector('#modal-cal-legend'),
         newId => {
           currentModalMonth = newId;
           renderModalContent();
@@ -3172,6 +3420,11 @@
     $('btn-ad-print-all').addEventListener('click', () => {
       renderAdminPrintArea(true);
       window.print();
+    });
+    window.addEventListener('beforeprint', () => {
+      if (state.mode === 'admin' && state.lastAdminOverviewSnapshot) {
+        renderAdminPrintArea(true);
+      }
     });
     $('btn-close-staff-modal').addEventListener('click', () => $('modal-staff-detail').classList.add('hidden'));
     $('modal-staff-detail').addEventListener('click', e => {
