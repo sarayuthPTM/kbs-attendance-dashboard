@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#1e3a8a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link id="app-favicon" rel="icon" type="image/svg+xml" href="">
   <title>ระบบแดชบอร์ดสรุปวันลาและการลงเวลาปฏิบัติราชการ | โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</title>
 
   <!-- Google Fonts: Prompt & Sarabun + TH Sarabun New (ฟอนต์สารบรรณราชการ) -->
@@ -674,6 +675,30 @@
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                 <span>พิมพ์</span>
               </button>
+            </div>
+          </div>
+
+          <!-- Custom Date Range Selector (ติ๊กเลือกวันไหนถึงวันไหน) -->
+          <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <label for="ad-use-date-range" class="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input id="ad-use-date-range" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-kbs-navy focus:ring-blue-300">
+              <span class="text-xs font-bold text-kbs-navyDark">ติ๊กเลือกช่วงวันที่แบบกำหนดเอง (ตั้งแต่วันไหน ถึง วันไหน)</span>
+            </label>
+
+            <div id="ad-date-range-bar" class="hidden flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500">ตั้งแต่:</span>
+                <input id="ad-date-start" type="date" class="rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold bg-slate-50 focus:bg-white focus:border-kbs-navy outline-none">
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500">ถึง:</span>
+                <input id="ad-date-end" type="date" class="rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs font-semibold bg-slate-50 focus:bg-white focus:border-kbs-navy outline-none">
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button id="btn-preset-half1" type="button" class="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-kbs-navy text-[11px] font-bold transition">วันที่ 1–15</button>
+                <button id="btn-preset-half2" type="button" class="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-kbs-navy text-[11px] font-bold transition">16–สิ้นเดือน</button>
+              </div>
+              <span id="ad-date-range-label" class="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold"></span>
             </div>
           </div>
         </div>

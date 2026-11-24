@@ -96,46 +96,30 @@
   }
 
   function createDefaultKvkEmblemDataUri() {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400">
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
       <defs>
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#fef08a"/>
-          <stop offset="35%" stop-color="#facc15"/>
-          <stop offset="70%" stop-color="#eab308"/>
-          <stop offset="100%" stop-color="#ca8a04"/>
+        <radialGradient id="s3bg" cx="0.35" cy="0.3" r="0.75">
+          <stop offset="0%" stop-color="#1E3A8A"/>
+          <stop offset="60%" stop-color="#0F172A"/>
+          <stop offset="100%" stop-color="#060B19"/>
+        </radialGradient>
+        <linearGradient id="s3gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#FEF3C7"/>
+          <stop offset="50%" stop-color="#F59E0B"/>
+          <stop offset="100%" stop-color="#B45309"/>
         </linearGradient>
-        <linearGradient id="blueRibbon" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#172554"/>
-          <stop offset="50%" stop-color="#1e40af"/>
-          <stop offset="100%" stop-color="#172554"/>
+        <linearGradient id="s3cyan" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#E0F2FE"/>
+          <stop offset="100%" stop-color="#60A5FA"/>
         </linearGradient>
       </defs>
-      <path d="M160 12 L255 150 L240 205 L268 200 L276 265 C270 335 220 382 160 388 C100 382 50 335 44 265 L52 200 L80 205 L65 150 Z"
-            fill="#ffffff" stroke="#ffffff" stroke-width="18" stroke-linejoin="round"/>
-      <g stroke="url(#goldGrad)" stroke-width="6.5" stroke-linecap="round">
-        <line x1="160" y1="150" x2="160" y2="22"/>
-        <line x1="160" y1="150" x2="136" y2="28"/>
-        <line x1="160" y1="150" x2="114" y2="42"/>
-        <line x1="160" y1="150" x2="94" y2="62"/>
-        <line x1="160" y1="150" x2="78" y2="86"/>
-        <line x1="160" y1="150" x2="66" y2="114"/>
-        <line x1="160" y1="150" x2="58" y2="144"/>
-        <line x1="160" y1="150" x2="184" y2="28"/>
-        <line x1="160" y1="150" x2="206" y2="42"/>
-        <line x1="160" y1="150" x2="226" y2="62"/>
-        <line x1="160" y1="150" x2="242" y2="86"/>
-        <line x1="160" y1="150" x2="254" y2="114"/>
-        <line x1="160" y1="150" x2="262" y2="144"/>
-      </g>
-      <polygon points="160,35 148,110 172,110" fill="url(#goldGrad)" stroke="#92400e" stroke-width="1.5"/>
-      <ellipse cx="160" cy="118" rx="28" ry="8" fill="url(#goldGrad)" stroke="#92400e" stroke-width="1.5"/>
-      <ellipse cx="160" cy="132" rx="38" ry="10" fill="url(#goldGrad)" stroke="#92400e" stroke-width="1.5"/>
-      <ellipse cx="160" cy="148" rx="48" ry="12" fill="url(#goldGrad)" stroke="#92400e" stroke-width="1.8"/>
-      <circle cx="160" cy="252" r="68" fill="url(#goldGrad)" stroke="#92400e" stroke-width="2.5"/>
-      <path d="M122 252 C122 218, 198 218, 198 252 C198 286, 122 286, 122 252 Z" fill="none" stroke="#78350f" stroke-width="5"/>
-      <path d="M142 225 C165 215, 185 245, 160 270 C135 285, 155 305, 182 285" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
-      <path d="M55 215 L82 215 L82 270 C82 322 118 352 160 352 C202 352 238 322 238 270 L238 215 L265 215 L265 272 C265 340 216 380 160 380 C104 380 55 340 55 272 Z"
-            fill="url(#blueRibbon)" stroke="url(#goldGrad)" stroke-width="4.5" stroke-linejoin="round"/>
+      <circle cx="256" cy="256" r="232" fill="url(#s3bg)" stroke="url(#s3gold)" stroke-width="12"/>
+      <circle cx="256" cy="256" r="210" fill="none" stroke="#60A5FA" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M132 256 A124 124 0 1 1 256 380" fill="none" stroke="url(#s3cyan)" stroke-width="18" stroke-linecap="round" opacity="0.88"/>
+      <path d="M170 256 A86 86 0 1 1 324 308" fill="none" stroke="url(#s3gold)" stroke-width="18" stroke-linecap="round"/>
+      <path d="M210 256 A46 46 0 1 1 256 302" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round"/>
+      <path d="M236 256 L262 282 L348 184" fill="none" stroke="url(#s3gold)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="206" y="408" width="100" height="10" rx="5" fill="url(#s3gold)"/>
     </svg>`;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
@@ -420,7 +404,7 @@
   }
 
   // -------------------- 5. EXACT ATTENDANCE CALCULATION ENGINE --------------------
-  function calcMonthStats(monthData) {
+  function calcMonthStats(monthData, startDay = 1, endDay = 31) {
     const stats = {
       present: 0,
       duty: 0,
@@ -438,8 +422,10 @@
     };
     if (!monthData || !Array.isArray(monthData.days)) return stats;
 
-    for (const raw of monthData.days) {
-      const v = String(raw || '').trim();
+    const minIdx = Math.max(0, Number(startDay || 1) - 1);
+    const maxIdx = Math.min(monthData.days.length - 1, Number(endDay || monthData.days.length) - 1);
+    for (let idx = minIdx; idx <= maxIdx; idx++) {
+      const v = String(monthData.days[idx] || '').trim();
       if (!v) continue;
       if (v === '/') { stats.present++; continue; }
       if (v === 'ร') { stats.duty++; continue; }
@@ -482,18 +468,111 @@
     return stats;
   }
 
-  function sumStats(record, monthIds) {
+  function sumStats(record, monthIdsOrSpecs) {
     const total = calcMonthStats(null);
     total.otherLeaveCount = 0;
     total.otherLeaveDays = 0;
-    for (const mId of monthIds) {
+    for (const item of (monthIdsOrSpecs || [])) {
+      const isObj = typeof item === 'object' && item !== null;
+      const mId = isObj ? item.id : item;
+      const startDay = isObj && item.startDay ? item.startDay : 1;
+      const endDay = isObj && item.endDay ? item.endDay : 31;
       const mData = record && record.months ? record.months[mId] : null;
-      const ms = calcMonthStats(mData);
+      const ms = calcMonthStats(mData, startDay, endDay);
       Object.keys(ms).forEach(k => {
         total[k] = (total[k] || 0) + ms[k];
       });
     }
     return total;
+  }
+
+  function toIsoDate(yearCE, monthNum, dayNum) {
+    return `${String(yearCE).padStart(4, '0')}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+  }
+
+  function formatThaiShortDate(isoStr) {
+    const m = String(isoStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return isoStr || '';
+    const thMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const yBE = Number(m[1]) + 543;
+    const mn = thMonths[Number(m[2])] || m[2];
+    const d = Number(m[3]);
+    return `${d} ${mn} ${String(yBE).slice(-2)}`;
+  }
+
+  function getAdminOverviewScopeSpecs(selectedTerm, termMonths) {
+    const months = Array.isArray(termMonths) ? termMonths : [];
+    const scopeEl = $('ad-scope-select');
+    const useDateCb = $('ad-use-date-range');
+    const dateBar = $('ad-date-range-bar');
+    const startEl = $('ad-date-start');
+    const endEl = $('ad-date-end');
+    const labelEl = $('ad-date-range-label');
+
+    const scopeVal = scopeEl ? scopeEl.value : 'all';
+    const isDateRange = Boolean((useDateCb && useDateCb.checked) || scopeVal === 'custom_range');
+    if (dateBar) dateBar.classList.toggle('hidden', !isDateRange);
+
+    if (months.length > 0 && startEl && endEl) {
+      const firstM = months[0];
+      const lastM = months[months.length - 1];
+      const termMin = toIsoDate(firstM.yearCE, firstM.month, 1);
+      const termMax = toIsoDate(lastM.yearCE, lastM.month, lastM.daysInMonth);
+      startEl.min = termMin;
+      startEl.max = termMax;
+      endEl.min = termMin;
+      endEl.max = termMax;
+
+      const dataMonths = months.filter(m => m.hasData);
+      const defFirst = dataMonths.length ? dataMonths[0] : firstM;
+      const defLast = dataMonths.length ? dataMonths[dataMonths.length - 1] : lastM;
+      if (!startEl.value || startEl.value < termMin || startEl.value > termMax) {
+        startEl.value = toIsoDate(defFirst.yearCE, defFirst.month, 1);
+      }
+      if (!endEl.value || endEl.value < termMin || endEl.value > termMax) {
+        endEl.value = toIsoDate(defLast.yearCE, defLast.month, defLast.daysInMonth);
+      }
+      if (endEl.value < startEl.value) {
+        endEl.value = startEl.value;
+      }
+    }
+
+    if (isDateRange && startEl && endEl && startEl.value && endEl.value) {
+      const sIso = startEl.value;
+      const eIso = endEl.value;
+      const specs = [];
+      for (const m of months) {
+        const mStartIso = toIsoDate(m.yearCE, m.month, 1);
+        const mEndIso = toIsoDate(m.yearCE, m.month, m.daysInMonth);
+        if (mEndIso < sIso || mStartIso > eIso) continue;
+        const startDay = sIso > mStartIso ? Number(sIso.slice(8, 10)) : 1;
+        const endDay = eIso < mEndIso ? Number(eIso.slice(8, 10)) : m.daysInMonth;
+        specs.push({ id: m.id, startDay, endDay });
+      }
+      const d1 = new Date(sIso + 'T00:00:00');
+      const d2 = new Date(eIso + 'T00:00:00');
+      const diffDays = Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
+      const text = `${formatThaiShortDate(sIso)} – ${formatThaiShortDate(eIso)} (${diffDays} วัน)`;
+      if (labelEl) labelEl.textContent = text;
+      return { specs, scopeLabel: `ช่วง ${text}`, isDateRange: true, startStr: sIso, endStr: eIso };
+    }
+
+    const openMonthsInTerm = selectedTerm ? getVisibleMonthsList(selectedTerm.termId) : [];
+    let ids = [];
+    if (scopeVal === 'visible') ids = openMonthsInTerm.map(m => m.id);
+    else if (scopeVal === 'all' || scopeVal === 'custom_range') ids = months.map(m => m.id);
+    else ids = [scopeVal];
+
+    return {
+      specs: ids.map(id => {
+        const mo = months.find(x => x.id === id);
+        return { id, startDay: 1, endDay: mo ? mo.daysInMonth : 31 };
+      }),
+      scopeLabel: `ขอบเขต ${ids.length} เดือน`,
+      isDateRange: false,
+      startStr: '',
+      endStr: ''
+    };
   }
 
   // -------------------- 6. GOOGLE SHEETS (GAS & VERCEL /api/gas) CONNECTORS --------------------
@@ -1731,6 +1810,7 @@
       <option value="all">ทุกเดือนในภาคเรียนนี้ (${termMonths.length} เดือน)</option>
       <option value="visible">เฉพาะเดือนที่เปิดให้ครูดู (${openMonthsInTerm.length} เดือน)</option>
       ${termMonths.map(m => `<option value="${esc(m.id)}">เฉพาะเดือน${esc(m.label)}</option>`).join('')}
+      <option value="custom_range">กำหนดช่วงวันที่ (วันไหน ถึง วันไหน)</option>
     `;
     if ([...scopeEl.options].some(o => o.value === prevScope)) scopeEl.value = prevScope;
 
@@ -1742,11 +1822,8 @@
       orderedDepts.map(([d, cnt]) => `<option value="${esc(d)}">${esc(d)} (${cnt} คน)</option>`).join('');
     if ([...deptEl.options].some(o => o.value === prevDept)) deptEl.value = prevDept;
 
-    const scopeVal = scopeEl.value;
-    let monthIds = [];
-    if (scopeVal === 'visible') monthIds = openMonthsInTerm.map(m => m.id);
-    else if (scopeVal === 'all') monthIds = termMonths.map(m => m.id);
-    else monthIds = [scopeVal];
+    const scopeInfo = getAdminOverviewScopeSpecs(selectedTerm, termMonths);
+    const monthSpecs = scopeInfo.specs;
 
     const groupVal = $('ad-group-filter').value;
     const deptVal = deptEl.value;
@@ -1759,7 +1836,7 @@
     const deptBuckets = new Map();
     groupRecords.forEach(r => {
       const dept = resolveStaffDepartment(r);
-      const st = sumStats(r, monthIds);
+      const st = sumStats(r, monthSpecs);
       if (!deptBuckets.has(dept)) {
         deptBuckets.set(dept, { count: 0, leaveDays: 0, late: 0, absent: 0 });
       }
@@ -1810,7 +1887,7 @@
     let totalPresent = 0, totalDuty = 0, totalLeaveDays = 0, totalLeaveCount = 0;
     let totalLate = 0, totalNoIn = 0, totalNoOut = 0, totalAbsent = 0, totalEarlyOut = 0;
     const computedRows = filtered.map(r => {
-      const st = sumStats(r, monthIds);
+      const st = sumStats(r, monthSpecs);
       totalPresent += st.present;
       totalDuty += st.duty;
       totalLeaveDays += st.totalLeaveDays;
@@ -1832,7 +1909,7 @@
       <div class="rounded-3xl bg-white/95 border border-slate-200 border-l-4 border-l-rose-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-slate-500">วันลารวม</span>
         <p class="text-2xl sm:text-3xl font-bold text-rose-600 mt-1 tabular-nums">${formatNumber(totalLeaveDays)} <span class="text-xs font-medium text-slate-500">วัน (${totalLeaveCount} ครั้ง)</span></p>
-        <p class="text-[11px] text-slate-500 mt-1.5">ขอบเขต ${monthIds.length} เดือน</p>
+        <p class="text-[11px] text-slate-500 mt-1.5">${esc(scopeInfo.scopeLabel)}</p>
       </div>
       <div class="rounded-3xl bg-white/95 border border-slate-200 border-l-4 border-l-amber-500 p-4 sm:p-5 shadow-md hover:-translate-y-0.5 transition-all">
         <span class="text-xs font-semibold text-slate-500">มาสาย &amp; ไม่สแกนนิ้ว</span>
@@ -1877,7 +1954,7 @@
     });
 
     // Charts
-    renderAdminOverviewCharts(filtered, computedRows, monthIds, termMonths);
+    renderAdminOverviewCharts(filtered, computedRows, monthSpecs, termMonths, scopeInfo.isDateRange);
   }
 
   const barValueLabelsPlugin = {
@@ -2037,20 +2114,44 @@
     });
   }
 
-  function renderAdminOverviewCharts(filteredRecords, computedRows, selectedMonthIds, termMonths) {
+  function renderAdminOverviewCharts(filteredRecords, computedRows, selectedSpecs, termMonths, isDateRange = false) {
     const monthlyCanvas = $('ad-chart-monthly');
     const issuesCanvas = $('ad-chart-issues');
     if (state.charts.adMonthly) state.charts.adMonthly.destroy();
     if (state.charts.adIssues) state.charts.adIssues.destroy();
 
-    const activeMonths = (termMonths || state.months).filter(m => m.hasData || selectedMonthIds.includes(m.id));
-    const labels = activeMonths.map(m => m.shortLabel);
-    const lateData = activeMonths.map(m => filteredRecords.reduce((acc, r) => acc + calcMonthStats(r.months[m.id]).late, 0));
-    const noScanData = activeMonths.map(m => filteredRecords.reduce((acc, r) => {
-      const s = calcMonthStats(r.months[m.id]);
-      return acc + s.noIn + s.noOut;
-    }, 0));
-    const leaveData = activeMonths.map(m => filteredRecords.reduce((acc, r) => acc + calcMonthStats(r.months[m.id]).totalLeaveDays, 0));
+    const specMap = new Map((selectedSpecs || []).map(sp => {
+      const id = typeof sp === 'object' ? sp.id : sp;
+      return [id, typeof sp === 'object' ? sp : { id, startDay: 1, endDay: 31 }];
+    }));
+
+    const activeMonths = (termMonths || state.months).filter(m =>
+      isDateRange ? specMap.has(m.id) : (m.hasData || specMap.has(m.id))
+    );
+    const labels = activeMonths.map(m => {
+      const sp = specMap.get(m.id);
+      if (isDateRange && sp && (sp.startDay > 1 || sp.endDay < m.daysInMonth)) {
+        return `${m.shortLabel} (${sp.startDay}-${sp.endDay})`;
+      }
+      return m.shortLabel;
+    });
+    const getSpecForMonth = m => specMap.get(m.id) || { id: m.id, startDay: 1, endDay: m.daysInMonth || 31 };
+
+    const lateData = activeMonths.map(m => {
+      const sp = getSpecForMonth(m);
+      return filteredRecords.reduce((acc, r) => acc + calcMonthStats(r.months[m.id], sp.startDay, sp.endDay).late, 0);
+    });
+    const noScanData = activeMonths.map(m => {
+      const sp = getSpecForMonth(m);
+      return filteredRecords.reduce((acc, r) => {
+        const s = calcMonthStats(r.months[m.id], sp.startDay, sp.endDay);
+        return acc + s.noIn + s.noOut;
+      }, 0);
+    });
+    const leaveData = activeMonths.map(m => {
+      const sp = getSpecForMonth(m);
+      return filteredRecords.reduce((acc, r) => acc + calcMonthStats(r.months[m.id], sp.startDay, sp.endDay).totalLeaveDays, 0);
+    });
 
     state.charts.adMonthly = new Chart(monthlyCanvas, {
       type: 'bar',
@@ -2576,11 +2677,7 @@
     const selectedTerm = getAdminTermObj();
     const termMonths = (selectedTerm && selectedTerm.months) || state.months;
     const records = (selectedTerm && state.adminRecordsByTerm[selectedTerm.termId]) || state.adminRecords || [];
-    const scopeVal = $('ad-scope-select').value;
-    let monthIds = [];
-    if (scopeVal === 'visible') monthIds = selectedTerm ? getVisibleMonthsList(selectedTerm.termId).map(m => m.id) : [];
-    else if (scopeVal === 'all') monthIds = termMonths.map(m => m.id);
-    else monthIds = [scopeVal];
+    const scopeInfo = getAdminOverviewScopeSpecs(selectedTerm, termMonths);
 
     const groupVal = $('ad-group-filter') ? $('ad-group-filter').value : 'all';
     const deptVal = $('ad-dept-filter') ? $('ad-dept-filter').value : 'all';
@@ -2594,7 +2691,7 @@
     const headers = ['ลำดับ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'กลุ่มสาระฯ/ผู้บริหาร (E-Profile)', 'กลุ่ม', 'มาปกติ', 'ไปราชการ', 'ลากิจ(ครั้ง)', 'ลากิจ(วัน)', 'ลาป่วย(ครั้ง)', 'ลาป่วย(วัน)', 'ลาอื่นๆ(ครั้ง)', 'ลาอื่นๆ(วัน)', 'รวมลา(ครั้ง)', 'รวมลา(วัน)', 'ไม่สแกนเข้า', 'ไม่สแกนออก', 'สาย', 'ขาดราชการ', 'ขอออก'];
     const lines = [headers.join(',')];
     for (const r of exportList) {
-      const s = sumStats(r, monthIds);
+      const s = sumStats(r, scopeInfo.specs);
       const dept = resolveStaffDepartment(r);
       const row = [
         r.seq, `"${(r.name || '').replace(/"/g, '""')}"`, `"${(r.position || '').replace(/"/g, '""')}"`, `"${dept.replace(/"/g, '""')}"`, `"${(r.group || '').replace(/"/g, '""')}"`,
@@ -2607,7 +2704,8 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `KBS_Attendance_Summary_${scopeVal}.csv`;
+    const tag = scopeInfo.isDateRange ? `${scopeInfo.startStr}_to_${scopeInfo.endStr}` : $('ad-scope-select').value;
+    a.download = `KBS_Attendance_Summary_${tag}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -2802,8 +2900,64 @@
       }
       renderAdminOverviewTab();
     });
-    ['ad-scope-select', 'ad-group-filter', 'ad-dept-filter', 'ad-rank-limit-select'].forEach(id => {
+    $('ad-scope-select').addEventListener('change', () => {
+      const val = $('ad-scope-select').value;
+      const cb = $('ad-use-date-range');
+      if (val === 'custom_range') {
+        if (cb) cb.checked = true;
+      } else {
+        if (cb) cb.checked = false;
+        const selectedTerm = getAdminTermObj();
+        const termMonths = (selectedTerm && selectedTerm.months) || state.months;
+        const mObj = termMonths.find(m => m.id === val);
+        if (mObj) {
+          $('ad-date-start').value = toIsoDate(mObj.yearCE, mObj.month, 1);
+          $('ad-date-end').value = toIsoDate(mObj.yearCE, mObj.month, mObj.daysInMonth);
+        }
+      }
+      renderAdminOverviewTab();
+    });
+    $('ad-use-date-range').addEventListener('change', () => {
+      const checked = $('ad-use-date-range').checked;
+      const scopeEl = $('ad-scope-select');
+      if (checked) {
+        const curVal = scopeEl.value;
+        const selectedTerm = getAdminTermObj();
+        const termMonths = (selectedTerm && selectedTerm.months) || state.months;
+        const mObj = termMonths.find(m => m.id === curVal);
+        if (mObj) {
+          $('ad-date-start').value = toIsoDate(mObj.yearCE, mObj.month, 1);
+          $('ad-date-end').value = toIsoDate(mObj.yearCE, mObj.month, mObj.daysInMonth);
+        }
+        scopeEl.value = 'custom_range';
+      } else if (scopeEl.value === 'custom_range') {
+        scopeEl.value = 'all';
+      }
+      renderAdminOverviewTab();
+    });
+    ['ad-date-start', 'ad-date-end', 'ad-group-filter', 'ad-dept-filter', 'ad-rank-limit-select'].forEach(id => {
       $(id).addEventListener('change', renderAdminOverviewTab);
+    });
+    $('btn-preset-half1').addEventListener('click', () => {
+      const startVal = $('ad-date-start').value;
+      if (!startVal) return;
+      $('ad-date-start').value = startVal.slice(0, 8) + '01';
+      $('ad-date-end').value = startVal.slice(0, 8) + '15';
+      $('ad-use-date-range').checked = true;
+      $('ad-scope-select').value = 'custom_range';
+      renderAdminOverviewTab();
+    });
+    $('btn-preset-half2').addEventListener('click', () => {
+      const startVal = $('ad-date-start').value;
+      if (!startVal) return;
+      const y = Number(startVal.slice(0, 4));
+      const m = Number(startVal.slice(5, 7));
+      const lastDay = new Date(y, m, 0).getDate();
+      $('ad-date-start').value = startVal.slice(0, 8) + '16';
+      $('ad-date-end').value = startVal.slice(0, 8) + String(lastDay).padStart(2, '0');
+      $('ad-use-date-range').checked = true;
+      $('ad-scope-select').value = 'custom_range';
+      renderAdminOverviewTab();
     });
     $('ad-search-staff-input').addEventListener('input', renderAdminOverviewTab);
     $('btn-ad-clear-dept').addEventListener('click', () => {
@@ -2881,7 +3035,9 @@
 
   // -------------------- 13. BOOTSTRAP --------------------
   async function boot() {
-    $('header-logo-img').src = createDefaultKvkEmblemDataUri();
+    const emblemUri = createDefaultKvkEmblemDataUri();
+    $('header-logo-img').src = emblemUri;
+    if ($('app-favicon')) $('app-favicon').href = emblemUri;
     loadSettingsLocal();
     bindEvents();
 
