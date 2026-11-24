@@ -924,6 +924,7 @@ function handleGetPublicCatalog(forceRefresh) {
     spreadsheetTitle: bundle.ssTitle,
     sheetTitle: latestTerm ? latestTerm.termName : '',
     syncedAt: syncedAt,
+    eprofileTabs: CONFIG.EPROFILE_TABS,
     terms: termsMeta,
     months: latestTerm ? latestTerm.months : [],
     staffCatalog: catalogList,
@@ -1128,6 +1129,7 @@ function handleGetAdminAllData(payload, forceRefresh) {
   var tabsDatasets = tabsInfo.map(function(ti) { return parseTabDataset(ti, forceRefresh); });
   var settings = readSettingsFromSheet(ss, tabsDatasets);
   var customPins = readCustomPinsFromSheet(ss);
+  var liveEprof = loadLiveEprofileMap(forceRefresh);
   var corrections = readCorrectionsFromSheet(ss);
 
   var requestedTermId = String(payload.termId || '').trim();
@@ -1157,6 +1159,23 @@ function handleGetAdminAllData(payload, forceRefresh) {
 
   var syncedAt = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
 
+  var enrichedRecords = activeDataset
+    ? activeDataset.records.map(function(r) {
+        var core = r.coreName || stripNamePrefix(r.name);
+        return {
+          key: r.key,
+          coreName: core,
+          rowNumber: r.rowNumber,
+          seq: r.seq,
+          name: r.name,
+          position: r.position,
+          group: r.group,
+          department: (liveEprof.depts && liveEprof.depts[core]) || '',
+          months: r.months
+        };
+      })
+    : [];
+
   return {
     success: true,
     source: 'gas_live',
@@ -1164,10 +1183,11 @@ function handleGetAdminAllData(payload, forceRefresh) {
     spreadsheetTitle: ss.getName(),
     sheetTitle: activeDataset ? activeDataset.termName : '',
     syncedAt: syncedAt,
+    eprofileTabs: CONFIG.EPROFILE_TABS,
     terms: termsMeta,
     activeTermId: activeDataset ? activeDataset.termId : '',
     months: activeDataset ? activeDataset.months : [],
-    records: activeDataset ? activeDataset.records : [],
+    records: enrichedRecords,
     settings: {
       visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,

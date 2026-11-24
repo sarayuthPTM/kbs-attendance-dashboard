@@ -147,6 +147,56 @@
   const seedCidCoreSet = new Set(Object.values(seedCidHashes));
   const fallbackData = window.KBS_ATTENDANCE_FALLBACK_DATA || null;
 
+  const EPROFILE_DEPT_ORDER = [
+    'ผู้บริหาร',
+    'แนะแนว/วัดผล',
+    'วิทยาศาสตร์และเทคโนโลยี',
+    'คณิตศาสตร์',
+    'ภาษาไทย',
+    'ภาษาต่างประเทศฯ',
+    'สังคมศึกษาฯ',
+    'สุขศึกษาและพละศึกษา',
+    'การงานอาชีพ',
+    'ศิลปะ',
+    'เจ้าหน้าที่ อื่นๆ',
+    'ห้องเรียนกีฬา'
+  ];
+
+  function resolveStaffDepartment(item) {
+    if (!item) return 'เจ้าหน้าที่ อื่นๆ';
+    const core = item.coreName || stripNamePrefix(item.name);
+    const catHit = (typeof state !== 'undefined' && Array.isArray(state.staffCatalog))
+      ? state.staffCatalog.find(s => (core && s.coreName === core) || (item.key && s.key === item.key))
+      : null;
+    const seedHit = seedMap.get(item.key) || (core ? seedStaff.find(s => s.coreName === core) : null);
+    const raw = item.department || (catHit && catHit.department) || (seedHit && seedHit.department) || '';
+    if (raw === 'เจ้าหน้าที่ / อื่นๆ') return 'เจ้าหน้าที่ อื่นๆ';
+    if (raw) return raw;
+    return item.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ อื่นๆ';
+  }
+
+  function getDepartmentRankMap() {
+    const order = (typeof state !== 'undefined' && Array.isArray(state.eprofileTabs) && state.eprofileTabs.length)
+      ? [...state.eprofileTabs, 'ห้องเรียนกีฬา']
+      : EPROFILE_DEPT_ORDER;
+    return new Map(order.map((name, idx) => [name, idx]));
+  }
+
+  function getOrderedDepartmentCounts(list) {
+    const counts = new Map();
+    (list || []).forEach(item => {
+      const dept = resolveStaffDepartment(item);
+      counts.set(dept, (counts.get(dept) || 0) + 1);
+    });
+    const rankMap = getDepartmentRankMap();
+    return [...counts.entries()].sort((a, b) => {
+      const ra = rankMap.has(a[0]) ? rankMap.get(a[0]) : 999;
+      const rb = rankMap.has(b[0]) ? rankMap.get(b[0]) : 999;
+      if (ra !== rb) return ra - rb;
+      return a[0].localeCompare(b[0], 'th');
+    });
+  }
+
   function stripNamePrefix(s) {
     return String(s || '')
       .replace(/^(ว่าที่\s*ร้อยตรี\s*หญิง|ว่าที่\s*ร้อยตรี|ว่าที่\s*ร\.?\s*ต\.?\s*หญิง|ว่าที่\s*ร\.?\s*ต\.?|นางสาว|นาง|นาย|น\.ส\.|ดร\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
@@ -176,6 +226,7 @@
     syncedAt: fallbackData ? fallbackData.syncedAt : '',
     terms: initialTerms,
     months: initialMonths,
+    eprofileTabs: [...EPROFILE_DEPT_ORDER],
     staffCatalog: buildInitialCatalog(),
     adminSelectedTermId: '0',
     adminRecordsByTerm: fallbackData && fallbackData.records ? { '0': fallbackData.records } : {},
@@ -588,6 +639,9 @@
       if (res.settings) {
         applySettingsFromServer(res.settings);
       }
+      if (Array.isArray(res.eprofileTabs) && res.eprofileTabs.length) {
+        state.eprofileTabs = res.eprofileTabs;
+      }
       if (Array.isArray(res.staffCatalog) && res.staffCatalog.length) {
         const nextCustomKeys = new Set();
         state.staffCatalog = res.staffCatalog.map(item => {
@@ -597,7 +651,7 @@
           return {
             ...item,
             coreName: core,
-            department: item.department || (seed && seed.department) || (item.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ'),
+            department: resolveStaffDepartment({ ...item, coreName: core }),
             avatarUrl: (seed && seed.avatarUrl) || '',
             hasSeedPin: Boolean(item.hasSeedPin || (seed && seed.hasSeedPin) || seedCidCoreSet.has(core))
           };
@@ -1394,14 +1448,14 @@
           state.adminCores = res.adminCores;
           state.settings.adminCores = res.adminCores;
         }
+        if (Array.isArray(res.eprofileTabs) && res.eprofileTabs.length) {
+          state.eprofileTabs = res.eprofileTabs;
+        }
         if (Array.isArray(res.records)) {
-          const mapped = res.records.map(r => {
-            const seed = seedMap.get(r.key);
-            return {
-              ...r,
-              department: (seed && seed.department) || (r.group === 'ลูกจ้างห้องเรียนกีฬา' ? 'ห้องเรียนกีฬา' : 'เจ้าหน้าที่ / อื่นๆ')
-            };
-          });
+          const mapped = res.records.map(r => ({
+            ...r,
+            department: resolveStaffDepartment(r)
+          }));
           state.adminRecords = mapped;
           if (state.adminSelectedTermId) {
             state.adminRecordsByTerm[state.adminSelectedTermId] = mapped;
@@ -1680,11 +1734,12 @@
     `;
     if ([...scopeEl.options].some(o => o.value === prevScope)) scopeEl.value = prevScope;
 
-    // Populate departments
+    // Populate departments (ordered per KBS E-Profile)
     const deptEl = $('ad-dept-filter');
     const prevDept = deptEl.value || 'all';
-    const depts = [...new Set(records.map(r => r.department || (seedMap.get(r.key) && seedMap.get(r.key).department) || 'อื่นๆ'))];
-    deptEl.innerHTML = `<option value="all">ทุกกลุ่มสาระฯ / ฝ่าย</option>` + depts.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    const orderedDepts = getOrderedDepartmentCounts(records);
+    deptEl.innerHTML = `<option value="all">ทุกกลุ่มสาระฯ / ผู้บริหาร (${records.length})</option>` +
+      orderedDepts.map(([d, cnt]) => `<option value="${esc(d)}">${esc(d)} (${cnt} คน)</option>`).join('');
     if ([...deptEl.options].some(o => o.value === prevDept)) deptEl.value = prevDept;
 
     const scopeVal = scopeEl.value;
@@ -1697,11 +1752,57 @@
     const deptVal = deptEl.value;
     const q = ($('ad-search-staff-input').value || '').trim().toLowerCase();
 
+    const clearDeptBtn = $('btn-ad-clear-dept');
+    if (clearDeptBtn) clearDeptBtn.classList.toggle('hidden', deptVal === 'all');
+
+    const groupRecords = records.filter(r => groupVal === 'all' || r.group === groupVal);
+    const deptBuckets = new Map();
+    groupRecords.forEach(r => {
+      const dept = resolveStaffDepartment(r);
+      const st = sumStats(r, monthIds);
+      if (!deptBuckets.has(dept)) {
+        deptBuckets.set(dept, { count: 0, leaveDays: 0, late: 0, absent: 0 });
+      }
+      const b = deptBuckets.get(dept);
+      b.count++;
+      b.leaveDays += st.totalLeaveDays;
+      b.late += st.late;
+      b.absent += st.absent;
+    });
+
+    const deptGridEl = $('ad-dept-summary-grid');
+    if (deptGridEl) {
+      const orderedSummaryDepts = getOrderedDepartmentCounts(groupRecords);
+      deptGridEl.innerHTML = orderedSummaryDepts.map(([dept]) => {
+        const b = deptBuckets.get(dept) || { count: 0, leaveDays: 0, late: 0, absent: 0 };
+        const isActive = deptVal === dept;
+        const isExec = dept === 'ผู้บริหาร';
+        return `
+          <button type="button" data-filter-dept="${esc(dept)}" class="ad-dept-card text-left rounded-2xl border p-3 transition-all ${isActive ? 'bg-kbs-navy text-white border-kbs-navy shadow-md ring-2 ring-amber-400' : (isExec ? 'bg-amber-50/70 hover:bg-amber-100/80 border-amber-200 text-slate-900' : 'bg-slate-50/80 hover:bg-blue-50/70 border-slate-200 text-slate-900')}">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[11px] font-bold truncate">${esc(dept)}</span>
+              <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${isActive ? 'bg-amber-400 text-slate-950' : 'bg-white border border-slate-200 text-kbs-navy'}">${b.count}</span>
+            </div>
+            <p class="text-[10px] mt-1 truncate ${isActive ? 'text-blue-100' : 'text-slate-500'}">
+              ลา ${formatNumber(b.leaveDays)}ว • สาย ${b.late} • ขาด ${b.absent}
+            </p>
+          </button>
+        `;
+      }).join('');
+      deptGridEl.querySelectorAll('.ad-dept-card').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const picked = btn.getAttribute('data-filter-dept');
+          deptEl.value = (deptEl.value === picked) ? 'all' : picked;
+          renderAdminOverviewTab();
+        });
+      });
+    }
+
     const filtered = records.filter(r => {
-      const dept = r.department || (seedMap.get(r.key) && seedMap.get(r.key).department) || 'อื่นๆ';
+      const dept = resolveStaffDepartment(r);
       if (groupVal !== 'all' && r.group !== groupVal) return false;
       if (deptVal !== 'all' && dept !== deptVal) return false;
-      if (q && !r.name.toLowerCase().includes(q) && !(r.position || '').toLowerCase().includes(q)) return false;
+      if (q && !r.name.toLowerCase().includes(q) && !(r.position || '').toLowerCase().includes(q) && !dept.toLowerCase().includes(q)) return false;
       return true;
     });
 
@@ -1752,7 +1853,7 @@
         <td class="px-3 py-2.5 text-center text-slate-500 font-medium">${record.seq}</td>
         <td class="px-3 py-2.5">
           <div class="font-semibold text-slate-900">${esc(record.name)}</div>
-          <div class="text-[11px] text-slate-500">${esc(record.position)} <span class="text-slate-400">• ${esc(record.group)}</span></div>
+          <div class="text-[11px] text-slate-500">${esc(record.position)} <span class="text-kbs-navy font-medium">• ${esc(resolveStaffDepartment(record))}</span></div>
         </td>
         <td class="px-2 py-2.5 text-center text-emerald-700 font-semibold">${stats.present}</td>
         <td class="px-2 py-2.5 text-center text-sky-700">${stats.duty}</td>
@@ -2102,6 +2203,7 @@
 
     const enriched = state.staffCatalog.map(s => {
       const core = s.coreName || stripNamePrefix(s.name);
+      const department = resolveStaffDepartment(s);
       const hasCustom = Boolean(state.customPinHashes[s.key] || state.customPinKeysFromGas.has(s.key) || state.customPinCoresFromGas.has(core) || s.hasCustomPin);
       const hasSeed = Boolean(s.hasSeedPin || seedCidCoreSet.has(core) || (seedMap.get(s.key) && seedMap.get(s.key).hasSeedPin));
       const isPrimaryAdmin = primarySet.has(core);
@@ -2111,8 +2213,17 @@
       if (hasCustom) { status = 'custom'; customCount++; }
       else if (hasSeed) { status = 'seed'; seedCount++; }
       else { missingCount++; }
-      return { ...s, core, status, isAdmin, isPrimaryAdmin };
+      return { ...s, core, department, status, isAdmin, isPrimaryAdmin };
     });
+
+    const deptFilterEl = $('ad-pin-dept-filter');
+    if (deptFilterEl) {
+      const prevDept = deptFilterEl.value || 'all';
+      const orderedDepts = getOrderedDepartmentCounts(enriched);
+      deptFilterEl.innerHTML = `<option value="all">ทุกกลุ่มสาระฯ / ผู้บริหาร (${enriched.length} คน)</option>` +
+        orderedDepts.map(([d, cnt]) => `<option value="${esc(d)}">${esc(d)} (${cnt} คน)</option>`).join('');
+      if ([...deptFilterEl.options].some(o => o.value === prevDept)) deptFilterEl.value = prevDept;
+    }
 
     $('ad-pins-stats').innerHTML = `
       <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200"><div class="text-xs text-emerald-700 font-semibold">มีเลขบัตรประชาชนใน E-Profile</div><div class="text-xl font-bold text-emerald-900 mt-0.5">${seedCount} คน</div></div>
@@ -2121,16 +2232,53 @@
       <div class="p-3.5 rounded-2xl bg-purple-50 border border-purple-200"><div class="text-xs text-purple-800 font-semibold">ผู้มีสิทธิ์แอดมิน</div><div class="text-xl font-bold text-purple-950 mt-0.5">${adminCount} คน</div></div>
     `;
 
+    const deptVal = deptFilterEl ? deptFilterEl.value : 'all';
     const filter = $('ad-pin-filter-select').value;
     const q = ($('ad-pin-search-input').value || '').trim().toLowerCase();
-    const list = enriched.filter(s => {
-      if (filter === 'admin' && !s.isAdmin) return false;
-      else if (filter !== 'all' && filter !== 'admin' && s.status !== filter) return false;
-      if (q && !s.name.toLowerCase().includes(q) && !(s.position || '').toLowerCase().includes(q)) return false;
-      return true;
-    });
+    const rankMap = getDepartmentRankMap();
 
-    $('ad-pins-table-body').innerHTML = list.map(s => {
+    const list = enriched
+      .filter(s => {
+        if (deptVal !== 'all' && s.department !== deptVal) return false;
+        if (filter === 'admin' && !s.isAdmin) return false;
+        else if (filter !== 'all' && filter !== 'admin' && s.status !== filter) return false;
+        if (q && !s.name.toLowerCase().includes(q) && !(s.position || '').toLowerCase().includes(q) && !s.department.toLowerCase().includes(q)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const ra = rankMap.has(a.department) ? rankMap.get(a.department) : 999;
+        const rb = rankMap.has(b.department) ? rankMap.get(b.department) : 999;
+        if (ra !== rb) return ra - rb;
+        return (a.rowNumber || a.seq || 0) - (b.rowNumber || b.seq || 0);
+      });
+
+    if (list.length === 0) {
+      $('ad-pins-table-body').innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-xs text-slate-400">ไม่พบรายชื่อที่ตรงกับเงื่อนไข</td></tr>`;
+      return;
+    }
+
+    const deptGroupCounts = new Map();
+    list.forEach(s => deptGroupCounts.set(s.department, (deptGroupCounts.get(s.department) || 0) + 1));
+
+    let lastDept = '';
+    const htmlRows = [];
+    list.forEach((s, idx) => {
+      if (s.department !== lastDept) {
+        lastDept = s.department;
+        const isExec = s.department === 'ผู้บริหาร';
+        htmlRows.push(`
+          <tr class="${isExec ? 'bg-amber-50/90 border-y border-amber-200' : 'bg-blue-50/80 border-y border-blue-200/80'}">
+            <td colspan="5" class="px-3 py-2 text-xs font-bold ${isExec ? 'text-amber-950' : 'text-kbs-navyDark'}">
+              <span class="inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full ${isExec ? 'bg-amber-500' : 'bg-kbs-navy'}"></span>
+                <span>${esc(s.department)}</span>
+                <span class="px-2 py-0.5 rounded-full bg-white/90 border border-slate-200 text-[10px] font-bold text-slate-700">${deptGroupCounts.get(s.department)} คน</span>
+              </span>
+            </td>
+          </tr>
+        `);
+      }
+
       const badge = s.status === 'custom'
         ? '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">กำหนดเลขบัตร/รหัสเองแล้ว</span>'
         : (s.status === 'seed'
@@ -2147,11 +2295,11 @@
         ? '<span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">สิทธิ์ถาวร</span>'
         : `<button type="button" data-toggle-admin="${esc(s.key)}" class="btn-toggle-staff-admin px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${s.isAdmin ? 'bg-purple-100 hover:bg-rose-100 text-purple-900 hover:text-rose-800 border border-purple-200' : 'bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-900 border border-slate-200'}">${s.isAdmin ? 'ถอดสิทธิ์แอดมิน' : 'ให้สิทธิ์แอดมิน'}</button>`;
 
-      return `
+      htmlRows.push(`
         <tr class="hover:bg-slate-50">
-          <td class="px-3 py-2.5 text-slate-500">${s.seq}</td>
+          <td class="px-3 py-2.5 text-slate-500">${idx + 1}</td>
           <td class="px-3 py-2.5 font-semibold text-slate-800">${esc(s.name)}</td>
-          <td class="px-3 py-2.5 text-slate-500">${esc(s.position)} • ${esc(s.group)}</td>
+          <td class="px-3 py-2.5 text-slate-600">${esc(s.position)} <span class="text-kbs-navy font-semibold">• ${esc(s.department)}</span></td>
           <td class="px-3 py-2.5"><div class="flex flex-wrap items-center gap-1">${badge}${adminBadge}</div></td>
           <td class="px-3 py-2.5 text-right space-x-1.5 whitespace-nowrap">
             ${roleBtn}
@@ -2159,8 +2307,10 @@
             ${s.status === 'custom' ? `<button type="button" data-reset-pin="${esc(s.key)}" class="btn-reset-staff-pin px-2 py-1 rounded-lg border border-slate-300 text-slate-600 text-[11px]">ล้างรหัส</button>` : ''}
           </td>
         </tr>
-      `;
-    }).join('');
+      `);
+    });
+
+    $('ad-pins-table-body').innerHTML = htmlRows.join('');
 
     document.querySelectorAll('.btn-toggle-staff-admin').forEach(btn => {
       btn.addEventListener('click', () => toggleStaffAdminRole(btn.getAttribute('data-toggle-admin')));
@@ -2432,12 +2582,22 @@
     else if (scopeVal === 'all') monthIds = termMonths.map(m => m.id);
     else monthIds = [scopeVal];
 
-    const headers = ['ลำดับ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'กลุ่ม', 'มาปกติ', 'ไปราชการ', 'ลากิจ(ครั้ง)', 'ลากิจ(วัน)', 'ลาป่วย(ครั้ง)', 'ลาป่วย(วัน)', 'ลาอื่นๆ(ครั้ง)', 'ลาอื่นๆ(วัน)', 'รวมลา(ครั้ง)', 'รวมลา(วัน)', 'ไม่สแกนเข้า', 'ไม่สแกนออก', 'สาย', 'ขาดราชการ', 'ขอออก'];
+    const groupVal = $('ad-group-filter') ? $('ad-group-filter').value : 'all';
+    const deptVal = $('ad-dept-filter') ? $('ad-dept-filter').value : 'all';
+    const exportList = records.filter(r => {
+      const dept = resolveStaffDepartment(r);
+      if (groupVal !== 'all' && r.group !== groupVal) return false;
+      if (deptVal !== 'all' && dept !== deptVal) return false;
+      return true;
+    });
+
+    const headers = ['ลำดับ', 'ชื่อ-สกุล', 'ตำแหน่ง', 'กลุ่มสาระฯ/ผู้บริหาร (E-Profile)', 'กลุ่ม', 'มาปกติ', 'ไปราชการ', 'ลากิจ(ครั้ง)', 'ลากิจ(วัน)', 'ลาป่วย(ครั้ง)', 'ลาป่วย(วัน)', 'ลาอื่นๆ(ครั้ง)', 'ลาอื่นๆ(วัน)', 'รวมลา(ครั้ง)', 'รวมลา(วัน)', 'ไม่สแกนเข้า', 'ไม่สแกนออก', 'สาย', 'ขาดราชการ', 'ขอออก'];
     const lines = [headers.join(',')];
-    for (const r of records) {
+    for (const r of exportList) {
       const s = sumStats(r, monthIds);
+      const dept = resolveStaffDepartment(r);
       const row = [
-        r.seq, `"${(r.name || '').replace(/"/g, '""')}"`, `"${(r.position || '').replace(/"/g, '""')}"`, `"${(r.group || '').replace(/"/g, '""')}"`,
+        r.seq, `"${(r.name || '').replace(/"/g, '""')}"`, `"${(r.position || '').replace(/"/g, '""')}"`, `"${dept.replace(/"/g, '""')}"`, `"${(r.group || '').replace(/"/g, '""')}"`,
         s.present, s.duty, s.personalCount, s.personalDays, s.sickCount, s.sickDays, s.otherLeaveCount, s.otherLeaveDays,
         s.totalLeaveCount, s.totalLeaveDays, s.noIn, s.noOut, s.late, s.absent, s.earlyOut
       ];
@@ -2646,6 +2806,10 @@
       $(id).addEventListener('change', renderAdminOverviewTab);
     });
     $('ad-search-staff-input').addEventListener('input', renderAdminOverviewTab);
+    $('btn-ad-clear-dept').addEventListener('click', () => {
+      $('ad-dept-filter').value = 'all';
+      renderAdminOverviewTab();
+    });
     $('btn-ad-export-csv').addEventListener('click', exportAdminCsv);
     $('btn-ad-print-all').addEventListener('click', () => window.print());
     $('btn-close-staff-modal').addEventListener('click', () => $('modal-staff-detail').classList.add('hidden'));
@@ -2656,7 +2820,8 @@
       if (e.target === $('modal-correction-request')) $('modal-correction-request').classList.add('hidden');
     });
 
-    // Admin Tab 3 PINs
+    // Admin Tab 3 PINs & E-Profile Departments
+    $('ad-pin-dept-filter').addEventListener('change', renderAdminPinsTab);
     $('ad-pin-filter-select').addEventListener('change', renderAdminPinsTab);
     $('ad-pin-search-input').addEventListener('input', renderAdminPinsTab);
     $('btn-batch-assign-missing-pins').addEventListener('click', batchAssignMissingPins);
