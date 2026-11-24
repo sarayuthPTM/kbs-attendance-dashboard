@@ -3244,7 +3244,6 @@
   async function boot() {
     const emblemUri = createDefaultKvkEmblemDataUri();
     $('header-logo-img').src = emblemUri;
-    if ($('app-favicon')) $('app-favicon').href = emblemUri;
     loadSettingsLocal();
     bindEvents();
 
