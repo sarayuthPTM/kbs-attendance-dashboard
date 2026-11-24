@@ -204,7 +204,7 @@
 
   const state = {
     mode: 'teacher', // 'teacher' | 'admin'
-    adTab: 'months', // 'months' | 'overview' | 'pins' | 'requests' | 'settings'
+    adTab: 'overview', // 'overview' | 'months' | 'pins' | 'requests' | 'settings'
     dataSource: fallbackData ? 'snapshot' : 'none',
     vercelProxyAvailable: false,
     syncedAt: fallbackData ? fallbackData.syncedAt : '',
@@ -1568,13 +1568,13 @@
   }
 
   const ADMIN_TAB_META = {
-    months: {
-      title: '1. เปิด-ปิดปี/เทอม และเดือน',
-      desc: 'กำหนดภาคเรียน/ปีและรายเดือนที่อนุญาตให้ครูเข้าดูข้อมูล พร้อมประกาศแจ้งเตือน'
-    },
     overview: {
-      title: '2. แดชบอร์ดภาพรวมทั้งโรงเรียน',
+      title: '1. แดชบอร์ดภาพรวมทั้งโรงเรียน',
       desc: 'สรุปสถิติ KPI กราฟเปรียบเทียบ และอันดับขาด/ลา/สาย/ไม่สแกนออก ของบุคลากรทุกคน'
+    },
+    months: {
+      title: '2. เปิด-ปิดปี/เทอม และเดือน',
+      desc: 'กำหนดภาคเรียน/ปีและรายเดือนที่อนุญาตให้ครูเข้าดูข้อมูล พร้อมประกาศแจ้งเตือน'
     },
     pins: {
       title: '3. จัดการรหัสยืนยันตัวตนครู',
@@ -1613,11 +1613,11 @@
         btn.className = 'ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-left text-blue-100 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition';
       }
     });
-    const meta = ADMIN_TAB_META[tabName] || ADMIN_TAB_META.months;
+    const meta = ADMIN_TAB_META[tabName] || ADMIN_TAB_META.overview;
     if ($('ad-active-tab-title')) $('ad-active-tab-title').textContent = meta.title;
     if ($('ad-active-tab-desc')) $('ad-active-tab-desc').textContent = meta.desc;
 
-    ['months', 'overview', 'pins', 'requests', 'settings'].forEach(p => {
+    ['overview', 'months', 'pins', 'requests', 'settings'].forEach(p => {
       const panel = $(`ad-panel-${p}`);
       if (panel) panel.classList.toggle('hidden', p !== tabName);
     });

@@ -518,13 +518,13 @@
 
             <!-- Vertical Navigation Menu -->
             <nav class="space-y-1.5 flex-1" aria-label="เมนูผู้ดูแลระบบ">
-              <button id="ad-tab-months" type="button" data-ad-tab="months" class="ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-bold text-left bg-white text-kbs-navyDark shadow-lg border-l-4 border-amber-400 flex items-center gap-2.5 transition">
-                <i data-lucide="calendar-cog" class="w-4 h-4 flex-shrink-0"></i>
-                <span class="flex-1 leading-snug">1. เปิด-ปิดปี/เทอม และเดือน</span>
-              </button>
-              <button id="ad-tab-overview" type="button" data-ad-tab="overview" class="ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-left text-blue-100 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition">
+              <button id="ad-tab-overview" type="button" data-ad-tab="overview" class="ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-bold text-left bg-white text-kbs-navyDark shadow-lg border-l-4 border-amber-400 flex items-center gap-2.5 transition">
                 <i data-lucide="layout-dashboard" class="w-4 h-4 flex-shrink-0"></i>
-                <span class="flex-1 leading-snug">2. แดชบอร์ดภาพรวมทั้งโรงเรียน</span>
+                <span class="flex-1 leading-snug">1. แดชบอร์ดภาพรวมทั้งโรงเรียน</span>
+              </button>
+              <button id="ad-tab-months" type="button" data-ad-tab="months" class="ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-left text-blue-100 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition">
+                <i data-lucide="calendar-cog" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="flex-1 leading-snug">2. เปิด-ปิดปี/เทอม และเดือน</span>
               </button>
               <button id="ad-tab-pins" type="button" data-ad-tab="pins" class="ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-left text-blue-100 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition">
                 <i data-lucide="users-round" class="w-4 h-4 flex-shrink-0"></i>
@@ -569,8 +569,8 @@
                 <span>เมนู</span>
               </button>
               <div class="min-w-0">
-                <h2 id="ad-active-tab-title" class="text-base sm:text-lg font-bold text-kbs-navyDark truncate">1. เปิด-ปิดปี/เทอม และเดือน</h2>
-                <p id="ad-active-tab-desc" class="text-[11px] sm:text-xs text-slate-500 truncate">กำหนดภาคเรียน/ปีและรายเดือนที่อนุญาตให้ครูเข้าดูข้อมูล</p>
+                <h2 id="ad-active-tab-title" class="text-base sm:text-lg font-bold text-kbs-navyDark truncate">1. แดชบอร์ดภาพรวมทั้งโรงเรียน</h2>
+                <p id="ad-active-tab-desc" class="text-[11px] sm:text-xs text-slate-500 truncate">สรุปสถิติ KPI กราฟเปรียบเทียบ และอันดับขาด/ลา/สาย/ไม่สแกนออก ของบุคลากรทุกคน</p>
               </div>
             </div>
             <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-kbs-navy text-[11px] font-bold flex-shrink-0">
@@ -579,8 +579,8 @@
             </span>
           </div>
 
-      <!-- ADMIN TAB 1: TERM & MONTH VISIBILITY CONTROLLER -->
-      <div id="ad-panel-months" class="no-print space-y-5">
+      <!-- ADMIN TAB 2: TERM & MONTH VISIBILITY CONTROLLER -->
+      <div id="ad-panel-months" class="hidden no-print space-y-5">
         <!-- Term / Year Visibility Cards -->
         <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
           <div class="mb-4">
@@ -649,8 +649,8 @@
         </div>
       </div>
 
-      <!-- ADMIN TAB 2: SCHOOL-WIDE OVERVIEW -->
-      <div id="ad-panel-overview" class="hidden space-y-5">
+      <!-- ADMIN TAB 1: SCHOOL-WIDE OVERVIEW -->
+      <div id="ad-panel-overview" class="space-y-5">
         <div class="no-print rounded-3xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <div>
