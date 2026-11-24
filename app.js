@@ -1346,39 +1346,39 @@
     const tot = sumStats(record, openMonths.map(m => m.id));
     const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     $('td-print-area').innerHTML = `
-      <div class="border-b-2 border-black pb-3 mb-4 flex items-center justify-between">
-        <div>
-          <h1 class="text-xl font-bold">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (${esc(termName || 'ภาคเรียน')})</h1>
-          <p class="text-sm">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
+      <div class="font-doc border-b-2 border-black pb-3 mb-4 flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <h1 class="text-[20pt] font-bold leading-tight">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (${esc(termName || 'ภาคเรียน')})</h1>
+          <p class="text-[15pt] leading-snug mt-0.5">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
         </div>
-        <div class="text-right text-xs">
+        <div class="text-right text-[14pt] whitespace-nowrap flex-shrink-0 leading-snug">
           <p>พิมพ์เมื่อ: ${esc(nowStr)}</p>
           <p>เดือนที่เปิดแสดงผล: ${openMonths.length} เดือน</p>
         </div>
       </div>
 
-      <div class="mb-4 p-3 border border-slate-400 rounded text-sm grid grid-cols-2 gap-2">
+      <div class="font-doc mb-4 px-4 py-3 border border-slate-500 rounded text-[15.5pt] leading-snug grid grid-cols-2 gap-x-6 gap-y-1">
         <div><strong>ชื่อ-สกุล:</strong> ${esc(record.name)}</div>
         <div><strong>ตำแหน่ง:</strong> ${esc(record.position)}</div>
         <div><strong>กลุ่มบุคลากร:</strong> ${esc(record.group)}</div>
         <div><strong>กลุ่มสาระฯ / ฝ่าย:</strong> ${esc(record.department || '-')}</div>
       </div>
 
-      <table class="w-full border-collapse border border-slate-500 text-xs mb-5">
+      <table class="font-doc w-full border-collapse border border-slate-600 text-[13.5pt] leading-tight mb-5">
         <thead>
           <tr class="bg-slate-200">
-            <th class="border border-slate-500 p-2 text-left">เดือน</th>
-            <th class="border border-slate-500 p-2 text-center">มาปกติ</th>
-            <th class="border border-slate-500 p-2 text-center">ราชการ</th>
-            <th class="border border-slate-500 p-2 text-center">ลากิจ (ครั้ง/วัน)</th>
-            <th class="border border-slate-500 p-2 text-center">ลาป่วย (ครั้ง/วัน)</th>
-            <th class="border border-slate-500 p-2 text-center">ลาคลอด/บวช/ภริยา</th>
-            <th class="border border-slate-500 p-2 text-center">รวมวันลา</th>
-            <th class="border border-slate-500 p-2 text-center">ไม่สแกนเข้า</th>
-            <th class="border border-slate-500 p-2 text-center">ไม่สแกนออก</th>
-            <th class="border border-slate-500 p-2 text-center">สาย</th>
-            <th class="border border-slate-500 p-2 text-center">ขาด</th>
-            <th class="border border-slate-500 p-2 text-center">ขอออก</th>
+            <th class="border border-slate-600 px-2 py-2 text-left whitespace-nowrap">เดือน</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">มาปกติ</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">ราชการ</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center">ลากิจ<br>(ครั้ง/วัน)</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center">ลาป่วย<br>(ครั้ง/วัน)</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center">ลาคลอด/<br>บวช/ภริยา</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">รวมวันลา</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center">ไม่สแกน<br>เข้า</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center">ไม่สแกน<br>ออก</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">สาย</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">ขาด</th>
+            <th class="border border-slate-600 px-1.5 py-2 text-center whitespace-nowrap">ขอออก</th>
           </tr>
         </thead>
         <tbody>
@@ -1386,38 +1386,38 @@
             const s = calcMonthStats(record.months[m.id]);
             return `
               <tr>
-                <td class="border border-slate-500 p-1.5 font-semibold">${esc(m.label)}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.present}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.duty}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.personalCount} / ${formatNumber(s.personalDays)}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.sickCount} / ${formatNumber(s.sickDays)}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.otherLeaveCount} / ${formatNumber(s.otherLeaveDays)}</td>
-                <td class="border border-slate-500 p-1.5 text-center font-bold">${s.totalLeaveCount} / ${formatNumber(s.totalLeaveDays)}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.noIn}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.noOut}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.late}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.absent}</td>
-                <td class="border border-slate-500 p-1.5 text-center">${s.earlyOut}</td>
+                <td class="border border-slate-600 px-2 py-1.5 font-bold whitespace-nowrap">${esc(m.label)}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.present}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.duty}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${s.personalCount} / ${formatNumber(s.personalDays)}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${s.sickCount} / ${formatNumber(s.sickDays)}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${s.otherLeaveCount} / ${formatNumber(s.otherLeaveDays)}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center font-bold whitespace-nowrap">${s.totalLeaveCount} / ${formatNumber(s.totalLeaveDays)}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.noIn}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.noOut}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.late}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.absent}</td>
+                <td class="border border-slate-600 px-1.5 py-1.5 text-center">${s.earlyOut}</td>
               </tr>
             `;
           }).join('')}
           <tr class="bg-slate-100 font-bold">
-            <td class="border border-slate-500 p-1.5">รวมสุทธิ (${openMonths.length} เดือนที่เปิด)</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.present}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.duty}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.personalCount} / ${formatNumber(tot.personalDays)}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.sickCount} / ${formatNumber(tot.sickDays)}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.otherLeaveCount} / ${formatNumber(tot.otherLeaveDays)}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.totalLeaveCount} / ${formatNumber(tot.totalLeaveDays)}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.noIn}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.noOut}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.late}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.absent}</td>
-            <td class="border border-slate-500 p-1.5 text-center">${tot.earlyOut}</td>
+            <td class="border border-slate-600 px-2 py-1.5 whitespace-nowrap">รวมสุทธิ (${openMonths.length} เดือนที่เปิด)</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.present}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.duty}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.personalCount} / ${formatNumber(tot.personalDays)}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.sickCount} / ${formatNumber(tot.sickDays)}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.otherLeaveCount} / ${formatNumber(tot.otherLeaveDays)}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">${tot.totalLeaveCount} / ${formatNumber(tot.totalLeaveDays)}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.noIn}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.noOut}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.late}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.absent}</td>
+            <td class="border border-slate-600 px-1.5 py-1.5 text-center">${tot.earlyOut}</td>
           </tr>
         </tbody>
       </table>
-      <p class="text-xs text-slate-600">* เอกสารนี้สร้างจากระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</p>
+      <p class="font-doc text-[14pt] text-slate-700">* เอกสารนี้สร้างจากระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</p>
     `;
   }
 

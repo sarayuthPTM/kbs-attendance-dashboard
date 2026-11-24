@@ -8,10 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบแดชบอร์ดสรุปวันลาและการลงเวลาปฏิบัติราชการ | โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</title>
 
-  <!-- Google Fonts: Prompt & Sarabun -->
+  <!-- Google Fonts: Prompt & Sarabun + TH Sarabun New (ฟอนต์สารบรรณราชการ) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-th-sarabun-new@1.0.0/css/th-sarabun-new.css">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -21,7 +22,7 @@
         extend: {
           fontFamily: {
             sans: ['Prompt', 'sans-serif'],
-            doc: ['Sarabun', 'sans-serif']
+            doc: ['THSarabunNew', 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', 'sans-serif']
           },
           colors: {
             kbs: {
@@ -59,8 +60,9 @@
       background-image: radial-gradient(rgba(30, 58, 138, 0.08) 1px, transparent 1px);
       background-size: 20px 20px;
     }
-    .font-doc {
-      font-family: 'Sarabun', sans-serif;
+    .font-doc,
+    .font-doc * {
+      font-family: 'THSarabunNew', 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', sans-serif !important;
     }
     .tabular-nums {
       font-variant-numeric: tabular-nums;
@@ -98,10 +100,16 @@
         size: A4 portrait;
         margin: 12mm;
       }
+      html,
       body {
         background: #ffffff !important;
         color: #000000 !important;
-        font-family: 'Sarabun', sans-serif !important;
+        font-family: 'THSarabunNew', 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', sans-serif !important;
+      }
+      body *,
+      .print-only,
+      .print-only * {
+        font-family: 'THSarabunNew', 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', sans-serif !important;
       }
       .no-print {
         display: none !important;
