@@ -1847,11 +1847,16 @@
       b.absent += st.absent;
     });
 
+    const orderedSummaryDepts = getOrderedDepartmentCounts(groupRecords);
+    const deptSummaryRows = orderedSummaryDepts.map(([dept]) => ({
+      dept,
+      ...(deptBuckets.get(dept) || { count: 0, leaveDays: 0, late: 0, absent: 0 })
+    }));
+
     const deptGridEl = $('ad-dept-summary-grid');
     if (deptGridEl) {
-      const orderedSummaryDepts = getOrderedDepartmentCounts(groupRecords);
-      deptGridEl.innerHTML = orderedSummaryDepts.map(([dept]) => {
-        const b = deptBuckets.get(dept) || { count: 0, leaveDays: 0, late: 0, absent: 0 };
+      deptGridEl.innerHTML = deptSummaryRows.map(b => {
+        const dept = b.dept;
         const isActive = deptVal === dept;
         const isExec = dept === 'ผู้บริหาร';
         return `
@@ -1955,6 +1960,205 @@
 
     // Charts
     renderAdminOverviewCharts(filtered, computedRows, monthSpecs, termMonths, scopeInfo.isDateRange);
+
+    state.lastAdminOverviewSnapshot = {
+      termName: selectedTerm ? selectedTerm.termName : '',
+      scopeLabel: scopeInfo.scopeLabel,
+      groupVal,
+      deptVal,
+      kpi: {
+        staffCount: filtered.length,
+        totalPresent,
+        totalDuty,
+        totalLeaveDays,
+        totalLeaveCount,
+        totalLate,
+        totalNoIn,
+        totalNoOut,
+        totalAbsent,
+        totalEarlyOut
+      },
+      deptSummaryRows,
+      computedRows
+    };
+    renderAdminPrintArea(false);
+  }
+
+  function getChartSnapshotDataUri(chartKey, settleAnimation) {
+    const ch = state.charts && state.charts[chartKey];
+    if (!ch) return '';
+    try {
+      if (settleAnimation) {
+        ch.stop();
+        ch.update('none');
+      }
+      return ch.toBase64Image('image/png', 1);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function renderAdminPrintArea(settleAnimations = false) {
+    const el = $('ad-print-area');
+    const snap = state.lastAdminOverviewSnapshot;
+    if (!el || !snap) return;
+
+    const k = snap.kpi;
+    const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const monthlyImg = getChartSnapshotDataUri('adMonthly', settleAnimations);
+    const issuesImg = getChartSnapshotDataUri('adIssues', settleAnimations);
+
+    const rankedCards = [
+      { key: 'adTopAbsent', title: 'ขาดราชการมากสุด (ขาด / -)', summaryElId: 'ad-top-absent-summary', emptyText: 'ไม่พบรายการขาดราชการในช่วงที่เลือก' },
+      { key: 'adTopLeave', title: 'ลามากสุด (ลากิจ + ลาป่วย + ลาอื่น)', summaryElId: 'ad-top-leave-summary', emptyText: 'ไม่พบรายการวันลาในช่วงที่เลือก' },
+      { key: 'adTopLate', title: 'มาสายมากสุด (ส)', summaryElId: 'ad-top-late-summary', emptyText: 'ไม่พบรายการมาสายในช่วงที่เลือก' },
+      { key: 'adTopNoOut', title: 'ไม่สแกนออกมากสุด (มอ)', summaryElId: 'ad-top-noout-summary', emptyText: 'ไม่พบรายการไม่สแกนออกในช่วงที่เลือก' }
+    ].map(c => {
+      const img = getChartSnapshotDataUri(c.key, settleAnimations);
+      const badge = $(c.summaryElId) ? $(c.summaryElId).textContent : '';
+      return { ...c, img, badge };
+    });
+
+    el.innerHTML = `
+      <div class="font-doc border-b-2 border-black pb-3 mb-3 flex items-start justify-between gap-4">
+        <div class="min-w-0">
+          <h1 class="text-[19pt] font-bold leading-tight">รายงานสรุปสถิติวันลาและการลงเวลาปฏิบัติราชการภาพรวมทั้งโรงเรียน</h1>
+          <p class="text-[14pt] leading-snug mt-0.5">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
+        </div>
+        <div class="text-right text-[12.5pt] whitespace-nowrap flex-shrink-0 leading-snug">
+          <p><strong>ภาคเรียน:</strong> ${esc(snap.termName || '-')}</p>
+          <p><strong>ช่วงข้อมูล:</strong> ${esc(snap.scopeLabel)}</p>
+          <p><strong>พิมพ์เมื่อ:</strong> ${esc(nowStr)}</p>
+        </div>
+      </div>
+
+      <!-- ส่วนที่ 1: ข้อมูลสถิติด้านบน -->
+      <div class="font-doc mb-3 px-3 py-1.5 bg-slate-100 border border-slate-400 rounded text-[13pt] flex flex-wrap items-center justify-between gap-2">
+        <span><strong>ตัวกรองกลุ่ม:</strong> ${esc(snap.groupVal === 'all' ? 'ทั้งหมด' : snap.groupVal)}</span>
+        <span><strong>กลุ่มสาระฯ / ฝ่าย:</strong> ${esc(snap.deptVal === 'all' ? 'ทุกกลุ่มสาระฯ / ผู้บริหาร' : snap.deptVal)}</span>
+      </div>
+
+      <div class="font-doc grid grid-cols-4 gap-2 mb-3 print-break-inside-avoid">
+        <div class="border border-slate-500 rounded p-2">
+          <div class="text-[12pt] text-slate-700 font-bold">บุคลากรในตัวกรอง</div>
+          <div class="text-[18pt] font-bold leading-tight">${k.staffCount} คน</div>
+          <div class="text-[11.5pt] text-slate-600">มาปกติ ${k.totalPresent.toLocaleString()} • ราชการ ${k.totalDuty.toLocaleString()}</div>
+        </div>
+        <div class="border border-slate-500 rounded p-2">
+          <div class="text-[12pt] text-slate-700 font-bold">วันลารวม</div>
+          <div class="text-[18pt] font-bold leading-tight">${formatNumber(k.totalLeaveDays)} วัน</div>
+          <div class="text-[11.5pt] text-slate-600">รวม ${k.totalLeaveCount.toLocaleString()} ครั้ง</div>
+        </div>
+        <div class="border border-slate-500 rounded p-2">
+          <div class="text-[12pt] text-slate-700 font-bold">มาสาย &amp; ไม่สแกนนิ้ว</div>
+          <div class="text-[18pt] font-bold leading-tight">${(k.totalLate + k.totalNoIn + k.totalNoOut).toLocaleString()} ครั้ง</div>
+          <div class="text-[11.5pt] text-slate-600">สาย ${k.totalLate} • มข ${k.totalNoIn} • มอ ${k.totalNoOut} • ขอออก ${k.totalEarlyOut}</div>
+        </div>
+        <div class="border border-slate-500 rounded p-2">
+          <div class="text-[12pt] text-slate-700 font-bold">ขาดราชการรวม (-)</div>
+          <div class="text-[18pt] font-bold leading-tight">${k.totalAbsent.toLocaleString()} ครั้ง</div>
+          <div class="text-[11.5pt] text-slate-600">สรุปภาพรวมทั้งโรงเรียน</div>
+        </div>
+      </div>
+
+      <!-- สรุปแยกตามกลุ่มสาระฯ / ผู้บริหาร (E-Profile) -->
+      <div class="font-doc mb-3 print-break-inside-avoid">
+        <h2 class="text-[15pt] font-bold mb-1">สรุปสถิติแยกตามกลุ่มสาระฯ / ผู้บริหาร (KBS E-Profile)</h2>
+        <table class="w-full border-collapse border border-slate-500 text-[12pt] leading-tight">
+          <thead>
+            <tr class="bg-slate-200">
+              <th class="border border-slate-500 px-2 py-1 text-left">กลุ่มสาระฯ / ฝ่าย</th>
+              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">จำนวน (คน)</th>
+              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">วันลารวม (วัน)</th>
+              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">มาสาย (ครั้ง)</th>
+              <th class="border border-slate-500 px-2 py-1 text-center whitespace-nowrap">ขาดราชการ (ครั้ง)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${snap.deptSummaryRows.map(b => `
+              <tr>
+                <td class="border border-slate-500 px-2 py-1 font-bold">${esc(b.dept)}</td>
+                <td class="border border-slate-500 px-2 py-1 text-center">${b.count}</td>
+                <td class="border border-slate-500 px-2 py-1 text-center">${formatNumber(b.leaveDays)}</td>
+                <td class="border border-slate-500 px-2 py-1 text-center">${b.late}</td>
+                <td class="border border-slate-500 px-2 py-1 text-center">${b.absent}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      ${(monthlyImg || issuesImg) ? `
+      <div class="font-doc grid grid-cols-2 gap-3 mb-3 print-break-inside-avoid">
+        ${monthlyImg ? `<div class="border border-slate-400 rounded p-2"><div class="text-[13pt] font-bold mb-1">สถิติภาพรวมรายเดือนทั้งโรงเรียน</div><img src="${monthlyImg}" alt="กราฟรายเดือน" class="w-full h-auto max-h-48 object-contain"></div>` : ''}
+        ${issuesImg ? `<div class="border border-slate-400 rounded p-2"><div class="text-[13pt] font-bold mb-1">บุคลากรที่มีรายการรวมสูงสุด</div><img src="${issuesImg}" alt="กราฟรวมสูงสุด" class="w-full h-auto max-h-48 object-contain"></div>` : ''}
+      </div>
+      ` : ''}
+
+      <div class="font-doc grid grid-cols-2 gap-3 mb-4 print-break-inside-avoid">
+        ${rankedCards.map(c => `
+          <div class="border border-slate-400 rounded p-2 print-break-inside-avoid">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-[13pt] font-bold">${esc(c.title)}</span>
+              <span class="text-[11pt] font-bold text-slate-700">${esc(c.badge)}</span>
+            </div>
+            ${c.img
+              ? `<img src="${c.img}" alt="${esc(c.title)}" class="w-full h-auto max-h-52 object-contain">`
+              : `<div class="py-5 text-center text-[12pt] text-slate-600 border border-dashed border-slate-300 rounded">${esc(c.emptyText)}</div>`}
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- ส่วนที่ 2: ตารางข้อมูลบุคลากรทั้งหมด -->
+      <div class="font-doc print-break-before">
+        <div class="border-b border-black pb-1.5 mb-2 flex items-baseline justify-between gap-2">
+          <h2 class="text-[16pt] font-bold">ตารางสรุปข้อมูลบุคลากรทั้งหมด (${snap.computedRows.length} คน)</h2>
+          <span class="text-[12pt] whitespace-nowrap">${esc(snap.termName)} • ${esc(snap.scopeLabel)}</span>
+        </div>
+        <table class="w-full border-collapse border border-slate-600 text-[11.5pt] leading-tight mb-3">
+          <thead>
+            <tr class="bg-slate-200">
+              <th class="border border-slate-600 px-1.5 py-1.5 text-center whitespace-nowrap">#</th>
+              <th class="border border-slate-600 px-2 py-1.5 text-left">ชื่อ-สกุล / ตำแหน่ง / กลุ่มสาระฯ</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">มาปกติ</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ราชการ</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ลากิจ</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ลาป่วย</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ลาอื่น</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">รวมลา</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">มข</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">มอ</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">สาย</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ขาด</th>
+              <th class="border border-slate-600 px-1 py-1.5 text-center whitespace-nowrap">ขอออก</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${snap.computedRows.map(({ record, stats }) => `
+              <tr>
+                <td class="border border-slate-600 px-1.5 py-1 text-center">${record.seq}</td>
+                <td class="border border-slate-600 px-2 py-1">
+                  <div class="font-bold leading-tight">${esc(record.name)}</div>
+                  <div class="text-[10.5pt] text-slate-700 leading-tight">${esc(record.position)} • ${esc(resolveStaffDepartment(record))}</div>
+                </td>
+                <td class="border border-slate-600 px-1 py-1 text-center">${stats.present}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center">${stats.duty}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center whitespace-nowrap">${stats.personalCount}/${formatNumber(stats.personalDays)}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center whitespace-nowrap">${stats.sickCount}/${formatNumber(stats.sickDays)}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center whitespace-nowrap">${stats.otherLeaveCount}/${formatNumber(stats.otherLeaveDays)}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center font-bold whitespace-nowrap">${stats.totalLeaveCount}/${formatNumber(stats.totalLeaveDays)}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center">${stats.noIn}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center">${stats.noOut}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center">${stats.late}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center font-bold">${stats.absent}</td>
+                <td class="border border-slate-600 px-1 py-1 text-center">${stats.earlyOut}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <p class="text-[12pt] text-slate-700">* หมายเหตุ: มข = ไม่สแกนเข้า, มอ = ไม่สแกนออก (รายการควบ เช่น ส/มอ นับเข้าทั้งช่องสายและไม่สแกนออก) • ค่าลากิจ/ป่วย/อื่น แสดงเป็น ครั้ง/วัน</p>
+      </div>
+    `;
   }
 
   const barValueLabelsPlugin = {
@@ -2965,7 +3169,10 @@
       renderAdminOverviewTab();
     });
     $('btn-ad-export-csv').addEventListener('click', exportAdminCsv);
-    $('btn-ad-print-all').addEventListener('click', () => window.print());
+    $('btn-ad-print-all').addEventListener('click', () => {
+      renderAdminPrintArea(true);
+      window.print();
+    });
     $('btn-close-staff-modal').addEventListener('click', () => $('modal-staff-detail').classList.add('hidden'));
     $('modal-staff-detail').addEventListener('click', e => {
       if (e.target === $('modal-staff-detail')) $('modal-staff-detail').classList.add('hidden');
