@@ -789,7 +789,32 @@
     } catch (e) {}
   }
 
-  async function saveSettingsToCloud(partialUpdate = {}) {
+  let settingsSaveChain = Promise.resolve();
+  let pendingSettingsSaveCount = 0;
+  let pendingSiteConfigPayload = false;
+  let pendingAdminCoresPayload = false;
+
+  function setMonthsSaveStatusBadge(mode, text) {
+    const el = $('ad-months-save-status');
+    if (!el) return;
+    if (!mode) {
+      el.classList.add('hidden');
+      return;
+    }
+    el.classList.remove('hidden');
+    if (mode === 'saving') {
+      el.className = 'px-3 py-1.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1.5';
+      el.innerHTML = `<span class="spinner-inline !w-3 !h-3"></span><span>${esc(text || 'กำลังบันทึกลงชีต...')}</span>`;
+    } else if (mode === 'saved') {
+      el.className = 'px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1';
+      el.textContent = text || '✓ บันทึกลงชีตแล้ว';
+    } else {
+      el.className = 'px-3 py-1.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-300 inline-flex items-center gap-1';
+      el.textContent = text || '⚠️ บันทึกลงชีตไม่สำเร็จ';
+    }
+  }
+
+  function saveSettingsToCloud(partialUpdate = {}) {
     state.settings = {
       ...state.settings,
       ...partialUpdate,
@@ -802,29 +827,62 @@
     applySiteConfigToDom();
     updateSyncBadge();
 
-    if (hasGasEndpoint() && state.adminCidHash) {
-      await callGasApi('saveAdminSettings', {
-        adminCidHash: state.adminCidHash,
-        settings: {
-          visibleTerms: state.settings.visibleTerms,
-          visibleMonths: state.settings.visibleMonths,
-          announcement: state.settings.announcement,
-          siteConfig: partialUpdate.siteConfig !== undefined ? state.settings.siteConfig : undefined,
-          adminCores: partialUpdate.adminCores !== undefined ? partialUpdate.adminCores : undefined
-        }
-      });
+    if (!(hasGasEndpoint() && state.adminCidHash)) {
+      return Promise.resolve({ success: true, localOnly: true });
     }
+
+    if (partialUpdate.siteConfig !== undefined) pendingSiteConfigPayload = true;
+    if (partialUpdate.adminCores !== undefined) pendingAdminCoresPayload = true;
+
+    pendingSettingsSaveCount++;
+    setMonthsSaveStatusBadge('saving', 'กำลังบันทึกลง Google Sheets...');
+
+    const task = settingsSaveChain.catch(() => {}).then(async () => {
+      try {
+        const sendSiteCfg = pendingSiteConfigPayload;
+        const sendAdminCores = pendingAdminCoresPayload;
+        pendingSiteConfigPayload = false;
+        pendingAdminCoresPayload = false;
+
+        const res = await callGasApi('saveAdminSettings', {
+          adminCidHash: state.adminCidHash,
+          settings: {
+            visibleTerms: state.settings.visibleTerms,
+            visibleMonths: state.settings.visibleMonths,
+            announcement: state.settings.announcement,
+            siteConfig: sendSiteCfg ? state.settings.siteConfig : undefined,
+            adminCores: sendAdminCores ? state.settings.adminCores : undefined
+          }
+        });
+        pendingSettingsSaveCount = Math.max(0, pendingSettingsSaveCount - 1);
+        if (pendingSettingsSaveCount === 0) {
+          if (res && res.settings && typeof res.settings === 'object') {
+            applySettingsFromServer(res.settings);
+          }
+          setMonthsSaveStatusBadge('saved', '✓ บันทึกลงชีตแล้ว');
+        }
+        return res;
+      } catch (err) {
+        pendingSettingsSaveCount = Math.max(0, pendingSettingsSaveCount - 1);
+        setMonthsSaveStatusBadge('error', '⚠️ บันทึกล้มเหลว ลองกดใหม่อีกครั้ง');
+        throw err;
+      }
+    });
+
+    settingsSaveChain = task.catch(() => {});
+    return task;
   }
 
   function applySettingsFromServer(serverSettings) {
     if (!serverSettings || typeof serverSettings !== 'object') return;
+    if (pendingSettingsSaveCount > 0) return;
     state.settings = {
       ...state.settings,
-      visibleTerms: serverSettings.visibleTerms
-        ? { ...state.settings.visibleTerms, ...serverSettings.visibleTerms }
+      visibleTerms: (serverSettings.visibleTerms && Object.keys(serverSettings.visibleTerms).length)
+        ? { ...serverSettings.visibleTerms }
         : state.settings.visibleTerms,
-      visibleMonths: serverSettings.visibleMonths
-        ? { ...state.settings.visibleMonths, ...serverSettings.visibleMonths }
+      visibleMonths: (serverSettings.visibleMonths && Object.keys(serverSettings.visibleMonths).length)
+        ? { ...serverSettings.visibleMonths }
         : state.settings.visibleMonths,
       announcement: serverSettings.announcement !== undefined ? serverSettings.announcement : state.settings.announcement,
       siteConfig: (serverSettings.siteConfig && typeof serverSettings.siteConfig === 'object')
@@ -1890,7 +1948,7 @@
               role="switch"
               aria-checked="${isOpen}"
               data-toggle-term="${esc(tm.termId)}"
-              class="term-switch-btn relative inline-flex h-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${isOpen ? 'bg-emerald-500' : 'bg-slate-300'}"
+              class="term-switch-btn relative inline-flex h-7 flex-shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${isOpen ? 'bg-emerald-500' : 'bg-slate-300'}"
               style="width: 52px;"
             >
               <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ${isOpen ? 'translate-x-6' : 'translate-x-0'}"></span>
@@ -1906,21 +1964,18 @@
     }).join('');
 
     termGrid.querySelectorAll('.term-switch-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         const tId = btn.getAttribute('data-toggle-term');
         const nextTerms = { ...(state.settings.visibleTerms || {}) };
-        nextTerms[tId] = !isTermVisible(tId);
-        btn.disabled = true;
-        try {
-          await saveSettingsToCloud({ visibleTerms: nextTerms });
-          const tObj = state.terms.find(x => x.termId === tId);
-          toast(`${nextTerms[tId] ? 'เปิดทั้งภาคเรียน/ปี' : 'ปิดทั้งภาคเรียน/ปี'} "${tObj ? tObj.termName : tId}" แล้ว`);
-          renderAllActiveViews();
-        } catch (err) {
-          toast('บันทึกไม่สำเร็จ: ' + err.message, 'error');
-        } finally {
-          btn.disabled = false;
-        }
+        const nextState = !isTermVisible(tId);
+        nextTerms[tId] = nextState;
+        const tObj = state.terms.find(x => x.termId === tId);
+        const savePromise = saveSettingsToCloud({ visibleTerms: nextTerms });
+        renderAdminMonthsTab();
+        toast(`${nextState ? 'เปิดทั้งภาคเรียน/ปี' : 'ปิดทั้งภาคเรียน/ปี'} "${tObj ? tObj.termName : tId}" แล้ว`);
+        savePromise.catch(err => {
+          toast('บันทึกลง Google Sheets ไม่สำเร็จ: ' + err.message, 'error');
+        });
       });
     });
 
@@ -1965,7 +2020,7 @@
               role="switch"
               aria-checked="${isOpen}"
               data-toggle-month="${esc(m.id)}"
-              class="month-switch-btn relative inline-flex h-7 w-13 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${isOpen ? 'bg-emerald-500' : 'bg-slate-300'}"
+              class="month-switch-btn relative inline-flex h-7 flex-shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${isOpen ? 'bg-emerald-500' : 'bg-slate-300'}"
               style="width: 52px;"
             >
               <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ${isOpen ? 'translate-x-6' : 'translate-x-0'}"></span>
@@ -1982,22 +2037,19 @@
     }).join('');
 
     grid.querySelectorAll('.month-switch-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         const mId = btn.getAttribute('data-toggle-month');
         const scopedKey = `${selectedTerm.termId}::${mId}`;
         const nextVis = { ...(state.settings.visibleMonths || {}) };
-        nextVis[scopedKey] = !isMonthVisible(selectedTerm.termId, mId);
-        btn.disabled = true;
-        try {
-          await saveSettingsToCloud({ visibleMonths: nextVis });
-          const mObj = termMonths.find(x => x.id === mId);
-          toast(`${nextVis[scopedKey] ? 'เปิดให้ครูดู' : 'ปิดการมองเห็น'} เดือน${mObj ? mObj.label : mId} แล้ว`);
-          renderAllActiveViews();
-        } catch (err) {
-          toast('บันทึกไม่สำเร็จ: ' + err.message, 'error');
-        } finally {
-          btn.disabled = false;
-        }
+        const nextState = !isMonthVisible(selectedTerm.termId, mId);
+        nextVis[scopedKey] = nextState;
+        const mObj = termMonths.find(x => x.id === mId);
+        const savePromise = saveSettingsToCloud({ visibleMonths: nextVis });
+        renderAdminMonthsTab();
+        toast(`${nextState ? 'เปิดให้ครูดู' : 'ปิดการมองเห็น'} เดือน${mObj ? mObj.label : mId} แล้ว`);
+        savePromise.catch(err => {
+          toast('บันทึกลง Google Sheets ไม่สำเร็จ: ' + err.message, 'error');
+        });
       });
     });
 
@@ -2012,6 +2064,7 @@
     if (document.activeElement !== annInput) {
       annInput.value = state.settings.announcement || '';
     }
+    refreshIcons();
   }
 
   // ---- Admin Tab 2: School-wide Overview ----
@@ -3531,47 +3584,77 @@
     $('btn-ad-sidebar-close').addEventListener('click', () => toggleAdminSidebarDrawer(false));
     $('ad-sidebar-backdrop').addEventListener('click', () => toggleAdminSidebarDrawer(false));
 
-    // Admin Tab 1 quick month toggles (scoped to selected term)
+    // Admin Tab 2 quick month toggles & sheet sync
+    $('btn-sync-from-months-tab').addEventListener('click', async () => {
+      const btn = $('btn-sync-from-months-tab');
+      setButtonLoading(btn, true, 'กำลังซิงค์...');
+      try {
+        await refreshPublicCatalogFromGas(true);
+        await loadAdminRecords(true);
+        renderAllActiveViews();
+        toast(`ดึงแท็บข้อมูลล่าสุดแล้ว (${state.terms.length} ภาคเรียน/ปี)`);
+      } catch (err) {
+        toast('ดึงข้อมูลไม่สำเร็จ: ' + err.message, 'error');
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+
     $('btn-open-months-with-data').addEventListener('click', async () => {
       const btn = $('btn-open-months-with-data');
       const selectedTerm = getAdminTermObj();
       if (!selectedTerm) return;
+      const nextVis = { ...(state.settings.visibleMonths || {}) };
+      (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = Boolean(m.hasData); });
+      const p = saveSettingsToCloud({ visibleMonths: nextVis });
+      renderAdminMonthsTab();
+      toast(`เปิดเฉพาะเดือนที่มีข้อมูลใน ${selectedTerm.termName} แล้ว`);
       setButtonLoading(btn, true, 'กำลังบันทึก...');
       try {
-        const nextVis = { ...(state.settings.visibleMonths || {}) };
-        (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = Boolean(m.hasData); });
-        await saveSettingsToCloud({ visibleMonths: nextVis });
-        toast(`เปิดเฉพาะเดือนที่มีข้อมูลใน ${selectedTerm.termName} แล้ว`);
-        renderAllActiveViews();
-      } finally { setButtonLoading(btn, false); }
+        await p;
+      } catch (err) {
+        toast('บันทึกลง Google Sheets ไม่สำเร็จ: ' + err.message, 'error');
+      } finally {
+        setButtonLoading(btn, false);
+      }
     });
 
     $('btn-open-all-months').addEventListener('click', async () => {
       const btn = $('btn-open-all-months');
       const selectedTerm = getAdminTermObj();
       if (!selectedTerm) return;
+      const nextVis = { ...(state.settings.visibleMonths || {}) };
+      (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = true; });
+      const p = saveSettingsToCloud({ visibleMonths: nextVis });
+      renderAdminMonthsTab();
+      toast(`เปิดทุกเดือนใน ${selectedTerm.termName} แล้ว`);
       setButtonLoading(btn, true, 'กำลังบันทึก...');
       try {
-        const nextVis = { ...(state.settings.visibleMonths || {}) };
-        (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = true; });
-        await saveSettingsToCloud({ visibleMonths: nextVis });
-        toast(`เปิดทุกเดือนใน ${selectedTerm.termName} แล้ว`);
-        renderAllActiveViews();
-      } finally { setButtonLoading(btn, false); }
+        await p;
+      } catch (err) {
+        toast('บันทึกลง Google Sheets ไม่สำเร็จ: ' + err.message, 'error');
+      } finally {
+        setButtonLoading(btn, false);
+      }
     });
 
     $('btn-close-all-months').addEventListener('click', async () => {
       const btn = $('btn-close-all-months');
       const selectedTerm = getAdminTermObj();
       if (!selectedTerm) return;
+      const nextVis = { ...(state.settings.visibleMonths || {}) };
+      (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = false; });
+      const p = saveSettingsToCloud({ visibleMonths: nextVis });
+      renderAdminMonthsTab();
+      toast(`ปิดทุกเดือนใน ${selectedTerm.termName} แล้ว`);
       setButtonLoading(btn, true, 'กำลังบันทึก...');
       try {
-        const nextVis = { ...(state.settings.visibleMonths || {}) };
-        (selectedTerm.months || []).forEach(m => { nextVis[`${selectedTerm.termId}::${m.id}`] = false; });
-        await saveSettingsToCloud({ visibleMonths: nextVis });
-        toast(`ปิดทุกเดือนใน ${selectedTerm.termName} แล้ว`);
-        renderAllActiveViews();
-      } finally { setButtonLoading(btn, false); }
+        await p;
+      } catch (err) {
+        toast('บันทึกลง Google Sheets ไม่สำเร็จ: ' + err.message, 'error');
+      } finally {
+        setButtonLoading(btn, false);
+      }
     });
 
     $('btn-save-announcement').addEventListener('click', async () => {
@@ -3582,6 +3665,8 @@
         await saveSettingsToCloud({ announcement: txt });
         toast('บันทึกข้อความประกาศเรียบร้อยแล้ว');
         renderAllActiveViews();
+      } catch (err) {
+        toast('บันทึกประกาศไม่สำเร็จ: ' + err.message, 'error');
       } finally { setButtonLoading(btn, false); }
     });
 

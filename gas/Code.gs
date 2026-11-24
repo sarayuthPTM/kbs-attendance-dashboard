@@ -1214,25 +1214,36 @@ function handleGetAdminAllData(payload, forceRefresh) {
 }
 
 function handleSaveAdminSettings(payload) {
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  if (!verifyAdminAuth(ss, payload)) {
-    return { success: false, error: 'คุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)' };
-  }
-  var updates = { updatedAt: new Date().toISOString() };
-  if (payload.settings) {
-    if (payload.settings.visibleTerms !== undefined) updates.visibleTerms = payload.settings.visibleTerms;
-    if (payload.settings.visibleMonths !== undefined) updates.visibleMonths = payload.settings.visibleMonths;
-    if (payload.settings.announcement !== undefined) updates.announcement = payload.settings.announcement;
-    if (payload.settings.adminCores !== undefined) {
-      updates.adminCores = normalizeAdminCoresList(payload.settings.adminCores);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    if (!verifyAdminAuth(ss, payload)) {
+      return { success: false, error: 'คุณไม่มีสิทธิ์ผู้ดูแลระบบ (Admin)' };
     }
-    if (payload.settings.siteConfig !== undefined && typeof payload.settings.siteConfig === 'object' && payload.settings.siteConfig !== null) {
-      updates.siteConfig = payload.settings.siteConfig;
+    var updates = { updatedAt: new Date().toISOString() };
+    if (payload.settings) {
+      if (payload.settings.visibleTerms !== undefined) updates.visibleTerms = payload.settings.visibleTerms;
+      if (payload.settings.visibleMonths !== undefined) updates.visibleMonths = payload.settings.visibleMonths;
+      if (payload.settings.announcement !== undefined) updates.announcement = payload.settings.announcement;
+      if (payload.settings.adminCores !== undefined) {
+        updates.adminCores = normalizeAdminCoresList(payload.settings.adminCores);
+      }
+      if (payload.settings.siteConfig !== undefined && typeof payload.settings.siteConfig === 'object' && payload.settings.siteConfig !== null) {
+        updates.siteConfig = payload.settings.siteConfig;
+      }
     }
+    writeSettingsToSheet(ss, updates);
+    invalidateFastBundleCaches();
+    var saved = readSettingsFromSheet(ss, null);
+    return {
+      success: true,
+      message: 'บันทึกการตั้งค่าลง Google Sheets เรียบร้อยแล้ว',
+      settings: saved
+    };
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
   }
-  writeSettingsToSheet(ss, updates);
-  invalidateFastBundleCaches();
-  return { success: true, message: 'บันทึกการตั้งค่าลง Google Sheets เรียบร้อยแล้ว' };
 }
 
 function handleSaveStaffPins(payload) {

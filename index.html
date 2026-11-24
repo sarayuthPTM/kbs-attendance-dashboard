@@ -598,17 +598,39 @@
       <!-- ADMIN TAB 2: TERM & MONTH VISIBILITY CONTROLLER -->
       <div id="ad-panel-months" class="hidden no-print space-y-5">
         <!-- Term / Year Visibility Cards -->
-        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
-          <div class="mb-4">
-            <h3 class="text-base sm:text-lg font-bold text-kbs-navyDark flex items-center gap-2">
-              <i data-lucide="layers" class="w-5 h-5 text-kbs-gold"></i>
-              <span>1) เปิด-ปิดระดับภาคเรียน / ปี (ตรวจจับแท็บจาก Google Sheet อัตโนมัติ)</span>
-            </h3>
-            <p class="text-xs text-slate-500 mt-0.5">
-              เมื่อมีการสร้างแท็บใหม่ในไฟล์ Google Sheets (เช่น <code class="bg-slate-100 px-1 rounded">1/70</code>, <code class="bg-slate-100 px-1 rounded">2/70</code>, <code class="bg-slate-100 px-1 rounded">1/71</code>) ระบบจะดึงขึ้นมาแสดงที่นี่โดยอัตโนมัติ แอดมินสามารถกด <strong>เปิด/ปิดทั้งปีหรือทั้งเทอม</strong> ได้ทันที
-            </p>
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-kbs-navyDark flex items-center gap-2">
+                <i data-lucide="layers" class="w-5 h-5 text-kbs-gold"></i>
+                <span>1) เปิด-ปิดระดับภาคเรียน / ปี (ตรวจจับแท็บจาก Google Sheet อัตโนมัติ)</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                เมื่อมีการสร้างแท็บใหม่ในไฟล์ Google Sheets (เช่น <code class="bg-slate-100 px-1 rounded">ข้อมูลลงเวลา 1/70</code>, <code class="bg-slate-100 px-1 rounded">2/70</code>, <code class="bg-slate-100 px-1 rounded">1/71</code>) ระบบจะดึงขึ้นมาแสดงที่นี่โดยอัตโนมัติ แอดมินสามารถกด <strong>เปิด/ปิดทั้งปีหรือทั้งเทอม</strong> ได้ทันที
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span id="ad-months-save-status" class="hidden px-3 py-1.5 rounded-full text-[11px] font-bold"></span>
+              <button id="btn-sync-from-months-tab" type="button" class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-60">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>ดึงแท็บใหม่จากชีต</span>
+              </button>
+            </div>
           </div>
           <div id="ad-terms-toggle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+          <!-- Guide for 1/70 and Future Academic Years -->
+          <div class="rounded-2xl bg-blue-50/70 border border-blue-200 p-4 text-xs text-slate-700 space-y-1.5">
+            <div class="font-bold text-kbs-navyDark flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-kbs-gold"></i>
+              <span>วิธีขึ้นเทอมใหม่ 1/70 และปีการศึกษาถัดไป (ไม่ต้องแก้โค้ด)</span>
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-[11.5px] leading-relaxed text-slate-600">
+              <li>เปิด Google Sheet หลัก แล้ว <strong>ทำสำเนาแท็บเดิม (Duplicate)</strong> เปลี่ยนชื่อแท็บเป็น <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-semibold">ข้อมูลลงเวลา 1/70</code> (คงหัวตารางแถว 1 เป็นชื่อเดือน เช่น <code class="bg-white px-1 rounded">พฤษภาคม 2570</code> และแถว 3 เป็น <code class="bg-white px-1 rounded">ลำดับ | ชื่อ-สกุล | ตำแหน่ง</code>)</li>
+              <li>กดปุ่ม <strong>"ดึงแท็บใหม่จากชีต"</strong> ด้านบน (หรือปุ่มซิงค์สีเหลืองด้านซ้าย) ข้อมูลเทอม <strong>1/70</strong> จะขึ้นมาในแดชบอร์ดแอดมินทันที</li>
+              <li>เทอมใหม่จะถูก <strong>ปิดไว้ฝั่งครูโดยอัตโนมัติ</strong> เพื่อความปลอดภัย เมื่อตรวจข้อมูลเรียบร้อยให้กดสวิตช์เปิดเทอม <strong>1/70</strong> และเปิดเดือนที่ต้องการด้านล่างครับ</li>
+            </ol>
+          </div>
         </div>
 
         <!-- Month Visibility Cards for Selected Term -->
