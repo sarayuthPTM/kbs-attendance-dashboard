@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#1e3a8a">
+  <meta name="theme-color" id="meta-theme-color" content="#1e3a8a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link id="app-favicon" rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -13,10 +13,10 @@
   <link rel="manifest" href="manifest.json">
   <title>ระบบแดชบอร์ดสรุปวันลาและการลงเวลาปฏิบัติราชการ | โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</title>
 
-  <!-- Google Fonts: Prompt & Sarabun + TH Sarabun New (ฟอนต์สารบรรณราชการ) -->
+  <!-- Google Fonts: Prompt, Sarabun, Kanit, Noto Sans Thai, IBM Plex Sans Thai + TH Sarabun New (ฟอนต์สารบรรณราชการ) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-th-sarabun-new@1.0.0/css/th-sarabun-new.css">
 
   <!-- Tailwind CSS CDN -->
@@ -26,17 +26,17 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Prompt', 'sans-serif'],
+            sans: ['var(--kbs-font)', 'Prompt', 'sans-serif'],
             doc: ['THSarabunNew', 'TH Sarabun New', 'TH SarabunPSK', 'Sarabun', 'sans-serif']
           },
           colors: {
             kbs: {
-              navy: '#1e3a8a',
-              navyDark: '#0f172a',
-              navyMid: '#1e40af',
-              gold: '#d97706',
-              goldLight: '#fbbf24',
-              goldSoft: '#fef3c7'
+              navy: 'rgb(var(--kbs-navy-rgb) / <alpha-value>)',
+              navyDark: 'rgb(var(--kbs-navy-dark-rgb) / <alpha-value>)',
+              navyMid: 'rgb(var(--kbs-navy-mid-rgb) / <alpha-value>)',
+              gold: 'rgb(var(--kbs-gold-rgb) / <alpha-value>)',
+              goldLight: 'rgb(var(--kbs-gold-light-rgb) / <alpha-value>)',
+              goldSoft: 'rgb(var(--kbs-gold-soft-rgb) / <alpha-value>)'
             }
           }
         }
@@ -50,8 +50,22 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
+    :root {
+      --kbs-navy-rgb: 30 58 138;
+      --kbs-navy-dark-rgb: 15 23 42;
+      --kbs-navy-mid-rgb: 30 64 175;
+      --kbs-gold-rgb: 217 119 6;
+      --kbs-gold-light-rgb: 251 191 36;
+      --kbs-gold-soft-rgb: 254 243 199;
+      --kbs-navy: #1e3a8a;
+      --kbs-navy-dark: #0f172a;
+      --kbs-navy-mid: #1e40af;
+      --kbs-gold: #d97706;
+      --kbs-gold-light: #fbbf24;
+      --kbs-font: 'Prompt', sans-serif;
+    }
     body {
-      font-family: 'Prompt', sans-serif;
+      font-family: var(--kbs-font);
       background-color: #f1f5f9;
       background-image:
         radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.08) 0px, transparent 50%),
@@ -154,7 +168,7 @@
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-tight truncate leading-tight">
+            <h1 id="header-site-title" class="text-sm sm:text-base md:text-lg font-bold tracking-tight truncate leading-tight">
               ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ
             </h1>
           </div>
@@ -199,13 +213,13 @@
         <!-- Left Showcase Column (5 cols) -->
         <div class="lg:col-span-5 space-y-4">
           <!-- Hero School Info Card -->
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-kbs-navyDark via-kbs-navy to-blue-800 text-white p-6 shadow-xl shadow-blue-950/15 border border-blue-900/60">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-6 shadow-xl shadow-blue-950/15 border border-white/15">
             <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-amber-400/15 blur-2xl pointer-events-none"></div>
             <div class="absolute -left-8 -bottom-10 w-36 h-36 rounded-full bg-sky-400/15 blur-2xl pointer-events-none"></div>
             <div class="relative z-10 space-y-4">
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[11px] font-semibold">
                 <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
-                <span>กลุ่มบริหารงานบุคคล • KBS Smart HR</span>
+                <span id="login-tagline-text">กลุ่มบริหารงานบุคคล • KBS Smart HR</span>
               </div>
               <div>
                 <h2 class="text-xl sm:text-2xl font-bold leading-snug">
@@ -241,7 +255,7 @@
           </div>
 
           <!-- Open Months Status Card -->
-          <div class="rounded-3xl bg-white/90 backdrop-blur-md border border-slate-200/80 p-4 sm:p-5 shadow-md">
+          <div id="login-open-months-card" class="rounded-3xl bg-white/90 backdrop-blur-md border border-slate-200/80 p-4 sm:p-5 shadow-md">
             <div class="flex items-center justify-between gap-2 mb-3">
               <div class="flex items-center gap-2 text-xs font-bold text-kbs-navyDark">
                 <span class="w-7 h-7 rounded-lg bg-amber-100 text-kbs-gold flex items-center justify-center">
@@ -332,7 +346,7 @@
     <!-- ========================================================= -->
     <section id="view-teacher-dashboard" class="hidden animate-fade-up space-y-5 max-w-7xl mx-auto">
       <!-- Profile Banner -->
-      <div class="no-print relative overflow-hidden rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-blue-800 text-white p-5 sm:p-6 shadow-2xl shadow-blue-950/15 border border-blue-900/60">
+      <div class="no-print relative overflow-hidden rounded-3xl bg-gradient-to-r from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-5 sm:p-6 shadow-2xl shadow-blue-950/15 border border-white/15">
         <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-amber-400/10 blur-2xl pointer-events-none"></div>
         <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="flex items-center gap-4 min-w-0">
@@ -502,7 +516,7 @@
       <div class="flex flex-col lg:flex-row gap-5 lg:gap-6 items-start">
         <!-- LEFT SIDEBAR -->
         <aside id="ad-sidebar" class="no-print fixed inset-y-0 left-0 z-50 w-72 -translate-x-full lg:translate-x-0 lg:static lg:z-auto lg:sticky lg:top-20 flex-shrink-0 transition-transform duration-300 ease-out">
-          <div class="h-full lg:h-auto lg:max-h-[calc(100vh-6rem)] rounded-none lg:rounded-3xl bg-gradient-to-b from-kbs-navyDark via-kbs-navy to-blue-950 text-white p-4 shadow-2xl shadow-blue-950/25 border-r lg:border border-blue-900/60 flex flex-col gap-4 overflow-y-auto">
+          <div class="h-full lg:h-auto lg:max-h-[calc(100vh-6rem)] rounded-none lg:rounded-3xl bg-gradient-to-b from-kbs-navyDark via-kbs-navy to-kbs-navyMid text-white p-4 shadow-2xl shadow-blue-950/25 border-r lg:border border-white/15 flex flex-col gap-4 overflow-y-auto">
             <!-- Sidebar Header -->
             <div class="flex items-start justify-between gap-2 pb-3 border-b border-white/15">
               <div class="min-w-0">
@@ -539,7 +553,7 @@
               </button>
               <button id="ad-tab-settings" type="button" data-ad-tab="settings" class="ad-tab-btn w-full px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-left text-blue-100 hover:bg-white/10 hover:text-white flex items-center gap-2.5 transition">
                 <i data-lucide="settings" class="w-4 h-4 flex-shrink-0"></i>
-                <span class="flex-1 leading-snug">5. ตั้งค่า Google Sheets &amp; Vercel</span>
+                <span class="flex-1 leading-snug">5. ตั้งค่าเว็บ &amp; ฐานข้อมูล</span>
               </button>
             </nav>
 
@@ -967,58 +981,254 @@
         </div>
       </div>
 
-      <!-- ADMIN TAB 5: SYSTEM SETTINGS -->
-      <div id="ad-panel-settings" class="hidden no-print grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <!-- GAS Web App Connection -->
+      <!-- ADMIN TAB 5: SITE CUSTOMIZATION, DATABASE LINKS & API SETTINGS -->
+      <div id="ad-panel-settings" class="hidden no-print space-y-5">
+        <!-- Quick Links to Databases -->
         <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
-          <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
-            <i data-lucide="sheet" class="w-5 h-5 text-emerald-600"></i>
-            <span>เชื่อมต่อ Google Apps Script API (ดึงข้อมูลสดจาก Google Sheet)</span>
-          </h3>
-          <p class="text-xs text-slate-500 leading-relaxed">
-            นำไฟล์ <code class="bg-slate-100 px-1.5 py-0.5 rounded">gas/Code.gs</code> ไป Deploy เป็น Web App (Access: Anyone) แล้วนำ URL ที่ได้มาวางที่นี่เพื่อให้เว็บดึงข้อมูลล่าสุดจากชีต <code class="bg-slate-100 px-1.5 py-0.5 rounded">ข้อมูลลงเวลา 2/69</code> ได้แบบเรียลไทม์
-          </p>
-          <div>
-            <label for="ad-gas-url-input" class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
-            <input id="ad-gas-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs focus:border-kbs-navy outline-none">
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <button id="btn-test-gas" type="button" class="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition disabled:opacity-60">
-              ทดสอบเชื่อมต่อ (Ping)
-            </button>
-            <button id="btn-save-gas-url" type="button" class="px-3.5 py-2 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white text-xs font-bold transition disabled:opacity-60">
-              บันทึก URL และซิงค์ทันที
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+                <i data-lucide="database" class="w-5 h-5 text-kbs-navy"></i>
+                <span>ลิงก์เข้าสู่ฐานข้อมูลโดยตรง (Google Sheets &amp; Apps Script)</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">คลิกเพื่อเปิดไฟล์ฐานข้อมูลต้นฉบับสำหรับตรวจสอบหรืออัปเดตข้อมูลประจำวันได้ทันที</p>
+            </div>
+            <button id="btn-toggle-db-urls" type="button" class="px-3 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition">
+              <i data-lucide="link" class="w-3.5 h-3.5 text-kbs-navy"></i>
+              <span>แก้ไขลิงก์ฐานข้อมูล</span>
             </button>
           </div>
-          <div id="ad-gas-test-result" class="hidden rounded-xl p-3 text-xs"></div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <a id="link-open-attendance-sheet" href="https://docs.google.com/spreadsheets/d/1AuOkjvEAy2JTS6DqDt1hUZMlVV6TO1EFcxclfVOfAfs/edit" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 p-4 flex items-center justify-between gap-3 transition">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                  <i data-lucide="table-2" class="w-5 h-5"></i>
+                </span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-emerald-950 truncate">ฐานข้อมูลลงเวลา &amp; วันลา</div>
+                  <div class="text-[11px] text-emerald-700 truncate">Google Sheet หลัก (ข้อมูลทุกภาคเรียน)</div>
+                </div>
+              </div>
+              <i data-lucide="external-link" class="w-4 h-4 text-emerald-700 flex-shrink-0 group-hover:translate-x-0.5 transition"></i>
+            </a>
+
+            <a id="link-open-eprofile-sheet" href="https://docs.google.com/spreadsheets/d/1-N4DD6OaR4j8kNubJjRyShffuN3rXZqrfjjwwN9ly_A/edit" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 p-4 flex items-center justify-between gap-3 transition">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-10 h-10 rounded-xl bg-kbs-navy text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                  <i data-lucide="users" class="w-5 h-5"></i>
+                </span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-kbs-navyDark truncate">ฐานข้อมูล E-Profile</div>
+                  <div class="text-[11px] text-kbs-navy truncate">เลขบัตร 13 หลัก &amp; กลุ่มสาระฯ</div>
+                </div>
+              </div>
+              <i data-lucide="external-link" class="w-4 h-4 text-kbs-navy flex-shrink-0 group-hover:translate-x-0.5 transition"></i>
+            </a>
+
+            <a id="link-open-apps-script" href="https://script.google.com/home/projects/1GnHRtiMBLEih5RRb5mOUf7MdBK2xHXlg9zycmOGZvBAcKWvd16Y_fuM6/edit" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/80 p-4 flex items-center justify-between gap-3 transition">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-10 h-10 rounded-xl bg-kbs-gold text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                  <i data-lucide="code-2" class="w-5 h-5"></i>
+                </span>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-amber-950 truncate">Google Apps Script</div>
+                  <div class="text-[11px] text-amber-800 truncate">จัดการสคริปต์ &amp; API Backend</div>
+                </div>
+              </div>
+              <i data-lucide="external-link" class="w-4 h-4 text-amber-800 flex-shrink-0 group-hover:translate-x-0.5 transition"></i>
+            </a>
+          </div>
+
+          <div id="ad-db-urls-panel" class="hidden rounded-2xl border border-slate-200 bg-slate-50/80 p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label for="ad-cfg-attendance-url" class="block text-[11px] font-semibold text-slate-700 mb-1">URL Google Sheet ลงเวลา</label>
+              <input id="ad-cfg-attendance-url" type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="https://docs.google.com/spreadsheets/d/...">
+            </div>
+            <div>
+              <label for="ad-cfg-eprofile-url" class="block text-[11px] font-semibold text-slate-700 mb-1">URL Google Sheet E-Profile</label>
+              <input id="ad-cfg-eprofile-url" type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="https://docs.google.com/spreadsheets/d/...">
+            </div>
+            <div>
+              <label for="ad-cfg-script-url" class="block text-[11px] font-semibold text-slate-700 mb-1">URL Google Apps Script Editor</label>
+              <input id="ad-cfg-script-url" type="url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="https://script.google.com/home/projects/...">
+            </div>
+          </div>
         </div>
 
-        <!-- Admin Role Policy & Vercel/GitHub Guide -->
-        <div class="space-y-5">
-          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-2.5">
-            <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
-              <i data-lucide="shield-check" class="w-5 h-5 text-kbs-gold"></i>
-              <span>ระบบสิทธิ์ผู้ดูแลระบบ (Role-Based Admin)</span>
-            </h3>
-            <p class="text-xs text-slate-600 leading-relaxed">
-              ระบบใช้การยืนยันตัวตนด้วย <strong>เลขประจำตัวประชาชน 13 หลัก</strong> เพียงจุดเดียว ผู้ที่มีสิทธิ์แอดมินจะมีปุ่มสลับโหมด <strong>สำหรับครู/บุคลากร</strong> และ <strong>สำหรับแอดมิน</strong> ปรากฏด้านบนขวาโดยอัตโนมัติ (สามารถเพิ่ม/ถอดสิทธิ์แอดมินให้บุคลากรอื่นได้ใน <strong>แท็บ 3</strong>)
-            </p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+          <!-- Website Appearance & Branding Customization -->
+          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+                  <i data-lucide="palette" class="w-5 h-5 text-kbs-gold"></i>
+                  <span>ปรับแต่งชื่อเว็บ ท้ายเว็บ สีธีม และตัวอักษร</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">ปรับเปลี่ยนได้ทันทีและซิงค์ให้ครู/บุคลากรทุกคนเห็นเหมือนกันทุกเครื่อง</p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label for="ad-cfg-site-title" class="block text-xs font-semibold text-slate-700 mb-1">ชื่อเว็บหลัก (หัวเว็บและชื่อแท็บเบราว์เซอร์)</label>
+                <input id="ad-cfg-site-title" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ">
+              </div>
+
+              <div>
+                <label for="ad-cfg-site-subtitle" class="block text-xs font-semibold text-slate-700 mb-1">คำอธิบายรองใต้ชื่อเว็บ</label>
+                <input id="ad-cfg-site-subtitle" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เชื่อมต่อ Google Sheets อัตโนมัติ">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="ad-cfg-school-name" class="block text-xs font-semibold text-slate-700 mb-1">ชื่อหน่วยงาน / โรงเรียน (บนหัวรายงาน A4)</label>
+                  <input id="ad-cfg-school-name" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่">
+                </div>
+                <div>
+                  <label for="ad-cfg-login-tagline" class="block text-xs font-semibold text-slate-700 mb-1">ป้ายหัวข้อหน้าเข้าสู่ระบบ</label>
+                  <input id="ad-cfg-login-tagline" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="กลุ่มบริหารงานบุคคล • KBS Smart HR">
+                </div>
+              </div>
+
+              <div>
+                <label for="ad-cfg-footer-text" class="block text-xs font-semibold text-slate-700 mb-1">ข้อความท้ายเว็บ (Footer)</label>
+                <input id="ad-cfg-footer-text" type="text" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-kbs-navy outline-none" placeholder="กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่...">
+              </div>
+
+              <div class="pt-1">
+                <label class="block text-xs font-semibold text-slate-700 mb-2">ชุดสีธีมสำเร็จรูป (คลิกเพื่อดูตัวอย่างทันที)</label>
+                <div id="ad-cfg-theme-presets" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label for="ad-cfg-primary-color" class="block text-xs font-semibold text-slate-700 mb-1">สีหลัก (Primary)</label>
+                  <div class="flex items-center gap-2 rounded-xl border border-slate-300 px-2.5 py-1.5 bg-slate-50">
+                    <input id="ad-cfg-primary-color" type="color" value="#1e3a8a" class="w-8 h-7 rounded cursor-pointer border-0 bg-transparent p-0">
+                    <span id="ad-cfg-primary-hex" class="text-xs font-mono text-slate-700">#1e3a8a</span>
+                  </div>
+                </div>
+                <div>
+                  <label for="ad-cfg-accent-color" class="block text-xs font-semibold text-slate-700 mb-1">สีรอง / สีเน้น (Accent)</label>
+                  <div class="flex items-center gap-2 rounded-xl border border-slate-300 px-2.5 py-1.5 bg-slate-50">
+                    <input id="ad-cfg-accent-color" type="color" value="#d97706" class="w-8 h-7 rounded cursor-pointer border-0 bg-transparent p-0">
+                    <span id="ad-cfg-accent-hex" class="text-xs font-mono text-slate-700">#d97706</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label for="ad-cfg-font-family" class="block text-xs font-semibold text-slate-700 mb-1">แบบตัวอักษรหน้าเว็บ (Font)</label>
+                  <select id="ad-cfg-font-family" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold focus:border-kbs-navy outline-none">
+                    <option value="Prompt">Prompt (ทันสมัย อ่านง่าย - ค่าเริ่มต้น)</option>
+                    <option value="Sarabun">Sarabun (สารบรรณ กึ่งทางการ)</option>
+                    <option value="Kanit">Kanit (คมชัด มีมิติ)</option>
+                    <option value="Noto Sans Thai">Noto Sans Thai (มาตรฐาน Google)</option>
+                    <option value="IBM Plex Sans Thai">IBM Plex Sans Thai (โมเดิร์น สบายตา)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="ad-cfg-font-scale" class="block text-xs font-semibold text-slate-700 mb-1">ขนาดตัวอักษรหน้าเว็บ</label>
+                  <select id="ad-cfg-font-scale" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold focus:border-kbs-navy outline-none">
+                    <option value="compact">กะทัดรัด (Compact)</option>
+                    <option value="normal">มาตรฐาน (Normal)</option>
+                    <option value="large">ใหญ่พิเศษอ่านง่าย (Large)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2.5">
+              <button id="btn-save-site-config" type="button" class="px-4 py-2.5 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white text-xs font-bold flex items-center gap-1.5 shadow transition disabled:opacity-60">
+                <i data-lucide="save" class="w-4 h-4 text-kbs-goldLight"></i>
+                <span>บันทึกการตั้งค่าเว็บทั้งหมด</span>
+              </button>
+              <button id="btn-reset-site-config" type="button" class="px-3.5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition disabled:opacity-60">
+                คืนค่าเริ่มต้น (KBS)
+              </button>
+            </div>
           </div>
 
-          <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-2.5">
-            <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
-              <i data-lucide="cloud" class="w-5 h-5 text-kbs-navy"></i>
-              <span>การเชื่อมต่อผ่าน Vercel + GitHub</span>
-            </h3>
-            <p class="text-xs text-slate-600 leading-relaxed">
-              เมื่อ Deploy โปรเจกต์นี้ผ่าน GitHub ขึ้น <strong>Vercel</strong> แนะนำให้เพิ่ม Environment Variable ชื่อ
-              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-semibold">GAS_API_URL</code>
-              (ใส่ URL ของ Apps Script Web App) ในหน้า Vercel Project Settings &gt; Environment Variables เพื่อให้ครูทุกคนเชื่อมต่อ Google Sheets อัตโนมัติผ่าน
-              <code class="bg-slate-100 px-1.5 py-0.5 rounded">/api/gas</code> โดยไม่ต้องกรอก URL บนเครื่องใหม่
-            </p>
-            <p class="text-[11px] text-slate-500">
-              สถานะ Proxy <code class="bg-slate-100 px-1 rounded">/api/gas</code>: <strong id="ad-vercel-proxy-status" class="text-kbs-navy">กำลังตรวจสอบ...</strong>
-            </p>
+          <!-- Right Column: Feature Toggles + GAS API + Vercel -->
+          <div class="space-y-5">
+            <!-- Useful Web Feature Controls -->
+            <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-3.5">
+              <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5 text-kbs-navy"></i>
+                <span>การตั้งค่าฟังก์ชันที่เป็นประโยชน์ (ผู้ใช้งานทั่วไป)</span>
+              </h3>
+              <div class="space-y-2.5 text-xs">
+                <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 bg-slate-50/70 cursor-pointer hover:bg-blue-50/40 transition">
+                  <div>
+                    <div class="font-bold text-slate-900">อนุญาตให้ครูพิมพ์สรุปรายงาน (A4 / PDF)</div>
+                    <div class="text-[11px] text-slate-500">แสดงปุ่ม "พิมพ์สรุป (A4)" ในแดชบอร์ดครูและบุคลากร</div>
+                  </div>
+                  <input id="ad-cfg-allow-teacher-print" type="checkbox" checked class="w-4 h-4 accent-blue-800 rounded cursor-pointer">
+                </label>
+
+                <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 bg-slate-50/70 cursor-pointer hover:bg-blue-50/40 transition">
+                  <div>
+                    <div class="font-bold text-slate-900">เปิดรับคำร้องแจ้งขอตรวจสอบข้อมูลจากครู</div>
+                    <div class="text-[11px] text-slate-500">แสดงปุ่ม "แจ้งขอตรวจสอบข้อมูล" ในหน้าส่วนตัวของครู</div>
+                  </div>
+                  <input id="ad-cfg-allow-teacher-corr" type="checkbox" checked class="w-4 h-4 accent-blue-800 rounded cursor-pointer">
+                </label>
+
+                <label class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 bg-slate-50/70 cursor-pointer hover:bg-blue-50/40 transition">
+                  <div>
+                    <div class="font-bold text-slate-900">แสดงการ์ด "เดือนที่เปิดให้เข้าดู" บนหน้าเข้าสู่ระบบ</div>
+                    <div class="text-[11px] text-slate-500">ช่วยให้ครูทราบล่วงหน้าว่าเดือนใดเปิดดูได้ก่อนกรอกเลขบัตรฯ</div>
+                  </div>
+                  <input id="ad-cfg-show-login-months" type="checkbox" checked class="w-4 h-4 accent-blue-800 rounded cursor-pointer">
+                </label>
+              </div>
+              <p class="text-[11px] text-slate-500">
+                * กดปุ่ม <strong>"บันทึกการตั้งค่าเว็บทั้งหมด"</strong> ทางด้านซ้ายเพื่อบันทึกค่าสวิตช์และธีมลง Google Sheets พร้อมกัน
+              </p>
+            </div>
+
+            <!-- GAS Web App Connection -->
+            <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+              <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+                <i data-lucide="sheet" class="w-5 h-5 text-emerald-600"></i>
+                <span>เชื่อมต่อ Google Apps Script API (ดึงข้อมูลสดจาก Google Sheet)</span>
+              </h3>
+              <p class="text-xs text-slate-500 leading-relaxed">
+                นำไฟล์ <code class="bg-slate-100 px-1.5 py-0.5 rounded">gas/Code.gs</code> ไป Deploy เป็น Web App (Access: Anyone) แล้วนำ URL ที่ได้มาวางที่นี่เพื่อให้เว็บดึงข้อมูลล่าสุดจากชีต <code class="bg-slate-100 px-1.5 py-0.5 rounded">ข้อมูลลงเวลา 2/69</code> ได้แบบเรียลไทม์
+              </p>
+              <div>
+                <label for="ad-gas-url-input" class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
+                <input id="ad-gas-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs focus:border-kbs-navy outline-none">
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button id="btn-test-gas" type="button" class="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition disabled:opacity-60">
+                  ทดสอบเชื่อมต่อ (Ping)
+                </button>
+                <button id="btn-save-gas-url" type="button" class="px-3.5 py-2 rounded-xl bg-kbs-navy hover:bg-kbs-navyDark text-white text-xs font-bold transition disabled:opacity-60">
+                  บันทึก URL และซิงค์ทันที
+                </button>
+              </div>
+              <div id="ad-gas-test-result" class="hidden rounded-xl p-3 text-xs"></div>
+            </div>
+
+            <!-- Vercel + GitHub Guide -->
+            <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm space-y-2.5">
+              <h3 class="text-base font-bold text-kbs-navyDark flex items-center gap-2">
+                <i data-lucide="cloud" class="w-5 h-5 text-kbs-navy"></i>
+                <span>การเชื่อมต่อผ่าน Vercel + GitHub</span>
+              </h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                เมื่อ Deploy โปรเจกต์นี้ผ่าน GitHub ขึ้น <strong>Vercel</strong> แนะนำให้เพิ่ม Environment Variable ชื่อ
+                <code class="bg-slate-100 px-1.5 py-0.5 rounded font-semibold">GAS_API_URL</code>
+                (ใส่ URL ของ Apps Script Web App) ในหน้า Vercel Project Settings &gt; Environment Variables เพื่อให้ครูทุกคนเชื่อมต่อ Google Sheets อัตโนมัติผ่าน
+                <code class="bg-slate-100 px-1.5 py-0.5 rounded">/api/gas</code> โดยไม่ต้องกรอก URL บนเครื่องใหม่
+              </p>
+              <p class="text-[11px] text-slate-500">
+                สถานะ Proxy <code class="bg-slate-100 px-1 rounded">/api/gas</code>: <strong id="ad-vercel-proxy-status" class="text-kbs-navy">กำลังตรวจสอบ...</strong>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1080,7 +1290,7 @@
   </div>
 
   <!-- ==================== FOOTER ==================== -->
-  <footer class="no-print py-4 px-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+  <footer id="site-footer" class="no-print py-4 px-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
     กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เชื่อมโยงข้อมูลจาก Google Sheets (Vercel + GitHub)
   </footer>
 

@@ -629,6 +629,7 @@ function readSettingsFromSheet(ss, tabsDatasets) {
     visibleMonths: defaultVisibleMonths,
     announcement: '',
     adminCores: normalizeAdminCoresList(null),
+    siteConfig: {},
     updatedAt: ''
   };
 
@@ -661,6 +662,11 @@ function readSettingsFromSheet(ss, tabsDatasets) {
     } else if (key === 'adminCores' && val) {
       try {
         settings.adminCores = normalizeAdminCoresList(JSON.parse(val));
+      } catch (e) {}
+    } else if (key === 'siteConfig' && val) {
+      try {
+        var parsedSite = JSON.parse(val);
+        if (parsedSite && typeof parsedSite === 'object') settings.siteConfig = parsedSite;
       } catch (e) {}
     } else if (key === 'updatedAt' && val) {
       settings.updatedAt = val.trim();
@@ -921,6 +927,7 @@ function handleGetPublicCatalog(forceRefresh) {
     success: true,
     source: 'gas_live',
     spreadsheetId: CONFIG.SPREADSHEET_ID,
+    eprofileSpreadsheetId: CONFIG.EPROFILE_SPREADSHEET_ID,
     spreadsheetTitle: bundle.ssTitle,
     sheetTitle: latestTerm ? latestTerm.termName : '',
     syncedAt: syncedAt,
@@ -932,6 +939,7 @@ function handleGetPublicCatalog(forceRefresh) {
       visibleTerms: settings.visibleTerms,
       visibleMonths: settings.visibleMonths,
       announcement: settings.announcement,
+      siteConfig: settings.siteConfig || {},
       updatedAt: settings.updatedAt
     }
   };
@@ -1180,6 +1188,7 @@ function handleGetAdminAllData(payload, forceRefresh) {
     success: true,
     source: 'gas_live',
     spreadsheetId: CONFIG.SPREADSHEET_ID,
+    eprofileSpreadsheetId: CONFIG.EPROFILE_SPREADSHEET_ID,
     spreadsheetTitle: ss.getName(),
     sheetTitle: activeDataset ? activeDataset.termName : '',
     syncedAt: syncedAt,
@@ -1193,6 +1202,7 @@ function handleGetAdminAllData(payload, forceRefresh) {
       visibleMonths: settings.visibleMonths,
       announcement: settings.announcement,
       adminCores: normalizeAdminCoresList(settings.adminCores),
+      siteConfig: settings.siteConfig || {},
       updatedAt: settings.updatedAt
     },
     adminCores: normalizeAdminCoresList(settings.adminCores),
@@ -1215,6 +1225,9 @@ function handleSaveAdminSettings(payload) {
     if (payload.settings.announcement !== undefined) updates.announcement = payload.settings.announcement;
     if (payload.settings.adminCores !== undefined) {
       updates.adminCores = normalizeAdminCoresList(payload.settings.adminCores);
+    }
+    if (payload.settings.siteConfig !== undefined && typeof payload.settings.siteConfig === 'object' && payload.settings.siteConfig !== null) {
+      updates.siteConfig = payload.settings.siteConfig;
     }
   }
   writeSettingsToSheet(ss, updates);

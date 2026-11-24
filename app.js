@@ -202,6 +202,129 @@
     months: initialMonths
   }];
 
+  const DEFAULT_SITE_CONFIG = {
+    siteTitle: 'ระบบสรุปวันลาและการลงเวลาปฏิบัติราชการ',
+    siteSubtitle: '',
+    schoolName: (APP_CFG && APP_CFG.SCHOOL_NAME) || 'โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่',
+    loginTagline: 'กลุ่มบริหารงานบุคคล • KBS Smart HR',
+    footerText: 'กลุ่มบริหารงานบุคคล โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เชื่อมโยงข้อมูลจาก Google Sheets (Vercel + GitHub)',
+    themePreset: 'kbs_navy',
+    primaryColor: '#1e3a8a',
+    accentColor: '#d97706',
+    fontFamily: 'Prompt',
+    fontSizeScale: 'normal',
+    allowTeacherPrint: true,
+    allowTeacherCorrection: true,
+    showLoginOpenMonths: true,
+    attendanceSheetUrl: `https://docs.google.com/spreadsheets/d/${(APP_CFG && APP_CFG.SPREADSHEET_ID) || '1AuOkjvEAy2JTS6DqDt1hUZMlVV6TO1EFcxclfVOfAfs'}/edit`,
+    eprofileSheetUrl: 'https://docs.google.com/spreadsheets/d/1-N4DD6OaR4j8kNubJjRyShffuN3rXZqrfjjwwN9ly_A/edit',
+    appsScriptUrl: 'https://script.google.com/home/projects/1GnHRtiMBLEih5RRb5mOUf7MdBK2xHXlg9zycmOGZvBAcKWvd16Y_fuM6/edit'
+  };
+
+  const THEME_PRESETS = [
+    { id: 'kbs_navy', name: 'กรมท่า – ทอง (KBS)', primary: '#1e3a8a', accent: '#d97706' },
+    { id: 'emerald_gold', name: 'เขียวมรกต – ทอง', primary: '#065f46', accent: '#d97706' },
+    { id: 'royal_purple', name: 'ม่วงราชพฤกษ์ – ทอง', primary: '#5b21b6', accent: '#d97706' },
+    { id: 'sky_amber', name: 'ฟ้าคราม – ส้มอำพัน', primary: '#0369a1', accent: '#ea580c' },
+    { id: 'crimson_gold', name: 'แดงเลือดนก – ทอง', primary: '#991b1b', accent: '#d97706' },
+    { id: 'slate_blue', name: 'เทาไทเทเนียม – ฟ้า', primary: '#334155', accent: '#2563eb' }
+  ];
+
+  function getSiteConfig() {
+    return { ...DEFAULT_SITE_CONFIG, ...((state.settings && state.settings.siteConfig) || {}) };
+  }
+
+  function sanitizeHexColor(val, fallback) {
+    return /^#[0-9a-fA-F]{6}$/.test(String(val || '').trim()) ? String(val).trim().toLowerCase() : fallback;
+  }
+
+  function sanitizeSafeExternalUrl(val, fallback) {
+    const s = String(val || '').trim();
+    return /^https?:\/\//i.test(s) ? s : fallback;
+  }
+
+  function hexToRgbArray(hex) {
+    const clean = sanitizeHexColor(hex, '#1e3a8a').slice(1);
+    return [
+      parseInt(clean.slice(0, 2), 16),
+      parseInt(clean.slice(2, 4), 16),
+      parseInt(clean.slice(4, 6), 16)
+    ];
+  }
+
+  function shiftHexRgb(hex, factor) {
+    const [r, g, b] = hexToRgbArray(hex);
+    const adj = c => Math.max(0, Math.min(255, Math.round(factor < 1 ? c * factor : c + (255 - c) * (factor - 1))));
+    const nr = adj(r), ng = adj(g), nb = adj(b);
+    const toHex = n => n.toString(16).padStart(2, '0');
+    return {
+      hex: `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`,
+      rgb: `${nr} ${ng} ${nb}`
+    };
+  }
+
+  function applySiteConfigToDom(overrideCfg = null) {
+    const cfg = overrideCfg ? { ...DEFAULT_SITE_CONFIG, ...overrideCfg } : getSiteConfig();
+    const primary = sanitizeHexColor(cfg.primaryColor, DEFAULT_SITE_CONFIG.primaryColor);
+    const accent = sanitizeHexColor(cfg.accentColor, DEFAULT_SITE_CONFIG.accentColor);
+    const primaryRgb = hexToRgbArray(primary).join(' ');
+    const primaryDark = shiftHexRgb(primary, 0.55);
+    const primaryMid = shiftHexRgb(primary, 1.15);
+    const accentRgb = hexToRgbArray(accent).join(' ');
+    const accentLight = shiftHexRgb(accent, 1.35);
+    const accentSoft = shiftHexRgb(accent, 1.86);
+
+    const rootStyle = document.documentElement.style;
+    rootStyle.setProperty('--kbs-navy-rgb', primaryRgb);
+    rootStyle.setProperty('--kbs-navy-dark-rgb', primaryDark.rgb);
+    rootStyle.setProperty('--kbs-navy-mid-rgb', primaryMid.rgb);
+    rootStyle.setProperty('--kbs-gold-rgb', accentRgb);
+    rootStyle.setProperty('--kbs-gold-light-rgb', accentLight.rgb);
+    rootStyle.setProperty('--kbs-gold-soft-rgb', accentSoft.rgb);
+    rootStyle.setProperty('--kbs-navy', primary);
+    rootStyle.setProperty('--kbs-navy-dark', primaryDark.hex);
+    rootStyle.setProperty('--kbs-navy-mid', primaryMid.hex);
+    rootStyle.setProperty('--kbs-gold', accent);
+    rootStyle.setProperty('--kbs-gold-light', accentLight.hex);
+
+    const allowedFonts = ['Prompt', 'Sarabun', 'Kanit', 'Noto Sans Thai', 'IBM Plex Sans Thai'];
+    const fontName = allowedFonts.includes(cfg.fontFamily) ? cfg.fontFamily : 'Prompt';
+    rootStyle.setProperty('--kbs-font', `'${fontName}', 'Prompt', sans-serif`);
+    if (document.body) {
+      document.body.style.fontFamily = `'${fontName}', 'Prompt', sans-serif`;
+    }
+
+    const scalePx = cfg.fontSizeScale === 'compact' ? '14px' : (cfg.fontSizeScale === 'large' ? '17.5px' : '16px');
+    document.documentElement.style.fontSize = scalePx;
+
+    const metaTheme = $('meta-theme-color');
+    if (metaTheme) metaTheme.setAttribute('content', primary);
+
+    const titleTxt = (cfg.siteTitle || DEFAULT_SITE_CONFIG.siteTitle).trim();
+    const schoolTxt = (cfg.schoolName || DEFAULT_SITE_CONFIG.schoolName).trim();
+    if ($('header-site-title')) $('header-site-title').textContent = titleTxt;
+    document.title = `${titleTxt} | ${schoolTxt}`;
+    if ($('login-tagline-text')) $('login-tagline-text').textContent = (cfg.loginTagline || DEFAULT_SITE_CONFIG.loginTagline).trim();
+    if ($('site-footer')) $('site-footer').textContent = (cfg.footerText || DEFAULT_SITE_CONFIG.footerText).trim();
+
+    if ($('login-open-months-card')) {
+      $('login-open-months-card').classList.toggle('hidden', cfg.showLoginOpenMonths === false);
+    }
+    if ($('td-btn-print')) {
+      $('td-btn-print').classList.toggle('hidden', cfg.allowTeacherPrint === false);
+    }
+    if ($('td-btn-request-correction')) {
+      $('td-btn-request-correction').classList.toggle('hidden', cfg.allowTeacherCorrection === false);
+    }
+
+    const attUrl = sanitizeSafeExternalUrl(cfg.attendanceSheetUrl, DEFAULT_SITE_CONFIG.attendanceSheetUrl);
+    const eprofUrl = sanitizeSafeExternalUrl(cfg.eprofileSheetUrl, DEFAULT_SITE_CONFIG.eprofileSheetUrl);
+    const gasEditUrl = sanitizeSafeExternalUrl(cfg.appsScriptUrl, DEFAULT_SITE_CONFIG.appsScriptUrl);
+    if ($('link-open-attendance-sheet')) $('link-open-attendance-sheet').href = attUrl;
+    if ($('link-open-eprofile-sheet')) $('link-open-eprofile-sheet').href = eprofUrl;
+    if ($('link-open-apps-script')) $('link-open-apps-script').href = gasEditUrl;
+  }
+
   const state = {
     mode: 'teacher', // 'teacher' | 'admin'
     adTab: 'overview', // 'overview' | 'months' | 'pins' | 'requests' | 'settings'
@@ -221,6 +344,7 @@
       announcement: '',
       gasUrl: (APP_CFG.GAS_API_URL || '').trim(),
       adminCores: [...PRIMARY_ADMIN_CORES],
+      siteConfig: { ...DEFAULT_SITE_CONFIG },
       updatedAt: ''
     },
     adminCores: [...PRIMARY_ADMIN_CORES],
@@ -653,7 +777,8 @@
             ...parsed,
             gasUrl: parsed.gasUrl || (APP_CFG.GAS_API_URL || '').trim(),
             visibleTerms: { ...state.settings.visibleTerms, ...(parsed.visibleTerms || {}) },
-            visibleMonths: { ...state.settings.visibleMonths, ...(parsed.visibleMonths || {}) }
+            visibleMonths: { ...state.settings.visibleMonths, ...(parsed.visibleMonths || {}) },
+            siteConfig: { ...DEFAULT_SITE_CONFIG, ...(parsed.siteConfig || {}) }
           };
         }
       }
@@ -668,9 +793,14 @@
     state.settings = {
       ...state.settings,
       ...partialUpdate,
+      siteConfig: partialUpdate.siteConfig
+        ? { ...getSiteConfig(), ...partialUpdate.siteConfig }
+        : getSiteConfig(),
       updatedAt: new Date().toISOString()
     };
     saveSettingsLocal();
+    applySiteConfigToDom();
+    updateSyncBadge();
 
     if (hasGasEndpoint() && state.adminCidHash) {
       await callGasApi('saveAdminSettings', {
@@ -679,6 +809,7 @@
           visibleTerms: state.settings.visibleTerms,
           visibleMonths: state.settings.visibleMonths,
           announcement: state.settings.announcement,
+          siteConfig: partialUpdate.siteConfig !== undefined ? state.settings.siteConfig : undefined,
           adminCores: partialUpdate.adminCores !== undefined ? partialUpdate.adminCores : undefined
         }
       });
@@ -696,9 +827,13 @@
         ? { ...state.settings.visibleMonths, ...serverSettings.visibleMonths }
         : state.settings.visibleMonths,
       announcement: serverSettings.announcement !== undefined ? serverSettings.announcement : state.settings.announcement,
+      siteConfig: (serverSettings.siteConfig && typeof serverSettings.siteConfig === 'object')
+        ? { ...DEFAULT_SITE_CONFIG, ...serverSettings.siteConfig }
+        : getSiteConfig(),
       updatedAt: serverSettings.updatedAt || state.settings.updatedAt
     };
     saveSettingsLocal();
+    applySiteConfigToDom();
   }
 
   async function refreshPublicCatalogFromGas(forceRefresh = false) {
@@ -752,10 +887,17 @@
     const subEl = $('header-term-subtitle');
     const openTerms = getOpenTermsList();
     const visibleCount = getAllOpenMonthsCount();
+    const siteCfg = getSiteConfig();
     if (subEl) {
-      subEl.textContent = openTerms.length
-        ? `โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • เปิดให้ดู ${openTerms.map(t => t.termName).join(', ')}`
-        : 'โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • ระบบข้อมูลรายภาคเรียน/ปี';
+      const customSub = (siteCfg.siteSubtitle || '').trim();
+      if (customSub) {
+        subEl.textContent = customSub;
+      } else {
+        const sch = (siteCfg.schoolName || DEFAULT_SITE_CONFIG.schoolName).trim();
+        subEl.textContent = openTerms.length
+          ? `${sch} • เปิดให้ดู ${openTerms.map(t => t.termName).join(', ')}`
+          : `${sch} • ระบบข้อมูลรายภาคเรียน/ปี`;
+      }
     }
     if (visBadge) {
       visBadge.innerHTML = `<i data-lucide="calendar-check" class="w-3.5 h-3.5"></i><span>เปิด ${openTerms.length} เทอม (${visibleCount} เดือน)</span>`;
@@ -1493,8 +1635,13 @@
     const tot = sumStats(record, openMonths.map(m => m.id));
     const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     const logoUri = createDefaultKvkEmblemDataUri();
+    const siteCfg = getSiteConfig();
+    const pCol = sanitizeHexColor(siteCfg.primaryColor, '#1e3a8a');
+    const aCol = sanitizeHexColor(siteCfg.accentColor, '#d97706');
+    const pMid = shiftHexRgb(pCol, 1.15).hex;
+    const schoolLabel = siteCfg.schoolName || DEFAULT_SITE_CONFIG.schoolName;
     $('td-print-area').innerHTML = `
-      <div class="font-doc rounded-lg overflow-hidden border border-[#1e3a8a] mb-3" style="background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%); color: #ffffff; border-bottom: 4px solid #f59e0b;">
+      <div class="font-doc rounded-lg overflow-hidden border mb-3" style="border-color: ${pCol}; background: linear-gradient(90deg, ${pCol} 0%, ${pMid} 100%); color: #ffffff; border-bottom: 4px solid ${aCol};">
         <div class="px-4 py-3 flex items-center justify-between gap-4">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-12 h-12 rounded-xl bg-white p-1 flex-shrink-0 flex items-center justify-center shadow">
@@ -1502,7 +1649,7 @@
             </div>
             <div class="min-w-0">
               <h1 class="text-[19pt] font-bold leading-tight text-white">รายงานสรุปข้อมูลวันลาและการลงเวลาปฏิบัติราชการ (${esc(termName || 'ภาคเรียน')})</h1>
-              <p class="text-[14pt] leading-snug mt-0.5 text-[#fde68a]">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
+              <p class="text-[14pt] leading-snug mt-0.5 text-[#fde68a]">${esc(schoolLabel)} • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
             </div>
           </div>
           <div class="text-right text-[13pt] whitespace-nowrap flex-shrink-0 leading-snug bg-white/10 rounded px-3 py-1.5 border border-white/25">
@@ -1662,8 +1809,8 @@
       desc: 'ตรวจสอบและอัปเดตสถานะคำร้องขอแก้ไขข้อมูลการลงเวลาที่ครูส่งเข้ามา'
     },
     settings: {
-      title: '5. ตั้งค่า Google Sheets & Vercel',
-      desc: 'ตั้งค่าการเชื่อมต่อ Google Apps Script API และเปลี่ยนรหัสผ่านแอดมิน'
+      title: '5. ตั้งค่าเว็บ & ฐานข้อมูล',
+      desc: 'ปรับแต่งชื่อเว็บ ท้ายเว็บ สีธีม ตัวอักษร สิทธิ์การใช้งาน และลิงก์เข้าสู่ฐานข้อมูล'
     }
   };
 
@@ -2235,8 +2382,14 @@
       }
     ];
 
+    const siteCfg = getSiteConfig();
+    const pCol = sanitizeHexColor(siteCfg.primaryColor, '#1e3a8a');
+    const aCol = sanitizeHexColor(siteCfg.accentColor, '#d97706');
+    const pMid = shiftHexRgb(pCol, 1.15).hex;
+    const schoolLabel = siteCfg.schoolName || DEFAULT_SITE_CONFIG.schoolName;
+
     el.innerHTML = `
-      <div class="font-doc rounded-lg overflow-hidden border border-[#1e3a8a] mb-3" style="background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%); color: #ffffff; border-bottom: 4px solid #f59e0b;">
+      <div class="font-doc rounded-lg overflow-hidden border mb-3" style="border-color: ${pCol}; background: linear-gradient(90deg, ${pCol} 0%, ${pMid} 100%); color: #ffffff; border-bottom: 4px solid ${aCol};">
         <div class="px-4 py-2.5 flex items-center justify-between gap-4">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-12 h-12 rounded-xl bg-white p-1 flex-shrink-0 flex items-center justify-center shadow">
@@ -2244,7 +2397,7 @@
             </div>
             <div class="min-w-0">
               <h1 class="text-[18.5pt] font-bold leading-tight text-white">รายงานสรุปสถิติวันลาและการลงเวลาปฏิบัติราชการภาพรวมทั้งโรงเรียน</h1>
-              <p class="text-[13.5pt] leading-snug mt-0.5 text-[#fde68a]">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่ • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
+              <p class="text-[13.5pt] leading-snug mt-0.5 text-[#fde68a]">${esc(schoolLabel)} • สำนักงานเขตพื้นที่การศึกษามัธยมศึกษาตรัง กระบี่</p>
             </div>
           </div>
           <div class="text-right text-[12pt] whitespace-nowrap flex-shrink-0 leading-snug bg-white/10 rounded px-2.5 py-1 border border-white/25">
@@ -3113,9 +3266,100 @@
     });
   }
 
-  // ---- Admin Tab 5: System Settings ----
+  // ---- Admin Tab 5: System Settings & Site Customization ----
+  function renderThemePresetButtons(activePresetId) {
+    const wrap = $('ad-cfg-theme-presets');
+    if (!wrap) return;
+    wrap.innerHTML = THEME_PRESETS.map(p => {
+      const isSelected = p.id === activePresetId;
+      return `
+        <button type="button" data-theme-preset="${esc(p.id)}" class="ad-theme-preset-btn text-left rounded-xl border p-2 transition flex items-center gap-2 ${isSelected ? 'border-kbs-navy bg-blue-50/70 ring-2 ring-kbs-navy/30' : 'border-slate-200 bg-white hover:bg-slate-50'}">
+          <span class="flex items-center -space-x-1 flex-shrink-0">
+            <span class="w-4 h-4 rounded-full border border-white shadow-xs" style="background-color: ${p.primary};"></span>
+            <span class="w-4 h-4 rounded-full border border-white shadow-xs" style="background-color: ${p.accent};"></span>
+          </span>
+          <span class="text-[11px] font-bold text-slate-800 truncate">${esc(p.name)}</span>
+        </button>
+      `;
+    }).join('');
+    wrap.querySelectorAll('.ad-theme-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const presetId = btn.getAttribute('data-theme-preset');
+        const found = THEME_PRESETS.find(x => x.id === presetId);
+        if (!found) return;
+        $('ad-cfg-primary-color').value = found.primary;
+        $('ad-cfg-accent-color').value = found.accent;
+        if ($('ad-cfg-primary-hex')) $('ad-cfg-primary-hex').textContent = found.primary;
+        if ($('ad-cfg-accent-hex')) $('ad-cfg-accent-hex').textContent = found.accent;
+        renderThemePresetButtons(found.id);
+        applySiteConfigToDom({
+          ...collectSiteConfigFormValues(),
+          themePreset: found.id,
+          primaryColor: found.primary,
+          accentColor: found.accent
+        });
+      });
+    });
+  }
+
+  function collectSiteConfigFormValues() {
+    const pCol = $('ad-cfg-primary-color') ? sanitizeHexColor($('ad-cfg-primary-color').value, DEFAULT_SITE_CONFIG.primaryColor) : DEFAULT_SITE_CONFIG.primaryColor;
+    const aCol = $('ad-cfg-accent-color') ? sanitizeHexColor($('ad-cfg-accent-color').value, DEFAULT_SITE_CONFIG.accentColor) : DEFAULT_SITE_CONFIG.accentColor;
+    const matchedPreset = THEME_PRESETS.find(p => p.primary.toLowerCase() === pCol && p.accent.toLowerCase() === aCol);
+    return {
+      siteTitle: ($('ad-cfg-site-title') && $('ad-cfg-site-title').value.trim()) || DEFAULT_SITE_CONFIG.siteTitle,
+      siteSubtitle: $('ad-cfg-site-subtitle') ? $('ad-cfg-site-subtitle').value.trim() : '',
+      schoolName: ($('ad-cfg-school-name') && $('ad-cfg-school-name').value.trim()) || DEFAULT_SITE_CONFIG.schoolName,
+      loginTagline: ($('ad-cfg-login-tagline') && $('ad-cfg-login-tagline').value.trim()) || DEFAULT_SITE_CONFIG.loginTagline,
+      footerText: ($('ad-cfg-footer-text') && $('ad-cfg-footer-text').value.trim()) || DEFAULT_SITE_CONFIG.footerText,
+      themePreset: matchedPreset ? matchedPreset.id : 'custom',
+      primaryColor: pCol,
+      accentColor: aCol,
+      fontFamily: ($('ad-cfg-font-family') && $('ad-cfg-font-family').value) || DEFAULT_SITE_CONFIG.fontFamily,
+      fontSizeScale: ($('ad-cfg-font-scale') && $('ad-cfg-font-scale').value) || DEFAULT_SITE_CONFIG.fontSizeScale,
+      allowTeacherPrint: $('ad-cfg-allow-teacher-print') ? $('ad-cfg-allow-teacher-print').checked : true,
+      allowTeacherCorrection: $('ad-cfg-allow-teacher-corr') ? $('ad-cfg-allow-teacher-corr').checked : true,
+      showLoginOpenMonths: $('ad-cfg-show-login-months') ? $('ad-cfg-show-login-months').checked : true,
+      attendanceSheetUrl: sanitizeSafeExternalUrl($('ad-cfg-attendance-url') && $('ad-cfg-attendance-url').value, DEFAULT_SITE_CONFIG.attendanceSheetUrl),
+      eprofileSheetUrl: sanitizeSafeExternalUrl($('ad-cfg-eprofile-url') && $('ad-cfg-eprofile-url').value, DEFAULT_SITE_CONFIG.eprofileSheetUrl),
+      appsScriptUrl: sanitizeSafeExternalUrl($('ad-cfg-script-url') && $('ad-cfg-script-url').value, DEFAULT_SITE_CONFIG.appsScriptUrl)
+    };
+  }
+
+  function populateSiteConfigForm(cfg) {
+    if ($('ad-cfg-site-title')) $('ad-cfg-site-title').value = cfg.siteTitle || DEFAULT_SITE_CONFIG.siteTitle;
+    if ($('ad-cfg-site-subtitle')) $('ad-cfg-site-subtitle').value = cfg.siteSubtitle || '';
+    if ($('ad-cfg-school-name')) $('ad-cfg-school-name').value = cfg.schoolName || DEFAULT_SITE_CONFIG.schoolName;
+    if ($('ad-cfg-login-tagline')) $('ad-cfg-login-tagline').value = cfg.loginTagline || DEFAULT_SITE_CONFIG.loginTagline;
+    if ($('ad-cfg-footer-text')) $('ad-cfg-footer-text').value = cfg.footerText || DEFAULT_SITE_CONFIG.footerText;
+
+    const pCol = sanitizeHexColor(cfg.primaryColor, DEFAULT_SITE_CONFIG.primaryColor);
+    const aCol = sanitizeHexColor(cfg.accentColor, DEFAULT_SITE_CONFIG.accentColor);
+    if ($('ad-cfg-primary-color')) $('ad-cfg-primary-color').value = pCol;
+    if ($('ad-cfg-accent-color')) $('ad-cfg-accent-color').value = aCol;
+    if ($('ad-cfg-primary-hex')) $('ad-cfg-primary-hex').textContent = pCol;
+    if ($('ad-cfg-accent-hex')) $('ad-cfg-accent-hex').textContent = aCol;
+
+    if ($('ad-cfg-font-family')) $('ad-cfg-font-family').value = cfg.fontFamily || DEFAULT_SITE_CONFIG.fontFamily;
+    if ($('ad-cfg-font-scale')) $('ad-cfg-font-scale').value = cfg.fontSizeScale || DEFAULT_SITE_CONFIG.fontSizeScale;
+
+    if ($('ad-cfg-allow-teacher-print')) $('ad-cfg-allow-teacher-print').checked = cfg.allowTeacherPrint !== false;
+    if ($('ad-cfg-allow-teacher-corr')) $('ad-cfg-allow-teacher-corr').checked = cfg.allowTeacherCorrection !== false;
+    if ($('ad-cfg-show-login-months')) $('ad-cfg-show-login-months').checked = cfg.showLoginOpenMonths !== false;
+
+    if ($('ad-cfg-attendance-url')) $('ad-cfg-attendance-url').value = cfg.attendanceSheetUrl || DEFAULT_SITE_CONFIG.attendanceSheetUrl;
+    if ($('ad-cfg-eprofile-url')) $('ad-cfg-eprofile-url').value = cfg.eprofileSheetUrl || DEFAULT_SITE_CONFIG.eprofileSheetUrl;
+    if ($('ad-cfg-script-url')) $('ad-cfg-script-url').value = cfg.appsScriptUrl || DEFAULT_SITE_CONFIG.appsScriptUrl;
+
+    renderThemePresetButtons(cfg.themePreset || 'kbs_navy');
+  }
+
   function renderAdminSettingsTab() {
     $('ad-gas-url-input').value = state.settings.gasUrl || '';
+    const cfg = getSiteConfig();
+    populateSiteConfigForm(cfg);
+    applySiteConfigToDom(cfg);
+
     const proxyEl = $('ad-vercel-proxy-status');
     if (proxyEl) {
       proxyEl.textContent = state.vercelProxyAvailable
@@ -3440,7 +3684,64 @@
     $('ad-pin-search-input').addEventListener('input', renderAdminPinsTab);
     $('btn-batch-assign-missing-pins').addEventListener('click', batchAssignMissingPins);
 
-    // Admin Tab 5 Settings
+    // Admin Tab 5 Settings & Site Customization
+    $('btn-toggle-db-urls').addEventListener('click', () => {
+      $('ad-db-urls-panel').classList.toggle('hidden');
+    });
+    const previewLiveAppearance = () => {
+      const pCol = $('ad-cfg-primary-color').value;
+      const aCol = $('ad-cfg-accent-color').value;
+      if ($('ad-cfg-primary-hex')) $('ad-cfg-primary-hex').textContent = pCol;
+      if ($('ad-cfg-accent-hex')) $('ad-cfg-accent-hex').textContent = aCol;
+      const draft = collectSiteConfigFormValues();
+      renderThemePresetButtons(draft.themePreset);
+      applySiteConfigToDom(draft);
+      updateSyncBadge();
+    };
+    ['ad-cfg-primary-color', 'ad-cfg-accent-color', 'ad-cfg-font-family', 'ad-cfg-font-scale'].forEach(id => {
+      $(id).addEventListener('change', previewLiveAppearance);
+      $(id).addEventListener('input', previewLiveAppearance);
+    });
+    ['ad-cfg-site-title', 'ad-cfg-site-subtitle', 'ad-cfg-footer-text', 'ad-cfg-login-tagline'].forEach(id => {
+      $(id).addEventListener('input', () => {
+        applySiteConfigToDom(collectSiteConfigFormValues());
+        updateSyncBadge();
+      });
+    });
+
+    $('btn-save-site-config').addEventListener('click', async () => {
+      const btn = $('btn-save-site-config');
+      const nextCfg = collectSiteConfigFormValues();
+      setButtonLoading(btn, true, 'กำลังบันทึก...');
+      try {
+        await saveSettingsToCloud({ siteConfig: nextCfg });
+        if (state.currentTeacher) renderTeacherDashboard();
+        if (state.mode === 'admin' && state.adTab === 'overview') renderAdminOverviewTab();
+        toast('บันทึกการตั้งค่าเว็บและธีมเรียบร้อยแล้ว');
+      } catch (err) {
+        toast('บันทึกลงเครื่องแล้ว แต่ซิงค์ Cloud ไม่สำเร็จ: ' + err.message, 'warning');
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+
+    $('btn-reset-site-config').addEventListener('click', async () => {
+      const btn = $('btn-reset-site-config');
+      const defCfg = { ...DEFAULT_SITE_CONFIG };
+      populateSiteConfigForm(defCfg);
+      setButtonLoading(btn, true, 'กำลังรีเซ็ต...');
+      try {
+        await saveSettingsToCloud({ siteConfig: defCfg });
+        if (state.currentTeacher) renderTeacherDashboard();
+        if (state.mode === 'admin' && state.adTab === 'overview') renderAdminOverviewTab();
+        toast('รีเซ็ตการตั้งค่ากลับเป็นค่าเริ่มต้น (KBS) แล้ว');
+      } catch (err) {
+        toast('รีเซ็ตบนเครื่องแล้ว: ' + err.message, 'warning');
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+
     $('btn-test-gas').addEventListener('click', async () => {
       const url = $('ad-gas-url-input').value.trim();
       const box = $('ad-gas-test-result');
@@ -3498,6 +3799,7 @@
     const emblemUri = createDefaultKvkEmblemDataUri();
     $('header-logo-img').src = emblemUri;
     loadSettingsLocal();
+    applySiteConfigToDom();
     bindEvents();
 
     // ลองเชื่อมต่อ Google Sheets ผ่าน GAS / /api/gas ทันทีที่เปิดหน้า
