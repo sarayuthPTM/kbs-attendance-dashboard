@@ -1257,17 +1257,63 @@
   }
 
   // -------------------- 9. TEACHER DASHBOARD RENDERING --------------------
+  function buildBeautifulAvatarSvg(t) {
+    const isAdminOrExec = Boolean((t && t.isAdmin) || (t && /ผู้บริหาร|ผู้อำนวยการ|รอง/.test(`${t.department || ''} ${t.position || ''}`)));
+    const pCol = sanitizeHexColor(getSiteConfig().primaryColor, '#1e3a8a');
+    const pDark = shiftHexRgb(pCol, 0.55).hex;
+    const badgeIcon = isAdminOrExec
+      ? `<circle cx="49" cy="49" r="9.5" fill="${pCol}" stroke="#ffffff" stroke-width="2"/>
+         <path d="M49 43.2l1.65 3.35 3.7.54-2.67 2.6.63 3.68-3.31-1.74-3.31 1.74.63-3.68-2.67-2.6 3.7-.54z" fill="#fbbf24"/>`
+      : `<circle cx="49" cy="49" r="9.5" fill="#059669" stroke="#ffffff" stroke-width="2"/>
+         <path d="M44.8 49.2l2.8 2.8 5.6-5.8" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-full h-full block">
+        <defs>
+          <linearGradient id="kbsAvBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fde68a"/>
+            <stop offset="52%" stop-color="#fbbf24"/>
+            <stop offset="100%" stop-color="#d97706"/>
+          </linearGradient>
+          <linearGradient id="kbsAvSuit" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${pCol}"/>
+            <stop offset="100%" stop-color="${pDark}"/>
+          </linearGradient>
+          <linearGradient id="kbsAvSkin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#f1f5f9"/>
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" fill="url(#kbsAvBg)"/>
+        <circle cx="32" cy="30" r="24" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="1.5"/>
+        <circle cx="32" cy="30" r="18" fill="#ffffff" fill-opacity="0.16"/>
+        <path d="M12 64c1.2-12.4 9.2-19.5 20-19.5S50.8 51.6 52 64z" fill="url(#kbsAvSuit)"/>
+        <path d="M26.5 45.2L32 54l5.5-8.8c-1.7-.5-3.6-.7-5.5-.7s-3.8.2-5.5.7z" fill="#ffffff" fill-opacity="0.92"/>
+        <path d="M32 47.5l2 5.2-2 4.3-2-4.3z" fill="#f59e0b"/>
+        <circle cx="32" cy="27.5" r="10.8" fill="url(#kbsAvSkin)" stroke="${pCol}" stroke-opacity="0.18" stroke-width="1.2"/>
+        <path d="M21.2 26.5c.8-6.4 5.4-10.2 10.8-10.2 5.6 0 10.2 3.8 10.8 10.2-2.2-2.7-5.5-4.1-10.8-4.1-4.8 0-8.2 1.3-10.8 4.1z" fill="${pDark}" fill-opacity="0.88"/>
+        <path d="M8 8Q32 2 56 8L56 18Q32 10 8 18Z" fill="#ffffff" fill-opacity="0.18"/>
+        ${badgeIcon}
+      </svg>
+    `;
+  }
+
   function renderTeacherDashboard() {
     const t = state.currentTeacher;
     if (!t) return;
 
     // Avatar
     const av = $('td-avatar');
+    const fallbackSvg = buildBeautifulAvatarSvg(t);
     if (t.avatarUrl) {
-      av.innerHTML = `<img src="${esc(t.avatarUrl)}" alt="${esc(t.name)}" class="w-full h-full object-cover" onerror="this.remove()">`;
+      av.innerHTML = `<img src="${esc(t.avatarUrl)}" alt="${esc(t.name)}" class="w-full h-full object-cover">`;
+      const img = av.querySelector('img');
+      if (img) {
+        img.addEventListener('error', () => {
+          av.innerHTML = fallbackSvg;
+        });
+      }
     } else {
-      const initial = (t.name || '?').replace(/^(นาย|นางสาว|นาง|ว่าที่\s*ร\.?ต\.?\s*หญิง|ว่าที่\s*ร\.?ต\.?)\s*/, '').charAt(0) || '?';
-      av.textContent = initial;
+      av.innerHTML = fallbackSvg;
     }
     $('td-group-badge').textContent = t.group;
     $('td-dept-badge').textContent = t.department || '-';
